@@ -37,7 +37,6 @@ function AdminRoutes() {
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
-      <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>
   </Routes>
 }

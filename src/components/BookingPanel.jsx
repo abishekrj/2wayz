@@ -144,7 +144,7 @@ export default function BookingPanel({ initialDestination = null }) {
         >
           <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
+        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
 
         {mode === 'schedule' && (
           <div className="grid gap-3 sm:grid-cols-2 lg:contents">

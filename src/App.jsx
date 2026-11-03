@@ -35,7 +35,8 @@ function AdminRoutes() {
   return <Routes>
     <Route path="login" element={<AdminLoginPage admin={admin} onLogin={setAdmin}/>}/>
     <Route path="/" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
-      <Route index element={<AdminDashboardPage/>}/>
+      <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
+      <Route path="dashboard" element={<AdminDashboardPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
     </Route>
   </Routes>

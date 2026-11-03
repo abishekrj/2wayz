@@ -33,8 +33,8 @@ function AdminRoutes() {
   }, [])
   if (checking) return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Checking administrator session…</div>
   return <Routes>
-    <Route path="/admin/login" element={<AdminLoginPage admin={admin} onLogin={setAdmin}/>}/>
-    <Route path="/admin" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
+    <Route path="login" element={<AdminLoginPage admin={admin} onLogin={setAdmin}/>}/>
+    <Route path="/" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
       <Route index element={<AdminDashboardPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
     </Route>

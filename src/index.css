@@ -7,10 +7,10 @@ body { margin:0; min-width:320px; }
 button,input { font:inherit; }
 ::selection { background:#ffe28a; color:#073B83; }
 .hero-pattern { background:radial-gradient(circle at 78% 24%,rgba(33,112,193,.58),transparent 32%),linear-gradient(125deg,#042b65 0%,#073b83 60%,#0c559c 100%); }
-.wayz-google-autocomplete { display:block;position:relative;width:100%;min-width:0;color:#10213d;font-family:'Poppins',sans-serif;font-size:14px; }
+.wayz-google-autocomplete { display:block;position:relative;width:100%;min-width:0;border:0 !important;outline:0 !important;box-shadow:none !important;background:transparent !important;color:#10213d;font-family:'Poppins',sans-serif;font-size:14px; }
 .wayz-google-autocomplete::part(input) { width:100%;min-width:0;height:54px;padding:0;border:0;outline:0;background:transparent;color:#10213d;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;box-shadow:none; }
 .wayz-google-autocomplete:focus-within { outline:none; }
-.wayz-google-autocomplete::part(input-container) { border:0 !important;outline:0 !important;box-shadow:none !important;background:transparent !important; }
+.wayz-google-autocomplete::part(focus-ring) { display:none !important; }
 .wayz-google-autocomplete::part(input):focus { outline:0; }
 .wayz-google-autocomplete::part(prediction-list) { z-index:1000; }
 @keyframes heroFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -18,9 +18,4 @@ button,input { font:inherit; }
 .page-enter { animation: pageEnter .28s ease-out both; }
 @keyframes pageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Keep Google Places inputs free of decorative search icons. */
-.wayz-google-autocomplete::part(autocomplete-icon),
-.wayz-google-autocomplete::part(search-icon),
-.wayz-google-autocomplete::part(start-icon),
-.wayz-google-autocomplete::part(leading-icon),
-.wayz-google-autocomplete::part(icon) { display:none !important; }
+/* Google input icon is disabled with the supported noInputIcon option. */

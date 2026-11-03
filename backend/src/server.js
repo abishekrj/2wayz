@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser'
 import { rateLimit } from 'express-rate-limit'
 import authRoutes from './routes/auth.js'
 import homepageRoutes from './routes/homepage.js'
+import cmsPageRoutes from './routes/cmsPages.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('DATABASE_URL and a JWT_SECRET of at least 32 characters are required.')
@@ -30,6 +31,7 @@ app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: 'd
 app.get('/api/health', (req, res) => res.json({ status: 'ok', service: '2WAYZ API' }))
 app.use('/api/admin/auth', authRoutes)
 app.use('/api/homepage', homepageRoutes)
+app.use('/api/cms-pages', cmsPageRoutes)
 app.use((error, req, res, next) => {
   console.error(error)
   res.status(500).json({ message: 'An unexpected server error occurred.' })

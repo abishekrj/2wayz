@@ -10,6 +10,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
 import AdminCmsPageEditor from './pages/AdminCmsPageEditor'
+import AdminRegisteredUsersPage from './pages/AdminRegisteredUsersPage'
 import CmsContentPage from './pages/CmsContentPage'
 import AdminLayout from './components/AdminLayout'
 import { adminApi } from './lib/adminApi'
@@ -35,6 +36,7 @@ function AdminRoutes() {
     <Route path="/" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
       <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
+      <Route path="registered-users" element={<AdminRegisteredUsersPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>

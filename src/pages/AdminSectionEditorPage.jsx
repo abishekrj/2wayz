@@ -51,6 +51,6 @@ export default function AdminSectionEditorPage() {
       {Object.entries(content).map(([key,value])=><FieldEditor key={key} name={key} value={value} onChange={next=>setContent(current=>({...current,[key]:next}))}/>)}
       {error&&<p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}{message&&<p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
       <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5"><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-sm font-bold text-white disabled:opacity-60"><Save size={17}/>{saving?'Saving…':'Save changes'}</button><button type="button" disabled={saving} onClick={()=>save(!section.isPublished)} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 disabled:opacity-60">{section.isPublished?<EyeOff size={17}/>:<Eye size={17}/>} {section.isPublished?'Unpublish':'Publish'}</button></div>
-    </form><p className="mt-4 text-xs leading-5 text-slate-400">Image uploads are stored by the 2WAYZ backend. The public homepage still needs to be connected to these saved CMS values before edits appear on the live homepage.</p>
+    </form><p className="mt-4 text-xs leading-5 text-slate-400">Image uploads are stored by the 2WAYZ backend. Uploaded images and saved values are used by the public homepage when the section is published.</p>
   </div>
 }

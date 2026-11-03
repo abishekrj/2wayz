@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { MapPin, LoaderCircle } from 'lucide-react'
 
 let mapsPromise
 
@@ -22,7 +22,7 @@ function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, tone = 'green', onSelect }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', onSelect }) {
   const hostRef = useRef(null)
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
@@ -100,7 +100,8 @@ export default function GooglePlaceField({ label, placeholder, tone = 'green', o
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
-      <span className="relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white px-4 transition">
+      <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-4 pr-3 transition ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
+        <Icon size={19} className="mr-3 shrink-0" />
         {selectedName ? (
           <button
             type="button"

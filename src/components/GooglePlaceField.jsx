@@ -59,6 +59,10 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           const place = event.placePrediction.toPlace()
           await place.fetchFields({ fields: ['id', 'displayName', 'formattedAddress', 'location'] })
           const name = place.displayName || place.formattedAddress || 'Selected place'
+          // Switch out of edit mode before updating the parent value. This prevents
+          // the autocomplete input from being recreated with the newly selected name.
+          setEditing(false)
+          setError('')
           onSelectRef.current({
             placeId: place.id,
             name,
@@ -67,11 +71,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
               ? { lat: place.location.lat(), lng: place.location.lng() }
               : null,
           })
-          // Remove Google's autocomplete element and its selected-text input before
-          // React renders the compact selected-place label.
-          if (hostRef.current) hostRef.current.replaceChildren()
-          setError('')
-          setEditing(false)
         } catch {
           setError('Could not read this location. Please select another suggestion.')
         }
@@ -105,7 +104,9 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       alive = false
       if (element && handleSelect) element.removeEventListener('gmp-select', handleSelect)
     }
-  }, [placeholder, autocompleteVersion, editing, value?.name])
+  // Do not depend on value?.name: selecting a place updates the parent value, but
+  // must not recreate Google's input and show the selected text a second time.
+  }, [placeholder, autocompleteVersion, editing])
 
   function changePlace() {
     setError('')

@@ -79,7 +79,69 @@ function HowItWorks() {
     { icon: Route, number: '02', title: 'Check your route & fare', text: 'See the estimated road distance, travel time and indicative auto fare.' },
     { icon: Smartphone, number: '03', title: 'Request your auto', text: 'Request an auto; live driver matching is coming soon.' }
   ]
-  return <section id="how-it-works" className="bg-white py-16 sm:py-20"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">Simple by design</p><h2 className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Your ride in three easy steps</h2><p className="mt-3 text-sm leading-6 text-slate-500">A straightforward way to plan your local journey.</p></div><div className="mt-10 grid gap-5 md:grid-cols-3">{steps.map(({icon:Icon,number,title,text})=><div key={number} className="rounded-3xl border border-slate-100 bg-wayz-mist/60 p-7"><span className="text-xs font-black tracking-widest text-wayz-blue">STEP {number}</span><div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-wayz-blue shadow-sm"><Icon size={26}/></div><h3 className="mt-5 text-lg font-extrabold text-wayz-ink">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p></div>)}</div></div></section>
+  return (
+    <section id="how-it-works" className="bg-white py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">Simple by design</p>
+          <h2 className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Your ride in three easy steps</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-500">A straightforward way to plan your local journey.</p>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {steps.map(({ icon: Icon, number, title, text }) => (
+            <article key={number} className="overflow-hidden rounded-3xl border border-slate-100 bg-wayz-mist/60 shadow-sm">
+              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-50 via-sky-100 to-amber-50 sm:h-52">
+                {number === '01' && (
+                  <svg viewBox="0 0 420 220" className="h-full w-full" role="img" aria-label="Map illustration showing pickup and destination points">
+                    <path d="M-20 55L440 150M-20 175L440 55M90-20L190 240M310-20L230 240" stroke="#cbdced" strokeWidth="22" fill="none"/>
+                    <path d="M-20 55L440 150M-20 175L440 55M90-20L190 240M310-20L230 240" stroke="#fff" strokeWidth="3" strokeDasharray="8 9" fill="none"/>
+                    <path d="M116 143Q170 35 286 91" stroke="#2563a6" strokeWidth="5" strokeDasharray="7 7" fill="none"/>
+                    <circle cx="116" cy="143" r="22" fill="#16a36a" stroke="#fff" strokeWidth="7"/>
+                    <circle cx="286" cy="91" r="22" fill="#e45b5b" stroke="#fff" strokeWidth="7"/>
+                    <circle cx="116" cy="143" r="6" fill="#fff"/><circle cx="286" cy="91" r="6" fill="#fff"/>
+                  </svg>
+                )}
+                {number === '02' && (
+                  <svg viewBox="0 0 420 220" className="h-full w-full" role="img" aria-label="Route illustration with distance and travel estimate">
+                    <path d="M-20 175Q70 165 110 90T230 95T440 35" stroke="#c6d9ed" strokeWidth="34" fill="none" strokeLinecap="round"/>
+                    <path d="M-20 175Q70 165 110 90T230 95T440 35" stroke="#fff" strokeWidth="4" strokeDasharray="11 10" fill="none"/>
+                    <path d="M52 168Q95 150 120 95T245 96T365 52" stroke="#2563a6" strokeWidth="5" fill="none" strokeLinecap="round"/>
+                    <circle cx="52" cy="168" r="12" fill="#16a36a" stroke="#fff" strokeWidth="5"/>
+                    <circle cx="365" cy="52" r="12" fill="#e45b5b" stroke="#fff" strokeWidth="5"/>
+                    <rect x="155" y="24" width="112" height="48" rx="12" fill="#fff" opacity=".95"/>
+                    <text x="211" y="44" textAnchor="middle" fill="#164477" fontSize="11" fontWeight="700">ROUTE</text>
+                    <text x="211" y="60" textAnchor="middle" fill="#2563a6" fontSize="13" fontWeight="800">DISTANCE + FARE</text>
+                  </svg>
+                )}
+                {number === '03' && (
+                  <svg viewBox="0 0 420 220" className="h-full w-full" role="img" aria-label="Auto rickshaw illustration ready for a passenger trip">
+                    <circle cx="330" cy="48" r="25" fill="#ffe29a"/>
+                    <path d="M0 184Q100 160 210 184T420 184V220H0" fill="#d6e8d7"/>
+                    <path d="M86 139L105 91Q112 75 132 75H258Q278 75 286 96L304 139Z" fill="#f4c94d" stroke="#b77b16" strokeWidth="5"/>
+                    <path d="M137 82H251L268 125H119Z" fill="#dff2ff" stroke="#b77b16" strokeWidth="4"/>
+                    <path d="M185 82V125" stroke="#b77b16" strokeWidth="4"/>
+                    <path d="M76 139H316V164H76Z" fill="#16845e"/>
+                    <circle cx="125" cy="166" r="22" fill="#24364b" stroke="#fff" strokeWidth="6"/>
+                    <circle cx="270" cy="166" r="22" fill="#24364b" stroke="#fff" strokeWidth="6"/>
+                    <rect x="91" y="137" width="25" height="9" rx="4" fill="#fff1b7"/>
+                    <path d="M307 146h22" stroke="#e45b5b" strokeWidth="7" strokeLinecap="round"/>
+                  </svg>
+                )}
+                <div className="absolute bottom-3 left-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-wayz-blue shadow-md ring-1 ring-slate-100">
+                  <Icon size={25} strokeWidth={2}/>
+                </div>
+                <span className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-extrabold tracking-widest text-wayz-blue">STEP {number}</span>
+              </div>
+              <div className="p-6 sm:p-7">
+                <h3 className="text-lg font-extrabold text-wayz-ink">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 export default function HomePage() {
   const [selectedDestination, setSelectedDestination] = useState(null)

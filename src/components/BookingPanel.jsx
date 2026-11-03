@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
   CalendarDays, Zap, Search, Info, Clock3,
-  Route as RouteIcon, LoaderCircle, MapPin, ArrowDownUp,
+  Route as RouteIcon, LoaderCircle, MapPin, ArrowLeftRight,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
@@ -118,7 +118,7 @@ export default function BookingPanel() {
       </div>
 
       <form onSubmit={submit} className={`mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.2fr)_.72fr_.72fr_auto]" : "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"}`}>
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} onSelect={selectPickup} />
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} />
         <button
           type="button"
           onClick={swapLocations}
@@ -127,9 +127,9 @@ export default function BookingPanel() {
           title="Swap pickup and destination"
           className="mb-[9px] flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ArrowDownUp size={19} />
+          <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" onSelect={selectDestination} />
+        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
 
         {mode === 'schedule' && (
           <div className="grid gap-3 sm:grid-cols-2 lg:contents">

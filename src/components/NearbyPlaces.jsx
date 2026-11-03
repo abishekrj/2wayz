@@ -89,18 +89,25 @@ export default function NearbyPlaces({ onSelectPlace }) {
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-card focus:outline-none focus:ring-4 focus:ring-blue-100"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
-                  {place.image ? (
+                  {place.image && (
                     <img
                       src={place.image}
                       alt={place.imageAlt}
                       loading="lazy"
+                      onError={event => {
+                        event.currentTarget.style.display = 'none'
+                        event.currentTarget.nextElementSibling.style.display = 'flex'
+                      }}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 text-wayz-blue">
-                      <Icon size={42} strokeWidth={1.5} />
-                    </div>
                   )}
+                  <div
+                    className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 text-wayz-blue"
+                    style={{ display: place.image ? 'none' : 'flex' }}
+                    aria-hidden="true"
+                  >
+                    <Icon size={42} strokeWidth={1.5} />
+                  </div>
                   <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-wayz-blue shadow-sm">
                     <MapPin size={12} className="mr-1 inline" /> Tiruvannamalai
                   </span>

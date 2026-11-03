@@ -6,13 +6,11 @@ import TravelDetailsPage from './pages/TravelDetailsPage'
 import TravelTrackingPage from './pages/TravelTrackingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import AboutPage from './pages/AboutPage'
-import HowItWorksPage from './pages/HowItWorksPage'
-import ForDriversPage from './pages/ForDriversPage'
-import ContactPage from './pages/ContactPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
-import AdminSectionEditorPage from './pages/AdminSectionEditorPage'\nimport AdminCmsPageEditor from './pages/AdminCmsPageEditor'\nimport CmsContentPage from './pages/CmsContentPage'
+import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
+import AdminCmsPageEditor from './pages/AdminCmsPageEditor'
+import CmsContentPage from './pages/CmsContentPage'
 import AdminLayout from './components/AdminLayout'
 import { adminApi } from './lib/adminApi'
 import { BookingProvider } from './context/BookingContext'
@@ -37,7 +35,9 @@ function AdminRoutes() {
     <Route path="/" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
       <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
-      <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>\n      <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
+      <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
+      <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
+      <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>
   </Routes>
 }
@@ -48,10 +48,7 @@ export default function App() {
     <Routes>
       <Route path="/admin/*" element={<AdminRoutes/>}/>
       <Route path="/" element={<HomePage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/how-it-works" element={<HowItWorksPage />} />
-      <Route path="/drivers" element={<ForDriversPage />} />
-      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/:slug" element={<CmsContentPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/driver/register" element={<DriverRegistrationPage />} />

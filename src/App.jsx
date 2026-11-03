@@ -12,7 +12,7 @@ import ForDriversPage from './pages/ForDriversPage'
 import ContactPage from './pages/ContactPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
-import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
+import AdminSectionEditorPage from './pages/AdminSectionEditorPage'\nimport AdminCmsPageEditor from './pages/AdminCmsPageEditor'\nimport CmsContentPage from './pages/CmsContentPage'
 import AdminLayout from './components/AdminLayout'
 import { adminApi } from './lib/adminApi'
 import { BookingProvider } from './context/BookingContext'
@@ -37,7 +37,7 @@ function AdminRoutes() {
     <Route path="/" element={admin ? <AdminLayout admin={admin}/> : <Navigate to="/admin/login" replace/>}>
       <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
-      <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
+      <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>\n      <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>
   </Routes>
 }

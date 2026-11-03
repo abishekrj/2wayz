@@ -35,6 +35,16 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   const selectedName = value?.name || ''
 
   useEffect(() => {
+    if (selectedName) {
+      setQuery('')
+      setSuggestions([])
+      setEditing(false)
+    } else {
+      setEditing(true)
+    }
+  }, [selectedName])
+
+  useEffect(() => {
     let alive = true
     loadGoogleMaps()
       .then(maps => maps.importLibrary('places'))

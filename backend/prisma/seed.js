@@ -48,7 +48,7 @@ async function main() {
   for (const section of sections) {
     await prisma.homePageSection.upsert({
       where: { slug: section.slug },
-      update: { title: section.title, content: section.content, sortOrder: section.sortOrder },
+      update: { title: section.title, sortOrder: section.sortOrder },
       create: section
     })
   }

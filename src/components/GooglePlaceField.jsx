@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle } from 'lucide-react'
+import { MapPin, LoaderCircle, Pencil } from 'lucide-react'
 
 let mapsPromise
 
@@ -28,6 +28,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   onSelectRef.current = onSelect
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState(!value)
   const selectedName = value?.name || ''
   const [autocompleteVersion, setAutocompleteVersion] = useState(0)
 
@@ -42,7 +43,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       if (!alive || !hostRef.current) return
 
       element = new places.PlaceAutocompleteElement({ includedRegionCodes: ['in'] })
-      element.placeholder = placeholder
+      element.placeholder = value?.name || placeholder
       element.noInputIcon = true
       element.style.border = '0'
       element.style.borderRadius = '0'
@@ -69,6 +70,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
               : null,
           })
           setError('')
+          setEditing(false)
         } catch {
           if (hostRef.current) hostRef.current.style.visibility = 'visible'
           setError('Could not read this location. Please select another suggestion.')
@@ -91,11 +93,11 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       alive = false
       if (element && handleSelect) element.removeEventListener('gmp-select', handleSelect)
     }
-  }, [placeholder, autocompleteVersion, !value])
+  }, [placeholder, autocompleteVersion, editing])
 
   function changePlace() {
     setError('')
-    onSelect(null)
+    setEditing(true)
     setAutocompleteVersion(version => version + 1)
   }
 
@@ -104,19 +106,25 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[64px] pr-3 transition focus-within:border-2 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
         <Icon size={36} className="absolute left-3 top-1/2 z-[99] box-content h-10 w-10 -translate-y-1/2 bg-white" />
-        {selectedName ? (
-          <button
-            type="button"
-            onClick={changePlace}
-            title="Click to change location"
-            className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800"
-          >
-            {selectedName}
-          </button>
+        {selectedName && !editing ? (
+          <>
+            <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">
+              {selectedName}
+            </span>
+            <button
+              type="button"
+              onClick={changePlace}
+              title="Edit location"
+              aria-label={`Edit ${label.toLowerCase()}`}
+              className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-wayz-blue"
+            >
+              <Pencil size={17} />
+            </button>
+          </>
         ) : (
           <span ref={hostRef} className="min-w-0 flex-1" />
         )}
-        {loading && !selectedName && <LoaderCircle className="ml-2 animate-spin text-slate-400" size={17} />}
+        {loading && (!selectedName || editing) && <LoaderCircle className="ml-2 animate-spin text-slate-400" size={17} />}
       </span>
       {error && <span className="mt-1 block text-xs text-rose-600">{error}</span>}
     </label>

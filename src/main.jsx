@@ -4,6 +4,26 @@ import './index.css'
 
 const rootElement = document.getElementById('root')
 
+function StartupLoader() {
+  return (
+    <main className="wayz-startup-loader" role="status" aria-live="polite" aria-label="Loading 2WAYZ">
+      <div className="wayz-loader-content">
+        <div className="wayz-loader-brand" aria-label="2WAYZ">
+          <span>2WAYZ</span><i />
+        </div>
+        <div className="wayz-loader-route" aria-hidden="true">
+          <span className="wayz-loader-track" />
+          <span className="wayz-loader-dot wayz-loader-dot-one" />
+          <span className="wayz-loader-dot wayz-loader-dot-two" />
+          <span className="wayz-loader-auto">↗</span>
+        </div>
+        <p className="wayz-loader-title">Your ride is getting ready</p>
+        <p className="wayz-loader-subtitle">Local rides. Made easy.</p>
+      </div>
+    </main>
+  )
+}
+
 function StartupMessage({ title, message, details }) {
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: '#f8fafc', fontFamily: 'Arial, sans-serif' }}>
@@ -45,7 +65,7 @@ if (!rootElement) {
   const root = ReactDOM.createRoot(rootElement)
 
   root.render(
-    <StartupMessage title="Loading 2WAYZ…" message="The application entry point is running. Loading the app modules now." />
+    <StartupLoader />
   )
 
   import('./App')

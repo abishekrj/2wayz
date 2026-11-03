@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 
 let mapsPromise
 
@@ -22,8 +22,10 @@ function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', onSelect }) {
+export default function GooglePlaceField({ label, placeholder, tone = 'green', onSelect }) {
   const hostRef = useRef(null)
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedName, setSelectedName] = useState('')
@@ -54,7 +56,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           const place = event.placePrediction.toPlace()
           await place.fetchFields({ fields: ['id', 'displayName', 'formattedAddress', 'location'] })
           const name = place.displayName || place.formattedAddress || 'Selected place'
-          onSelect({
+          onSelectRef.current({
             placeId: place.id,
             name,
             address: place.formattedAddress || name,
@@ -86,7 +88,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       alive = false
       if (element && handleSelect) element.removeEventListener('gmp-select', handleSelect)
     }
-  }, [placeholder, onSelect, autocompleteVersion])
+  }, [placeholder, autocompleteVersion])
 
   function changePlace() {
     setSelectedName('')
@@ -98,8 +100,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
-      <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-4 pr-3 transition ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
-        <Icon size={19} className="mr-3 shrink-0" />
+      <span className="relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white px-4 transition">
         {selectedName ? (
           <button
             type="button"

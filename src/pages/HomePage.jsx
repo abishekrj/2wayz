@@ -72,30 +72,26 @@ function HeroSlider() {
   const previous = () => setActive(current => (current - 1 + heroSlides.length) % heroSlides.length)
   const next = () => setActive(current => (current + 1) % heroSlides.length)
 
-  return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative overflow-visible text-white">
-    <div className="mx-auto max-w-7xl px-5 pb-8 pt-7 sm:pb-10 sm:pt-9 lg:px-8 lg:pt-10">
-      <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,.92fr)] lg:gap-10">
-        <div className="min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div key={active} className="min-w-0 max-w-2xl animate-[heroFade_.45s_ease-out]">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50 sm:text-[11px]"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span>
-              <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[46px]">{slide.title}</h1>
-              <p className="mt-2 max-w-xl text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p>
-            </div>
-            <div className="flex shrink-0 gap-2 pt-1" aria-label="Hero banner controls">
-              <button type="button" onClick={previous} aria-label="Previous highlight" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white transition hover:bg-white/20 sm:h-10 sm:w-10"><ChevronLeft size={19}/></button>
-              <button type="button" onClick={next} aria-label="Next highlight" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white transition hover:bg-white/20 sm:h-10 sm:w-10"><ChevronRight size={19}/></button>
-            </div>
-          </div>
-          <div className="relative z-20 mt-6 sm:mt-7">
-            <BookingPanel/>
-          </div>
+  return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative isolate overflow-hidden text-white">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 opacity-30 mix-blend-screen"><AutoHeroIllustration/></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-[#042b65]/95 via-[#073b83]/80 to-[#073b83]/55"/>
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#042b65]/60 to-transparent"/>
+    </div>
+    <div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12">
+      <div className="flex items-start justify-between gap-5">
+        <div key={active} className="min-w-0 max-w-3xl animate-[heroFade_.45s_ease-out]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50 sm:text-[11px]"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span>
+          <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[46px]">{slide.title}</h1>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p>
         </div>
-        <div className="mx-auto w-full max-w-[500px] lg:max-w-none">
-          <div key={'illustration-' + active} className="animate-[heroFade_.45s_ease-out]">
-            <AutoHeroIllustration/>
-          </div>
+        <div className="flex shrink-0 gap-2 pt-1" aria-label="Hero banner controls">
+          <button type="button" onClick={previous} aria-label="Previous highlight" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white transition hover:bg-white/20 sm:h-10 sm:w-10"><ChevronLeft size={19}/></button>
+          <button type="button" onClick={next} aria-label="Next highlight" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/35 bg-white/10 text-white transition hover:bg-white/20 sm:h-10 sm:w-10"><ChevronRight size={19}/></button>
         </div>
+      </div>
+      <div className="relative z-20 mt-7 w-full sm:mt-8">
+        <BookingPanel/>
       </div>
     </div>
   </section>

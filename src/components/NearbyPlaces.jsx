@@ -71,7 +71,7 @@ export default function NearbyPlaces({ onSelectPlace }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">Explore the town</p>
-            <h2 id="nearby-places-heading" className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Nearby Places in Tiruvannamalai</h2>
+            <h2 id="nearby-places-heading" className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Places to Visit in Tiruvannamalai</h2>
             <p className="mt-3 text-sm leading-6 text-slate-500">Choose a popular temple or local destination. We’ll set it as your drop-off point in the booking form.</p>
           </div>
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-wayz-blue"><MapPin size={15}/> Select a destination</span>

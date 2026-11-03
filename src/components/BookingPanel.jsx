@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  CalendarDays, Zap, Search, ArrowDown, Info, Clock3,
-  Route as RouteIcon, IndianRupee, LoaderCircle, MapPin,
+  CalendarDays, Zap, Search, Info, Clock3,
+  Route as RouteIcon, LoaderCircle, MapPin,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
@@ -110,16 +110,15 @@ export default function BookingPanel() {
         </div>
       </div>
 
-      <form onSubmit={submit} className="mt-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(170px,.72fr)]">
+      <form onSubmit={submit} className={`mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[1.2fr_1.2fr_.72fr_.72fr_auto]" : "md:grid-cols-[1fr_1fr_auto]"}`}>
         <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} onSelect={selectPickup} />
-        <div className="hidden items-center justify-center pb-5 text-slate-300 md:flex"><ArrowDown className="-rotate-90" size={18} /></div>
         <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" onSelect={selectDestination} />
 
         {mode === 'schedule' && (
-          <div className="grid gap-3 sm:grid-cols-2 md:col-span-4 lg:col-span-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:contents">
             <label className="text-[11px] font-bold tracking-wider text-slate-600">
               PICKUP DATE
-              <input type="date" min={new Date().toLocaleDateString('en-CA')} value={date} onChange={event => setDate(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" />
+              <input type="date" min={new Date().toLocaleDateString('en-CA')} value={date} onChange={event => setDate(event.target.value)} className="mt-2 h-[58px] w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" />
             </label>
             <label className="text-[11px] font-bold tracking-wider text-slate-600">
               PICKUP TIME
@@ -128,7 +127,7 @@ export default function BookingPanel() {
           </div>
         )}
 
-        <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 md:col-span-4 lg:col-span-1">
+        <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
         </button>

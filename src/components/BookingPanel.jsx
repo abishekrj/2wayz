@@ -101,7 +101,7 @@ export default function BookingPanel() {
   }
 
   return (
-    <div id="book" className="w-full rounded-[24px] border border-slate-100 bg-white p-5 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:p-7">
+    <div id="book" className="relative z-30 w-full rounded-[24px] border border-slate-100 bg-white p-5 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:p-7">
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Book your local auto</p>
@@ -117,7 +117,7 @@ export default function BookingPanel() {
         </div>
       </div>
 
-      <form onSubmit={submit} className={`mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.2fr)_.72fr_.72fr_auto]" : "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"}`}>
+      <form onSubmit={submit} className={`relative z-20 mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.2fr)_.72fr_.72fr_auto]" : "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"}`}>
         <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} />
         <button
           type="button"

@@ -20,7 +20,7 @@ async function calculateRoute(pickup, destination) {
   async function resolvePlace(location) {
     if (location.placeId) return new Place({ id: location.placeId })
     const { places = [] } = await Place.searchByText({
-      textQuery: `${location.name}, Tiruvannamalai, Tamil Nadu, India`,
+      textQuery: location.searchText || `${location.name}, Tiruvannamalai, Tamil Nadu, India`,
       fields: ['id', 'displayName', 'formattedAddress', 'location'],
     })
     if (!places[0]?.id) throw new Error(`Could not find ${location.name} on Google Maps. Please edit and select a suggestion.`)
@@ -63,7 +63,10 @@ export default function BookingPanel({ initialDestination = null }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (initialDestination) selectDestination(initialDestination)
+    if (!initialDestination) return
+    setDestination(initialDestination)
+    setEstimate(null)
+    setError('')
   }, [initialDestination])
 
   function selectPickup(value) {

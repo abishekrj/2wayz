@@ -24,5 +24,5 @@ export const adminApi = {
   registerUser: (name, phone, password) => request('/users/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) }),
   passengerLogin: (phone, password) => request('/users/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
   passengerMe: () => request('/users/me'),
-  passengerLogout: () => request('/users/logout', { method: 'POST })
+  passengerLogout: () => request('/users/logout', { method: 'POST' })
 }

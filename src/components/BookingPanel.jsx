@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
@@ -11,14 +11,22 @@ import RouteMap from './RouteMap'
 const FARE = { base: 30, includedKm: 1, perKm: 18, minimum: 50, rounding: 5 }
 
 async function calculateRoute(pickup, destination) {
-  if (!pickup?.placeId || !destination?.placeId) {
-    throw new Error('Please select both locations from the Google suggestions.')
+  if (!pickup || !destination) {
+    throw new Error('Please select both locations.')
   }
 
   const { Place } = await window.google.maps.importLibrary('places')
   const { Route } = await window.google.maps.importLibrary('routes')
-  const origin = new Place({ id: pickup.placeId })
-  const end = new Place({ id: destination.placeId })
+  async function resolvePlace(location) {
+    if (location.placeId) return new Place({ id: location.placeId })
+    const { places = [] } = await Place.searchByText({
+      textQuery: `${location.name}, Tiruvannamalai, Tamil Nadu, India`,
+      fields: ['id', 'displayName', 'formattedAddress', 'location'],
+    })
+    if (!places[0]?.id) throw new Error(`Could not find ${location.name} on Google Maps. Please edit and select a suggestion.`)
+    return places[0]
+  }
+  const [origin, end] = await Promise.all([resolvePlace(pickup), resolvePlace(destination)])
   const response = await Route.computeRoutes({
     origin,
     destination: end,
@@ -42,7 +50,7 @@ async function calculateRoute(pickup, destination) {
   }
 }
 
-export default function BookingPanel() {
+export default function BookingPanel({ initialDestination = null }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [mode, setMode] = useState('instant')
@@ -53,6 +61,10 @@ export default function BookingPanel() {
   const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (initialDestination) selectDestination(initialDestination)
+  }, [initialDestination])
 
   function selectPickup(value) {
     setPickup(value)

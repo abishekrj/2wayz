@@ -13,10 +13,10 @@ const passengerCookieOptions = () => ({ httpOnly: true, secure: process.env.COOK
 router.post('/register', registrationLimiter, async (req, res, next) => {
   try {
     const name = String(req.body?.name || '').trim()
-    const phone = String(req.body?.phone || '').replace(/\\D/g, '')
+    const phone = String(req.body?.phone || '').replace(/\D/g, '')
     const password = String(req.body?.password || '')
     if (name.length < 2 || name.length > 100) return res.status(400).json({ message: 'Enter a name between 2 and 100 characters.' })
-    if (!/^\\d{10}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' })
+    if (!/^\d{10}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' })
     if (password.length < 8 || password.length > 128) return res.status(400).json({ message: 'Password must contain at least 8 characters.' })
     const passwordHash = await bcrypt.hash(password, 12)
     const user = await prisma.passengerUser.create({ data: { name, phone, passwordHash }, select: { id: true, name: true, phone: true, createdAt: true } })
@@ -29,9 +29,9 @@ router.post('/register', registrationLimiter, async (req, res, next) => {
 
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
-    const phone = String(req.body?.phone || '').replace(/\\D/g, '')
+    const phone = String(req.body?.phone || '').replace(/\D/g, '')
     const password = String(req.body?.password || '')
-    if (!/^\\d{10}$/.test(phone) || !password) return res.status(400).json({ message: 'Enter your 10-digit mobile number and password.' })
+    if (!/^\d{10}$/.test(phone) || !password) return res.status(400).json({ message: 'Enter your 10-digit mobile number and password.' })
     const user = await prisma.passengerUser.findUnique({ where: { phone } })
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ message: 'Invalid mobile number or password.' })

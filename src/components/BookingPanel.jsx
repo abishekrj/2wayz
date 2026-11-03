@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
   CalendarDays, Zap, Search, Info, Clock3,
-  Route as RouteIcon, LoaderCircle, MapPin,
+  Route as RouteIcon, LoaderCircle, MapPin, ArrowDownUp,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
@@ -66,6 +66,13 @@ export default function BookingPanel() {
     setError('')
   }
 
+  function swapLocations() {
+    setPickup(destination)
+    setDestination(pickup)
+    setEstimate(null)
+    setError('')
+  }
+
   async function submit(event) {
     event.preventDefault()
     setError('')
@@ -110,8 +117,18 @@ export default function BookingPanel() {
         </div>
       </div>
 
-      <form onSubmit={submit} className={`mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[1.2fr_1.2fr_.72fr_.72fr_auto]" : "md:grid-cols-[1fr_1fr_auto]"}`}>
+      <form onSubmit={submit} className={`mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.2fr)_.72fr_.72fr_auto]" : "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"}`}>
         <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} onSelect={selectPickup} />
+        <button
+          type="button"
+          onClick={swapLocations}
+          disabled={!pickup && !destination}
+          aria-label="Swap pickup and destination"
+          title="Swap pickup and destination"
+          className="mb-[9px] flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ArrowDownUp size={19} />
+        </button>
         <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" onSelect={selectDestination} />
 
         {mode === 'schedule' && (

@@ -43,7 +43,8 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       if (!alive || !hostRef.current) return
 
       element = new places.PlaceAutocompleteElement({ includedRegionCodes: ['in'] })
-      element.placeholder = value?.name || placeholder
+      element.placeholder = placeholder
+      if (editing && value?.name) element.value = value.name
       element.noInputIcon = true
       element.style.border = '0'
       element.style.borderRadius = '0'
@@ -93,7 +94,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       alive = false
       if (element && handleSelect) element.removeEventListener('gmp-select', handleSelect)
     }
-  }, [placeholder, autocompleteVersion, editing])
+  }, [placeholder, autocompleteVersion, editing, value?.name])
 
   function changePlace() {
     setError('')

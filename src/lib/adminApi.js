@@ -16,5 +16,6 @@ export const adminApi = {
   logout: () => request('/admin/auth/logout', { method: 'POST' }),
   me: () => request('/admin/auth/me'),
   sections: () => request('/homepage/admin'),
+  uploadImage: async (file) => { const form = new FormData(); form.append('image', file); const response = await fetch(`${API_BASE}/homepage/admin/upload`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Image upload failed.'); return data },
   saveSection: (slug, section) => request(`/homepage/admin/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(section) })
 }

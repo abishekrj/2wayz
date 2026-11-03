@@ -17,10 +17,13 @@ const app = express()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 app.use('/uploads', express.static(path.resolve(currentDir, '../uploads'), { maxAge: '7d', dotfiles: 'deny' }))
 const port = Number(process.env.PORT || 5001)
-const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://127.0.0.1:5173').split(',').map(value => value.trim())
+const allowedOrigins = new Set([
+  ...('http://127.0.0.1:5173,http://localhost:5173').split(','),
+  ...(process.env.CLIENT_ORIGIN || '').split(',')
+].map(value => value.trim()).filter(Boolean))
 
 app.use(helmet())
-app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.includes(origin)) return callback(null, true); callback(new Error('Origin not allowed by CORS.')) }, credentials: true }))
+app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.has(origin)) return callback(null, true); console.warn('Blocked CORS origin:', origin); return callback(new Error('Origin not allowed by CORS.')) }, credentials: true }))
 app.use(express.json({ limit: '1mb' }))
 app.use(cookieParser())
 app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: 'draft-7', legacyHeaders: false }))

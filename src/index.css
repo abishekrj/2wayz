@@ -11,3 +11,4 @@ button,input { font:inherit; }
 .wayz-google-autocomplete::part(input) { width:100%;min-width:0;height:54px;padding:0;border:0;outline:0;background:transparent;color:#10213d;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;box-shadow:none; }
 .wayz-google-autocomplete::part(input):focus { outline:0; }
 .wayz-google-autocomplete::part(prediction-list) { z-index:1000; }
+@keyframes heroFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }

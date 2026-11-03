@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Home, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit } from 'lucide-react'
+import { LayoutDashboard, Home, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -11,7 +11,7 @@ const homeSections = [
 
 export default function AdminLayout({ admin }) {
   const [homeOpen, setHomeOpen] = useState(true)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)\n  const [cmsOpen, setCmsOpen] = useState(true)\n  const [cmsPages, setCmsPages] = useState([])\n  useEffect(() => { adminApi.pages().then(data => setCmsPages(data.pages || [])).catch(() => {}) }, [])
   const navigate = useNavigate()
   async function logout() {
     try { await adminApi.logout() } finally { navigate('/admin/login', { replace: true }) }
@@ -21,6 +21,8 @@ export default function AdminLayout({ admin }) {
     <nav className="flex-1 space-y-2 overflow-y-auto p-3">
       <NavLink end to="/admin/dashboard" onClick={() => setMobileOpen(false)} className={({isActive}) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10'}`}><LayoutDashboard size={18}/>Dashboard</NavLink>
       <button type="button" onClick={() => setHomeOpen(value => !value)} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10"><span className="flex items-center gap-3"><Home size={18}/>Home Page</span>{homeOpen ? <ChevronDown size={17}/> : <ChevronRight size={17}/>}</button>
+      <button type="button" onClick={() => setCmsOpen(value => !value)} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10"><span className="flex items-center gap-3"><Files size={18}/>CMS Pages</span>{cmsOpen ? <ChevronDown size={17}/> : <ChevronRight size={17}/>}</button>
+      {cmsOpen && <div className="ml-3 space-y-1 border-l border-white/15 pl-3">{cmsPages.map(page=><NavLink key={page.slug} to={`/admin/cms-pages/${page.slug}`} onClick={() => setMobileOpen(false)} className={({isActive}) => `flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium transition ${isActive ? 'bg-white/15 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}><FileEdit size={14}/>{page.navLabel}</NavLink>)}</div>}
       {homeOpen && <div className="ml-3 space-y-1 border-l border-white/15 pl-3">{homeSections.map(([slug,title])=><NavLink key={slug} to={`/admin/home-page/${slug}`} onClick={() => setMobileOpen(false)} className={({isActive}) => `flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium transition ${isActive ? 'bg-white/15 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}><FileEdit size={14}/>{title}</NavLink>)}</div>}
     </nav>
     <div className="border-t border-white/10 p-4"><p className="truncate text-sm font-semibold">{admin?.name}</p><p className="truncate text-xs text-blue-200">{admin?.email}</p><button onClick={logout} className="mt-4 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-blue-100 hover:bg-white/10"><LogOut size={16}/>Sign out</button></div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Home, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files } from 'lucide-react'
+import { LayoutDashboard, Users, Home, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -54,6 +54,10 @@ export default function AdminLayout({ admin }) {
       <nav className="flex-1 space-y-2 overflow-y-auto p-3">
         <NavLink end to="/admin/dashboard" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10'}`}>
           <LayoutDashboard size={18} />Dashboard
+        </NavLink>
+
+        <NavLink to="/admin/registered-users" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
+          <Users size={18} />Registered Users
         </NavLink>
 
         <section>

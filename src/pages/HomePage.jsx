@@ -47,16 +47,16 @@ function HeroSlider() {
   const previous = () => setActive(current => (current - 1 + heroSlides.length) % heroSlides.length)
   const next = () => setActive(current => (current + 1) % heroSlides.length)
   return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative overflow-visible text-white">
-    <div className="mx-auto max-w-7xl px-5 pb-10 pt-12 sm:pb-14 sm:pt-16 lg:px-8 lg:pt-20">
+    <div className="mx-auto max-w-7xl px-5 pb-7 pt-8 sm:pb-9 sm:pt-10 lg:px-8 lg:pt-12">
       <div key={active} className="mx-auto max-w-3xl text-center animate-[heroFade_.45s_ease-out]">
         <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50 sm:text-[11px]"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span>
-        <h1 className="mt-5 text-[2.35rem] font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[56px]">{slide.title}</h1>
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-blue-50 sm:text-base">{slide.description}</p>
+        <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[48px]">{slide.title}</h1>
+        <p className="mx-auto mt-2 max-w-2xl truncate whitespace-nowrap text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p>
       </div>
-      <div className="relative z-20 mx-auto mt-9 max-w-6xl sm:mt-11">
+      <div className="relative z-20 mx-auto mt-6 max-w-6xl sm:mt-7">
         <BookingPanel/>
       </div>
-      <div className="mx-auto mt-6 flex max-w-6xl items-center justify-between">
+      <div className="mx-auto mt-4 flex max-w-6xl items-center justify-between">
         <div className="flex items-center gap-2" role="group" aria-label="Choose slide">{heroSlides.map((item,index)=><button key={item.eyebrow} type="button" aria-label={'Show slide ' + (index+1)} aria-current={active===index?'true':undefined} onClick={()=>setActive(index)} className={'h-2 rounded-full transition-all ' + (active===index?'w-8 bg-wayz-yellow':'w-2 bg-white/50 hover:bg-white')}/>)}</div>
         <div className="flex gap-2"><button type="button" onClick={previous} aria-label="Previous slide" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 transition hover:bg-white/20"><ChevronLeft size={18}/></button><button type="button" onClick={next} aria-label="Next slide" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 transition hover:bg-white/20"><ChevronRight size={18}/></button></div>
       </div>

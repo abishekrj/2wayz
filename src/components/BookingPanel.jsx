@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useBooking } from '../context/BookingContext'
 import {
   CalendarDays, Zap, Search, ArrowDown, Info, Clock3,
   Route as RouteIcon, IndianRupee, LoaderCircle, MapPin,
@@ -41,6 +43,8 @@ async function calculateRoute(pickup, destination) {
 }
 
 export default function BookingPanel() {
+  const navigate = useNavigate()
+  const { setBooking } = useBooking()
   const [mode, setMode] = useState('instant')
   const [pickup, setPickup] = useState(null)
   const [destination, setDestination] = useState(null)
@@ -78,7 +82,10 @@ export default function BookingPanel() {
 
     setBusy(true)
     try {
-      setEstimate(await calculateRoute(pickup, destination))
+      const routeEstimate = await calculateRoute(pickup, destination)
+      setEstimate(routeEstimate)
+      setBooking({ mode, pickup, destination, date, time, estimate: routeEstimate, vehicle: 'auto' })
+      navigate('/travel-details')
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')
     } finally {

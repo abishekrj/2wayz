@@ -4,6 +4,8 @@ import HomePage from './pages/HomePage'
 import DriverRegistrationPage from './pages/DriverRegistrationPage'
 import TravelDetailsPage from './pages/TravelDetailsPage'
 import TravelTrackingPage from './pages/TravelTrackingPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import { BookingProvider } from './context/BookingContext'
 
 function ScrollToTop() {
@@ -19,6 +21,8 @@ export default function App() {
     <ScrollToTop />
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/driver/register" element={<DriverRegistrationPage />} />
       <Route path="/travel-details" element={<TravelDetailsPage />} />
       <Route path="/travel-tracking" element={<TravelTrackingPage />} />

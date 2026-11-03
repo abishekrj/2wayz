@@ -21,5 +21,8 @@ export const adminApi = {
   pages: () => request('/cms-pages/admin'),
   savePage: (slug, page) => request(`/cms-pages/admin/${encodeURIComponent(slug)}`, { method: 'PUT', body: JSON.stringify(page) }),
   users: (search = '', page = 1) => request(`/users/admin?search=${encodeURIComponent(search)}&page=${page}`),
-  registerUser: (name, phone, password) => request('/users/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) })
+  registerUser: (name, phone, password) => request('/users/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) }),
+  passengerLogin: (phone, password) => request('/users/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
+  passengerMe: () => request('/users/me'),
+  passengerLogout: () => request('/users/logout', { method: 'POST })
 }

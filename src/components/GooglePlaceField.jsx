@@ -67,6 +67,9 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
               ? { lat: place.location.lat(), lng: place.location.lng() }
               : null,
           })
+          // Remove Google's autocomplete element and its selected-text input before
+          // React renders the compact selected-place label.
+          if (hostRef.current) hostRef.current.replaceChildren()
           setError('')
           setEditing(false)
         } catch {

@@ -37,31 +37,6 @@ const heroSlides = [
     description: 'A simpler way for Tiruvannamalai passengers and auto drivers to connect.',
   }
 ]
-function AutoHeroIllustration() {
-  return <svg viewBox="0 0 560 330" className="h-full w-full" role="img" aria-label="Illustration of a 2WAYZ auto rickshaw on a local road">
-    <defs><linearGradient id="autoSky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#dff2ff"/><stop offset="1" stopColor="#f8fbff"/></linearGradient><linearGradient id="autoBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffd84d"/><stop offset="1" stopColor="#f4a900"/></linearGradient></defs>
-    <rect width="560" height="330" rx="28" fill="url(#autoSky)"/>
-    <circle cx="456" cy="64" r="29" fill="#ffd76a"/>
-    <path d="M0 252Q125 210 250 250T560 240V330H0Z" fill="#cce8d1"/>
-    <path d="M0 284Q160 250 300 286T560 270V330H0Z" fill="#a7cbb3"/>
-    <path d="M70 245h420" stroke="#fff" strokeWidth="5" strokeDasharray="22 18" opacity=".8"/>
-    <g transform="translate(78 45)">
-      <path d="M105 174l17-76q7-28 38-28h112q20 0 32 18l38 58 9 28H105Z" fill="url(#autoBody)" stroke="#9a5b08" strokeWidth="6" strokeLinejoin="round"/>
-      <path d="M160 76h107q12 0 20 13l24 39H146l11-40q2-12 3-12Z" fill="#174c79" stroke="#9a5b08" strokeWidth="5"/>
-      <path d="M211 78v48M146 137h178" stroke="#fef3c7" strokeWidth="5"/>
-      <path d="M92 171h275l20 19H83Z" fill="#263b50"/>
-      <path d="M117 170l-12-34q-5-14 7-21l30-13 11 17-19 17 10 34Z" fill="#f7bd24" stroke="#9a5b08" strokeWidth="5"/>
-      <path d="M326 142l36 7 12 20-42 1Z" fill="#e8a10c" stroke="#9a5b08" strokeWidth="5"/>
-      <circle cx="145" cy="190" r="29" fill="#263544"/><circle cx="145" cy="190" r="13" fill="#d8e3eb"/>
-      <circle cx="330" cy="190" r="29" fill="#263544"/><circle cx="330" cy="190" r="13" fill="#d8e3eb"/>
-      <path d="M174 61h107l-10-21H189Z" fill="#f7bd24" stroke="#9a5b08" strokeWidth="5"/>
-      <path d="M195 38h66" stroke="#263544" strokeWidth="8" strokeLinecap="round"/>
-      <path d="M96 145h22" stroke="#fff4ca" strokeWidth="8" strokeLinecap="round"/>
-      <rect x="205" y="143" width="54" height="22" rx="5" fill="#073b83"/><text x="232" y="158" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="800">2WAYZ</text>
-    </g>
-    <g fill="#073b83" opacity=".85"><circle cx="83" cy="75" r="5"/><circle cx="103" cy="58" r="3"/><circle cx="478" cy="133" r="5"/><circle cx="495" cy="115" r="3"/></g>
-  </svg>
-}
 function HeroSlider() {
   const [active, setActive] = useState(0)
   useEffect(() => {
@@ -74,9 +49,8 @@ function HeroSlider() {
 
   return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative isolate overflow-hidden text-white">
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 opacity-30 mix-blend-screen"><AutoHeroIllustration/></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#042b65]/95 via-[#073b83]/80 to-[#073b83]/55"/>
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#042b65]/60 to-transparent"/>
+      <div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#042b65]/35 to-transparent"/>
     </div>
     <div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12">
       <div className="flex items-start justify-between gap-5">

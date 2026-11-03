@@ -42,7 +42,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     } else {
       setEditing(true)
     }
-  }, [selectedName])
+  }, [value, selectedName])
 
   useEffect(() => {
     let alive = true

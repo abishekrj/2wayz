@@ -43,6 +43,10 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
       element = new places.PlaceAutocompleteElement({ includedRegionCodes: ['in'] })
       element.placeholder = placeholder
+      element.noInputIcon = true
+      element.style.border = '0'
+      element.style.borderRadius = '0'
+      element.style.backgroundColor = 'transparent'
       element.requestedLanguage = 'en'
       element.requestedRegion = 'IN'
       element.locationBias = { north: 12.34, south: 12.10, east: 79.20, west: 78.94 }

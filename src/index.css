@@ -19,3 +19,104 @@ button,input { font:inherit; }
 @keyframes pageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Google input icon is disabled with the supported noInputIcon option. */
+
+
+/* Branded application startup screen */
+.wayz-startup-loader {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background: #f7faff;
+  font-family: 'Poppins', sans-serif;
+}
+.wayz-loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: wayzLoaderAppear .45s ease-out both;
+}
+.wayz-loader-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #073b83;
+  font-size: clamp(42px, 8vw, 58px);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -.09em;
+  line-height: 1;
+}
+.wayz-loader-brand i {
+  width: 12px;
+  height: 27px;
+  margin-top: 7px;
+  border-radius: 3px;
+  background: #ffd447;
+  transform: skew(-12deg);
+}
+.wayz-loader-route {
+  position: relative;
+  width: 112px;
+  height: 25px;
+  margin-top: 29px;
+}
+.wayz-loader-track {
+  position: absolute;
+  top: 11px;
+  left: 4px;
+  width: 104px;
+  border-top: 2px dashed #b9cbe2;
+}
+.wayz-loader-dot {
+  position: absolute;
+  top: 7px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ffd447;
+  box-shadow: 0 0 0 1px #e8bd35;
+}
+.wayz-loader-dot-one { left: 4px; }
+.wayz-loader-dot-two { right: 4px; background: #0b5ca8; box-shadow: 0 0 0 1px #0b5ca8; }
+.wayz-loader-auto {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 7px;
+  background: #073b83;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  animation: wayzLoaderTravel 1.5s ease-in-out infinite alternate;
+}
+.wayz-loader-title {
+  margin: 22px 0 0;
+  color: #10213d;
+  font-size: 14px;
+  font-weight: 600;
+}
+.wayz-loader-subtitle {
+  margin: 4px 0 0;
+  color: #718198;
+  font-size: 12px;
+  font-weight: 400;
+}
+@keyframes wayzLoaderAppear {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wayzLoaderTravel {
+  from { transform: translateX(0); }
+  to { transform: translateX(88px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wayz-loader-content, .wayz-loader-auto { animation: none; }
+}

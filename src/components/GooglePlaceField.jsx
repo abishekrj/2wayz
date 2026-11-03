@@ -55,9 +55,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       element.className = 'wayz-google-autocomplete'
 
       handleSelect = async event => {
-        // Hide Google's formatted-address text immediately so it never flashes before
-        // our concise place-name display is ready.
-        if (hostRef.current) hostRef.current.style.visibility = 'hidden'
         try {
           const place = event.placePrediction.toPlace()
           await place.fetchFields({ fields: ['id', 'displayName', 'formattedAddress', 'location'] })
@@ -73,7 +70,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           setError('')
           setEditing(false)
         } catch {
-          if (hostRef.current) hostRef.current.style.visibility = 'visible'
           setError('Could not read this location. Please select another suggestion.')
         }
       }
@@ -83,7 +79,18 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       hostRef.current.style.visibility = 'visible'
       hostRef.current.replaceChildren(element)
       setLoading(false)
-      if (editing) requestAnimationFrame(() => element?.focus())
+      if (editing) {
+        requestAnimationFrame(() => {
+          const input = element?.shadowRoot?.querySelector('input')
+          if (!input) {
+            element?.focus()
+            return
+          }
+          input.focus()
+          const end = input.value.length
+          input.setSelectionRange(end, end)
+        })
+      }
     }).catch(err => {
       if (alive) {
         setError(err.message)

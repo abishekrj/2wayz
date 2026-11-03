@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom'
 import { Save, Eye, EyeOff, Plus, Trash2, Upload, RotateCcw } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
+const mediaUrl = value => value && value.startsWith('/') ? new URL(value, API_BASE).toString() : value
+
 function isImageField(key, value) {
   return typeof value === 'string' && /(image|photo|banner|thumbnail|logo|icon)/i.test(key)
 }
@@ -25,7 +28,7 @@ function FieldEditor({ name, value, onChange, depth = 0 }) {
   return <label className="block"><span className="text-sm font-semibold text-slate-700">{label}</span>
     {typeof value === 'boolean' ? <select value={String(value)} onChange={e=>onChange(e.target.value==='true')} className={common}><option value="true">Yes</option><option value="false">No</option></select>
     : typeof value === 'number' ? <input type="number" value={value} onChange={e=>onChange(Number(e.target.value))} className={common}/>
-    : isImageField(name,value) ? <div className="space-y-2"><input type="url" value={value} onChange={e=>onChange(e.target.value)} placeholder="Image URL" className={common}/><input type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const result=await adminApi.uploadImage(file);onChange(result.url)}catch(error){window.alert(error.message)}e.target.value=''}} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-wayz-blue"/>{value&&<img src={value} alt={label} className="mt-2 max-h-36 rounded-lg border border-slate-200 object-contain"/>}</div>
+    : isImageField(name,value) ? <div className="space-y-2"><input type="url" value={value} onChange={e=>onChange(e.target.value)} placeholder="Image URL" className={common}/><input type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const result=await adminApi.uploadImage(file);onChange(result.url)}catch(error){window.alert(error.message)}e.target.value=''}} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-wayz-blue"/>{value&&<img src={mediaUrl(value)} alt={label} className="mt-2 max-h-36 rounded-lg border border-slate-200 object-contain"/>}</div>
     : typeof value === 'string' && (value.length>90 || /description|body|text|caption/i.test(name)) ? <textarea rows={4} value={value} onChange={e=>onChange(e.target.value)} className={common}/>
     : <input type="text" value={value ?? ''} onChange={e=>onChange(e.target.value)} className={common}/>}
   </label>

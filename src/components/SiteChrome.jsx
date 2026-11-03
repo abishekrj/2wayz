@@ -1,25 +1,51 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, ChevronDown, MapPin } from 'lucide-react'
 import Brand from './Brand'
+
+const navigation = [
+  { label: 'Home', to: '/' },
+  { label: 'About', to: '/about' },
+  { label: 'How it works', to: '/how-it-works' },
+  { label: 'For drivers', to: '/drivers' },
+  { label: 'Contact', to: '/contact' },
+]
+
+function navClass(active) {
+  return active
+    ? 'font-bold text-wayz-blue'
+    : 'font-semibold text-slate-700 transition hover:text-wayz-blue'
+}
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
+  const { pathname } = useLocation()
+
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
         <Brand />
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-700 md:flex">
-          <Link className="text-wayz-blue" to="/">Home</Link><Link className="transition hover:text-wayz-blue" to="/about">About</Link><Link className="transition hover:text-wayz-blue" to="/how-it-works">How it works</Link><Link className="transition hover:text-wayz-blue" to="/drivers">For drivers</Link><Link className="transition hover:text-wayz-blue" to="/contact">Contact</Link>
+        <nav aria-label="Main navigation" className="hidden items-center gap-8 text-sm md:flex">
+          {navigation.map((item) => {
+            const active = pathname === item.to
+            return <Link key={item.to} to={item.to} aria-current={active ? 'page' : undefined} className={navClass(active)}>{item.label}</Link>
+          })}
         </nav>
         <div className="relative hidden md:block">
           <button onClick={() => setAuthOpen(!authOpen)} aria-expanded={authOpen} className="rounded-xl bg-wayz-blue px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-wayz-navy">Login / Sign up <ChevronDown className="ml-1 inline" size={15}/></button>
           {authOpen && <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl"><Link onClick={() => setAuthOpen(false)} to="/login" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Login</Link><Link onClick={() => setAuthOpen(false)} to="/register" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Create account</Link><Link onClick={() => setAuthOpen(false)} to="/driver/register" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Register as driver</Link></div>}
         </div>
-        <button aria-label="Toggle navigation" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy md:hidden">{menuOpen ? <X/> : <Menu/>}</button>
+        <button aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy md:hidden">{menuOpen ? <X/> : <Menu/>}</button>
       </div>
-      {menuOpen && <nav className="grid gap-1 border-t border-slate-100 bg-white px-5 py-3 text-sm font-semibold md:hidden">{[['Home','/'],['About','/about'],['How it works','/how-it-works'],['For drivers','/drivers'],['Contact','/contact']].map(([item,href])=><Link key={item} onClick={()=>setMenuOpen(false)} className="rounded-lg px-3 py-3 hover:bg-wayz-mist" to={href}>{item}</Link>)}<div className="grid grid-cols-2 gap-2 pt-2"><Link onClick={()=>setMenuOpen(false)} to="/login" className="rounded-xl bg-wayz-blue px-4 py-3 text-center text-white">Login</Link><Link onClick={()=>setMenuOpen(false)} to="/register" className="rounded-xl border border-wayz-blue px-4 py-3 text-center text-wayz-blue">Register</Link></div><Link onClick={()=>setMenuOpen(false)} to="/driver/register" className="rounded-lg px-3 py-3 text-wayz-blue">Register as an auto driver</Link></nav>}
+      {menuOpen && <nav aria-label="Mobile navigation" className="grid gap-1 border-t border-slate-100 bg-white px-5 py-3 text-sm md:hidden">
+        {navigation.map((item) => {
+          const active = pathname === item.to
+          return <Link key={item.to} onClick={() => setMenuOpen(false)} to={item.to} aria-current={active ? 'page' : undefined} className={`rounded-lg px-3 py-3 transition ${active ? 'bg-blue-50 font-bold text-wayz-blue' : 'font-semibold text-slate-700 hover:bg-wayz-mist'}`}>{item.label}</Link>
+        })}
+        <div className="grid grid-cols-2 gap-2 pt-2"><Link onClick={() => setMenuOpen(false)} to="/login" className="rounded-xl bg-wayz-blue px-4 py-3 text-center text-white">Login</Link><Link onClick={() => setMenuOpen(false)} to="/register" className="rounded-xl border border-wayz-blue px-4 py-3 text-center text-wayz-blue">Register</Link></div>
+        <Link onClick={() => setMenuOpen(false)} to="/driver/register" className="rounded-lg px-3 py-3 text-wayz-blue">Register as an auto driver</Link>
+      </nav>}
     </header>
   )
 }

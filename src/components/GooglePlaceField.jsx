@@ -22,13 +22,13 @@ function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', onSelect }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect }) {
   const hostRef = useRef(null)
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedName, setSelectedName] = useState('')
+  const selectedName = value?.name || ''
   const [autocompleteVersion, setAutocompleteVersion] = useState(0)
 
   useEffect(() => {
@@ -68,7 +68,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
               ? { lat: place.location.lat(), lng: place.location.lng() }
               : null,
           })
-          setSelectedName(name)
           setError('')
         } catch {
           if (hostRef.current) hostRef.current.style.visibility = 'visible'
@@ -92,10 +91,9 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       alive = false
       if (element && handleSelect) element.removeEventListener('gmp-select', handleSelect)
     }
-  }, [placeholder, autocompleteVersion])
+  }, [placeholder, autocompleteVersion, !value])
 
   function changePlace() {
-    setSelectedName('')
     setError('')
     onSelect(null)
     setAutocompleteVersion(version => version + 1)

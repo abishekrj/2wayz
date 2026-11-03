@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle, Pencil } from 'lucide-react'
+import { MapPin, LoaderCircle } from 'lucide-react'
 
 let mapsPromise
 
@@ -83,6 +83,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       hostRef.current.style.visibility = 'visible'
       hostRef.current.replaceChildren(element)
       setLoading(false)
+      if (editing) requestAnimationFrame(() => element?.focus())
     }).catch(err => {
       if (alive) {
         setError(err.message)
@@ -105,23 +106,17 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
-      <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[64px] pr-3 transition focus-within:border-2 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
+      <span
+        onClick={() => {
+          if (selectedName && !editing) changePlace()
+        }}
+        className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[64px] pr-3 transition focus-within:border-2 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
+      >
         <Icon size={36} className="absolute left-3 top-1/2 z-[99] box-content h-10 w-10 -translate-y-1/2 bg-white" />
         {selectedName && !editing ? (
-          <>
-            <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">
-              {selectedName}
-            </span>
-            <button
-              type="button"
-              onClick={changePlace}
-              title="Edit location"
-              aria-label={`Edit ${label.toLowerCase()}`}
-              className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-wayz-blue"
-            >
-              <Pencil size={17} />
-            </button>
-          </>
+          <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">
+            {selectedName}
+          </span>
         ) : (
           <span ref={hostRef} className="min-w-0 flex-1" />
         )}

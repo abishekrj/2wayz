@@ -77,7 +77,7 @@ export default function NearbyPlaces({ onSelectPlace }) {
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-wayz-blue"><MapPin size={15}/> Select a destination</span>
         </div>
 
-        <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {places.map(place => {
             const Icon = place.icon
             return (

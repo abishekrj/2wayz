@@ -47,7 +47,7 @@ function HeroSlider() {
   const previous = () => setActive(current => (current - 1 + heroSlides.length) % heroSlides.length)
   const next = () => setActive(current => (current + 1) % heroSlides.length)
 
-  return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative isolate overflow-hidden text-white">
+  return <section aria-label="2WAYZ highlights" aria-roledescription="carousel" className="hero-pattern relative isolate overflow-visible text-white">
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#042b65]/35 to-transparent"/>
@@ -79,7 +79,7 @@ function HowItWorks() {
   return <section id="how-it-works" className="bg-white py-16 sm:py-20"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">Simple by design</p><h2 className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Your ride in three easy steps</h2><p className="mt-3 text-sm leading-6 text-slate-500">A straightforward way to plan your local journey.</p></div><div className="mt-10 grid gap-5 md:grid-cols-3">{steps.map(({icon:Icon,number,title,text})=><div key={number} className="rounded-3xl border border-slate-100 bg-wayz-mist/60 p-7"><span className="text-xs font-black tracking-widest text-wayz-blue">STEP {number}</span><div className="mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-wayz-blue shadow-sm"><Icon size={26}/></div><h3 className="mt-5 text-lg font-extrabold text-wayz-ink">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{text}</p></div>)}</div></div></section>
 }
 export default function HomePage() {
-  return <div className="min-h-screen overflow-hidden bg-white">
+  return <div className="min-h-screen overflow-x-clip bg-white">
     <SiteHeader/>
     <main>
       <HeroSlider/>

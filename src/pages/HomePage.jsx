@@ -5,8 +5,8 @@ import {
   Clock3, CalendarDays, HeartHandshake, BadgeIndianRupee,
   CheckCircle2, Smartphone, Route, UserPlus, Zap
 } from 'lucide-react'
-import BookingPanel from './components/BookingPanel'
-import Brand from './components/Brand'
+import BookingPanel from '../components/BookingPanel'
+import Brand from '../components/Brand'
 
 const benefits = [
   { icon: Clock3, title: 'Quick local rides', body: 'Find an auto for everyday trips around Tiruvannamalai.' },

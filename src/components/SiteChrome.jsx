@@ -22,7 +22,7 @@ export function SiteHeader() {
   const [authOpen, setAuthOpen] = useState(false)
   const { pathname } = useLocation()
   const pages = useCmsNavigation()
-  const navigation = pages.length ? pages.map(page=>({label:page.navLabel,to:'/'+page.slug})) : fallbackNavigation
+  const navigation = [{label:'Home',to:'/'},...(pages.length ? pages.map(page=>({label:page.navLabel,to:'/'+page.slug})) : fallbackNavigation)]
 
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">

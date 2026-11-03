@@ -6,9 +6,9 @@ const prisma = new PrismaClient()
 
 const sections = [
   { slug: 'hero-banner', title: 'Hero Banner', sortOrder: 1, content: { slides: [
-    { eyebrow: 'LOCAL AUTO BOOKING · TIRUVANNAMALAI', title: 'Your town. Your ride.', description: 'Book a local auto in a few simple steps.' },
-    { eyebrow: 'PLAN YOUR JOURNEY WITH CONFIDENCE', title: 'Know your route. Know your fare.', description: 'Check road distance, travel time and an indicative fare before you go.' },
-    { eyebrow: 'A LOCAL PLATFORM FOR LOCAL DRIVERS', title: 'Local rides. Local drivers.', description: 'A simpler way for Tiruvannamalai passengers and auto drivers to connect.' }
+    { eyebrow: 'LOCAL AUTO BOOKING · TIRUVANNAMALAI', title: 'Your town. Your ride.', imageUrl: '', description: 'Book a local auto in a few simple steps.' },
+    { eyebrow: 'PLAN YOUR JOURNEY WITH CONFIDENCE', title: 'Know your route. Know your fare.', imageUrl: '', description: 'Check road distance, travel time and an indicative fare before you go.' },
+    { eyebrow: 'A LOCAL PLATFORM FOR LOCAL DRIVERS', title: 'Local rides. Local drivers.', imageUrl: '', description: 'A simpler way for Tiruvannamalai passengers and auto drivers to connect.' }
   ] } },
   { slug: 'benefits', title: 'Benefits', sortOrder: 2, content: { items: [
     { title: 'Quick local rides', body: 'Find an auto for everyday trips around Tiruvannamalai.', icon: 'clock' },
@@ -21,15 +21,15 @@ const sections = [
     { title: 'Check your route & fare', text: 'See the estimated road distance, travel time and indicative auto fare.' },
     { title: 'Request your auto', text: 'Request an auto; live driver matching is coming soon.' }
   ] } },
-  { slug: 'darshan-promo', title: 'Darshan Promo Banner', sortOrder: 4, content: { heading: 'Planning a visit to Arunachaleswarar Temple?', body: 'Get started with your Darshan ticket booking through the Tamil Nadu Hindu Religious & Charitable Endowments Department portal. Plan your visit with greater peace of mind.', buttonText: 'Book Darshan Tickets', buttonUrl: 'https://hrce.tn.gov.in/intrahrce/login', disclosure: 'You’ll be redirected to the official HR&CE website to continue.' } },
+  { slug: 'darshan-promo', title: 'Darshan Promo Banner', sortOrder: 4, content: { heading: 'Planning a visit to Arunachaleswarar Temple?', body: 'Get started with your Darshan ticket booking through the Tamil Nadu Hindu Religious & Charitable Endowments Department portal. Plan your visit with greater peace of mind.', imageUrl: '', buttonText: 'Book Darshan Tickets', buttonUrl: 'https://hrce.tn.gov.in/intrahrce/login', disclosure: 'You’ll be redirected to the official HR&CE website to continue.' } },
   { slug: 'nearby-places', title: 'Places to Visit', sortOrder: 5, content: { heading: 'Places to Visit in Tiruvannamalai', places: [
     'Arunachaleswarar Temple','Sri Ramana Ashram','Virupaksha Cave','Skandashramam','Yogi Ramsuratkumar Ashram','Adi Annamalai Temple','Seshadri Swamigal Ashram','Pachaiamman Temple'
-  ] } },
+  ].map(name => ({ name, subtitle: '', detail: '', imageUrl: '' })) } },
   { slug: 'upcoming-events', title: 'Upcoming Events', sortOrder: 6, content: { heading: 'Upcoming Events', events: [
     { title: 'Karthigai Deepam', date: '2026-11-24' },
     { title: 'New Year 2027', date: '2027-01-01' }
   ] } },
-  { slug: 'about', title: 'About 2WAYZ', sortOrder: 7, content: { eyebrow: 'A local mobility partner', heading: 'Getting around Tiruvannamalai, made simpler.', body: 'From temple visits and market trips to everyday errands, 2WAYZ is being built around the way people travel in our town.', points: ['Book an auto when you need one','Plan a ride for a later time','See an indicative fare before continuing'] } },
+  { slug: 'about', title: 'About 2WAYZ', sortOrder: 7, content: { eyebrow: 'A local mobility partner', heading: 'Getting around Tiruvannamalai, made simpler.', body: 'From temple visits and market trips to everyday errands, 2WAYZ is being built around the way people travel in our town.', imageUrl: '', points: ['Book an auto when you need one','Plan a ride for a later time','See an indicative fare before continuing'] } },
   { slug: 'drivers', title: 'Driver Section', sortOrder: 8, content: { eyebrow: 'BUILT WITH LOCAL DRIVERS IN MIND', heading: 'A better way to connect with your next passenger.', body: '2WAYZ aims to help Tiruvannamalai auto drivers connect with nearby customers through a straightforward local booking platform.', buttonText: 'Join as a driver', benefits: ['Connect with passengers in your local area','A simple app experience designed for auto drivers','Transparent trip and earning information','Build direct relationships with local customers'] } }
 ]
 
@@ -46,10 +46,32 @@ async function main() {
     create: { name: process.env.ADMIN_NAME || '2WAYZ Super Admin', email, passwordHash }
   })
   for (const section of sections) {
-    await prisma.homePageSection.upsert({
+    const existing = await prisma.homePageSection.findUnique({ where: { slug: section.slug } })
+    if (!existing) {
+      await prisma.homePageSection.create({ data: section })
+      continue
+    }
+    const mergeDefaults = (current, defaults) => {
+      if (Array.isArray(defaults)) {
+        if (!Array.isArray(current)) return defaults
+        return defaults.map((item, index) => {
+          const old = current[index]
+          if (item && typeof item === 'object' && !Array.isArray(item)) {
+            const previous = old && typeof old === 'object' && !Array.isArray(old) ? old : (typeof old === 'string' ? { name: old } : {})
+            return mergeDefaults(previous, item)
+          }
+          return old === undefined ? item : old
+        }).concat(current.slice(defaults.length))
+      }
+      if (defaults && typeof defaults === 'object') {
+        const previous = current && typeof current === 'object' && !Array.isArray(current) ? current : {}
+        return Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, previous[key] === undefined ? value : mergeDefaults(previous[key], value)]).concat(Object.entries(previous).filter(([key]) => !(key in defaults))))
+      }
+      return current === undefined ? defaults : current
+    }
+    await prisma.homePageSection.update({
       where: { slug: section.slug },
-      update: { title: section.title, sortOrder: section.sortOrder },
-      create: section
+      data: { title: section.title, sortOrder: section.sortOrder, content: mergeDefaults(existing.content, section.content) }
     })
   }
   console.log('Super admin and homepage section defaults are ready.')

@@ -100,8 +100,8 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
-      <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[56px] pr-3 transition focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
-        <Icon size={19} className="absolute left-3 top-1/2 z-[99] box-content w-[40px] -translate-y-1/2 bg-white" />
+      <span className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[112px] pr-3 transition focus-within:border-2 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'}`}>
+        <Icon size={36} className="absolute left-3 top-1/2 z-[99] box-content h-10 w-10 -translate-y-1/2 bg-white" />
         {selectedName ? (
           <button
             type="button"

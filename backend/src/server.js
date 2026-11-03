@@ -1,5 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
@@ -12,6 +14,8 @@ if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECR
 }
 
 const app = express()
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+app.use('/uploads', express.static(path.resolve(currentDir, '../uploads'), { maxAge: '7d', dotfiles: 'deny' }))
 const port = Number(process.env.PORT || 5001)
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://127.0.0.1:5173').split(',').map(value => value.trim())
 

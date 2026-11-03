@@ -11,7 +11,10 @@ const homeSections = [
 
 export default function AdminLayout({ admin }) {
   const [homeOpen, setHomeOpen] = useState(true)
-  const [mobileOpen, setMobileOpen] = useState(false)\n  const [cmsOpen, setCmsOpen] = useState(true)\n  const [cmsPages, setCmsPages] = useState([])\n  useEffect(() => { adminApi.pages().then(data => setCmsPages(data.pages || [])).catch(() => {}) }, [])
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [cmsOpen, setCmsOpen] = useState(true)
+  const [cmsPages, setCmsPages] = useState([])
+  useEffect(() => { adminApi.pages().then(data => setCmsPages(data.pages || [])).catch(() => {}) }, [])
   const navigate = useNavigate()
   async function logout() {
     try { await adminApi.logout() } finally { navigate('/admin/login', { replace: true }) }

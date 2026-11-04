@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { createHash, randomBytes } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
@@ -373,6 +374,99 @@ router.get('/active', requirePassenger, async (req, res, next) => {
       select: { id: true, reference: true, status: true, pickupName: true, pickupAddress: true, destinationName: true, destinationAddress: true, estimatedFare: true, distanceKm: true, estimatedMinutes: true, createdAt: true }
     })
     res.json({ booking })
+  } catch (error) { next(error) }
+})
+
+
+router.post('/:id/share', requirePassenger, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { id: req.params.id, passengerId: req.passengerAuth.sub },
+      select: { id: true, status: true }
+    })
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    if (!['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(booking.status)) {
+      return res.status(409).json({ message: 'You can share your trip after a driver accepts your booking.' })
+    }
+
+    // The raw random token is returned once to the passenger. Only its SHA-256
+    // hash is stored, so a database read cannot reveal a working share URL.
+    const token = randomBytes(32).toString('base64url')
+    const tokenHash = createHash('sha256').update(token).digest('hex')
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    await prisma.tripShareLink.upsert({
+      where: { bookingId: booking.id },
+      create: { bookingId: booking.id, tokenHash, expiresAt },
+      update: { tokenHash, expiresAt, revokedAt: null }
+    })
+    res.status(201).json({ token, expiresAt })
+  } catch (error) { next(error) }
+})
+
+router.delete('/:id/share', requirePassenger, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { id: req.params.id, passengerId: req.passengerAuth.sub },
+      select: { id: true }
+    })
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    await prisma.tripShareLink.updateMany({
+      where: { bookingId: booking.id, revokedAt: null },
+      data: { revokedAt: new Date() }
+    })
+    res.json({ message: 'Trip sharing has been stopped.' })
+  } catch (error) { next(error) }
+})
+
+router.get('/shared/:token', async (req, res, next) => {
+  try {
+    const token = String(req.params.token || '')
+    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return res.status(404).json({ message: 'This trip sharing link is invalid or has expired.' })
+    const tokenHash = createHash('sha256').update(token).digest('hex')
+    const share = await prisma.tripShareLink.findFirst({
+      where: { tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
+      include: {
+        booking: {
+          include: {
+            driver: { select: { name: true, vehicleNumber: true, currentLat: true, currentLng: true, locationUpdatedAt: true, isOnline: true } }
+          }
+        }
+      }
+    })
+    if (!share) return res.status(410).json({ message: 'This trip sharing link has expired or has been stopped.' })
+    const booking = share.booking
+    if (!['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(booking.status)) {
+      await prisma.tripShareLink.updateMany({ where: { id: share.id, revokedAt: null }, data: { revokedAt: new Date() } })
+      return res.status(410).json({ message: 'This ride has ended. Live trip sharing is no longer available.' })
+    }
+    const driver = booking.driver
+    const locationIsFresh = Boolean(driver?.isOnline && driver.locationUpdatedAt && Date.now() - driver.locationUpdatedAt.getTime() <= 60000)
+    res.set('Cache-Control', 'no-store')
+    res.json({
+      trip: {
+        reference: booking.reference,
+        status: booking.status,
+        pickupName: booking.pickupName,
+        pickupAddress: booking.pickupAddress,
+        pickupLat: booking.pickupLat,
+        pickupLng: booking.pickupLng,
+        destinationName: booking.destinationName,
+        destinationAddress: booking.destinationAddress,
+        destinationLat: booking.destinationLat,
+        destinationLng: booking.destinationLng,
+        requestedAt: booking.requestedAt,
+        tripStartedAt: booking.tripStartedAt,
+        driver: driver ? {
+          name: driver.name,
+          vehicleNumber: driver.vehicleNumber,
+          currentLat: locationIsFresh ? driver.currentLat : null,
+          currentLng: locationIsFresh ? driver.currentLng : null,
+          locationUpdatedAt: driver.locationUpdatedAt,
+          locationIsFresh
+        } : null,
+        shareExpiresAt: share.expiresAt
+      }
+    })
   } catch (error) { next(error) }
 })
 

@@ -161,27 +161,39 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
     const driverId = req.driverAuth.sub
     const walletStatus = await walletEligibility(driverId)
     if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
-    const offer = await prisma.driverOffer.findFirst({ where: { id: req.params.offerId, driverId, status: 'OFFERED' }, include: { booking: true } })
-    if (!offer || offer.booking.status !== 'REQUESTED') return res.status(409).json({ message: 'This ride is no longer available.' })
-    if (offer.booking.mode === 'schedule' && offer.booking.scheduledAt && offer.booking.scheduledAt <= new Date()) {
-      await prisma.driverOffer.updateMany({ where: { id: offer.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
-      return res.status(409).json({ message: 'The scheduled pickup time has passed. This ride is no longer available.' })
-    }
-    const now = new Date()
-    const result = await prisma.booking.updateMany({ where: { id: offer.bookingId, status: 'REQUESTED', driverId: null }, data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now, ...(offer.booking.mode === 'schedule' ? { dispatchStatus: 'ASSIGNED' } : {}) } })
-    if (result.count !== 1) {
-      await prisma.driverOffer.updateMany({ where: { id: offer.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
-      return res.status(409).json({ message: 'Another driver has already accepted this ride.' })
-    }
-    await prisma.$transaction([
-      prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId, status: 'OFFERED' }, data: { status: 'ACCEPTED' } }),
-      prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId: { not: driverId }, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } }),
-      prisma.driverActivity.create({ data: { driverId, eventType: 'RIDE_ACCEPTED', description: `Accepted ride ${offer.booking.reference}.`, bookingId: offer.bookingId } })
-    ])
-    await notifyBooking({ booking: { id: offer.booking.id, reference: offer.booking.reference, passengerId: offer.booking.passengerId, driverId }, type: 'DRIVER_ASSIGNED', title: 'Driver assigned', message: `A driver accepted ride ${offer.booking.reference}.` , includeDriver: false })
-    await notifyBooking({ booking: { id: offer.booking.id, reference: offer.booking.reference, passengerId: offer.booking.passengerId, driverId }, type: 'RIDE_ASSIGNED', title: 'New ride assigned', message: `You accepted ride ${offer.booking.reference}.`, includePassenger: false, includeAdmin: false })
-    res.json({ message: 'Ride accepted. You are assigned to this booking.', bookingReference: offer.booking.reference })
-  } catch (error) { next(error) }
+    const accepted = await prisma.$transaction(async tx => {
+      // Share a per-driver lock with Super Admin manual assignment.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${driverId}, 0))::text`
+      const offer = await tx.driverOffer.findFirst({ where: { id: req.params.offerId, driverId, status: 'OFFERED' }, include: { booking: true } })
+      if (!offer || offer.booking.status !== 'REQUESTED' || offer.booking.driverId) {
+        throw Object.assign(new Error('This ride is no longer available.'), { statusCode: 409 })
+      }
+      if (offer.booking.mode === 'schedule' && offer.booking.scheduledAt && offer.booking.scheduledAt <= new Date()) {
+        throw Object.assign(new Error('The scheduled pickup time has passed. This ride is no longer available.'), { statusCode: 409 })
+      }
+      const activeRide = await tx.booking.findFirst({
+        where: { driverId, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+        select: { reference: true }
+      })
+      if (activeRide) throw Object.assign(new Error(`Finish your current ride (${activeRide.reference}) before accepting another request.`), { statusCode: 409 })
+      const now = new Date()
+      const result = await tx.booking.updateMany({
+        where: { id: offer.bookingId, status: 'REQUESTED', driverId: null },
+        data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now, ...(offer.booking.mode === 'schedule' ? { dispatchStatus: 'ASSIGNED' } : {}) }
+      })
+      if (result.count !== 1) throw Object.assign(new Error('Another driver has already accepted this ride.'), { statusCode: 409 })
+      await tx.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId, status: 'OFFERED' }, data: { status: 'ACCEPTED' } })
+      await tx.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId: { not: driverId }, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
+      await tx.driverActivity.create({ data: { driverId, eventType: 'RIDE_ACCEPTED', description: `Accepted ride ${offer.booking.reference}.`, bookingId: offer.bookingId } })
+      return { id: offer.booking.id, reference: offer.booking.reference, passengerId: offer.booking.passengerId, driverId }
+    })
+    await notifyBooking({ booking: accepted, type: 'DRIVER_ASSIGNED', title: 'Driver assigned', message: `A driver accepted ride ${accepted.reference}.`, includeDriver: false })
+    await notifyBooking({ booking: accepted, type: 'RIDE_ASSIGNED', title: 'New ride assigned', message: `You accepted ride ${accepted.reference}.`, includePassenger: false, includeAdmin: false })
+    res.json({ message: 'Ride accepted. You are assigned to this booking.', bookingReference: accepted.reference })
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message })
+    next(error)
+  }
 })
 
 router.post('/offers/:offerId/decline', requireDriver, async (req, res, next) => {

@@ -65,6 +65,8 @@ npm run dev
 
 The API listens on port 5001 by default.
 
+For secure booking fare calculation, add `GOOGLE_MAPS_SERVER_API_KEY` to `backend/.env`. This must be a separate server-side key (do not use the frontend `VITE_GOOGLE_MAPS_API_KEY`). Enable the Routes API and restrict this key to the Routes API; add an IP-address restriction for your backend server when its outbound IP is stable. Never put this key in frontend files or commit `backend/.env`. Booking creation now recalculates the shortest available driving route on the backend and ignores browser-submitted distance and duration.
+
 ### 3. Configure and start the frontend
 
 In the project root, make sure `.env.local` contains the separate 2WAYZ Google Maps key and:

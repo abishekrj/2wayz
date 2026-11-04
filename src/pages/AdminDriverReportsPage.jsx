@@ -19,7 +19,7 @@ function downloadCsv(rows, from, to) {
     ['Driver', row => row.name], ['Mobile', row => row.phone], ['Vehicle', row => row.vehicleNumber],
     ['Status', row => row.status], ['Completed rides', row => row.completedRides],
     ['Cancelled rides', row => row.cancelledRides], ['Accepted offers', row => row.acceptedOffers],
-    ['Declined offers', row => row.declinedOffers], ['Final fares', row => row.finalFares],
+    ['Declined offers', row => row.declinedOffers], ['Final fares', row => row.finalFares], ['Net earnings', row => row.netEarnings],
     ['Commission amount', row => row.commissionAmount], ['Commission deducted', row => row.commissionDeducted],
     ['Outstanding commission', row => row.outstandingCommission]
   ]
@@ -133,6 +133,7 @@ export default function AdminDriverReportsPage() {
         <Metric label="Completed rides" value={summary.totalCompleted} detail="Trips completed by drivers" icon={TrendingUp}/>
         <Metric label="Cancelled rides" value={summary.totalCancelled} detail="Cancelled booking records" icon={Ban}/>
         <Metric label="Total final fares" value={money(summary.totalFares)} detail={'Average fare ' + money(summary.averageFare)} icon={BarChart3}/>
+        <Metric label="Estimated driver net earnings" value={money(summary.totalNetEarnings)} detail="Final fares less commission amount" icon={TrendingUp}/>
         <Metric label="Commission amount" value={money(summary.totalCommission)} detail="Commission on rides completed in this period" icon={Wallet}/>
         <Metric label="Commission deducted" value={money(summary.totalDeducted)} detail="Settled amount recorded on these commission entries" icon={Wallet}/>
         <Metric label="Outstanding commission" value={money(summary.totalOutstanding)} detail="Current unpaid commission for listed drivers" icon={Wallet}/>
@@ -147,20 +148,20 @@ export default function AdminDriverReportsPage() {
         {!hasRows ? <p className="p-8 text-center text-sm text-slate-500">No driver performance records match this filter.</p> :
           <div className="overflow-x-auto"><table className="min-w-[1050px] w-full text-left text-sm">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr>
-              <th className="px-4 py-3">Driver</th><th className="px-4 py-3">Completed</th><th className="px-4 py-3">Cancelled</th><th className="px-4 py-3">Accepted</th><th className="px-4 py-3">Declined</th><th className="px-4 py-3">Final fares</th><th className="px-4 py-3">Commission</th><th className="px-4 py-3">Deducted</th><th className="px-4 py-3">Outstanding</th>
+              <th className="px-4 py-3">Driver</th><th className="px-4 py-3">Completed</th><th className="px-4 py-3">Cancelled</th><th className="px-4 py-3">Accepted</th><th className="px-4 py-3">Declined</th><th className="px-4 py-3">Final fares</th><th className="px-4 py-3">Net earnings</th><th className="px-4 py-3">Commission</th><th className="px-4 py-3">Deducted</th><th className="px-4 py-3">Outstanding</th>
             </tr></thead>
             <tbody className="divide-y divide-slate-100">{visibleDrivers.map(driver => <tr key={driver.id} className="hover:bg-slate-50">
               <td className="px-4 py-4"><p className="font-bold text-wayz-ink">{driver.name}</p><p className="mt-1 text-xs text-slate-500">{driver.phone} · {driver.vehicleNumber}</p></td>
               <td className="px-4 py-4 font-semibold text-emerald-700">{driver.completedRides}</td><td className="px-4 py-4">{driver.cancelledRides}</td><td className="px-4 py-4">{driver.acceptedOffers}</td><td className="px-4 py-4">{driver.declinedOffers}</td>
-              <td className="px-4 py-4 font-semibold">{money(driver.finalFares)}</td><td className="px-4 py-4">{money(driver.commissionAmount)}</td><td className="px-4 py-4">{money(driver.commissionDeducted)}</td><td className="px-4 py-4 font-semibold text-amber-700">{money(driver.outstandingCommission)}</td>
+              <td className="px-4 py-4 font-semibold">{money(driver.finalFares)}</td><td className="px-4 py-4 font-semibold text-emerald-700">{money(driver.netEarnings)}</td><td className="px-4 py-4">{money(driver.commissionAmount)}</td><td className="px-4 py-4">{money(driver.commissionDeducted)}</td><td className="px-4 py-4 font-semibold text-amber-700">{money(driver.outstandingCommission)}</td>
             </tr>)}</tbody>
           </table></div>}
       </section>
 
       <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 p-4 sm:p-5"><h2 className="font-extrabold text-wayz-ink">Daily ride summary</h2><p className="mt-1 text-xs text-slate-500">Daily completed rides, cancellations and final fares.</p></div>
+        <div className="border-b border-slate-100 p-4 sm:p-5"><h2 className="font-extrabold text-wayz-ink">Daily ride summary</h2><p className="mt-1 text-xs text-slate-500">Daily completed rides, cancellations, final fares and estimated driver net earnings.</p></div>
         {daily.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">No completed or cancelled rides in this period.</p> :
-          <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Completed</th><th className="px-4 py-3">Cancelled</th><th className="px-4 py-3">Final fares</th></tr></thead><tbody className="divide-y divide-slate-100">{daily.map(day => <tr key={day.date}><td className="px-4 py-3 font-medium">{day.date}</td><td className="px-4 py-3 text-emerald-700">{day.completedRides}</td><td className="px-4 py-3">{day.cancelledRides}</td><td className="px-4 py-3 font-semibold">{money(day.fares)}</td></tr>)}</tbody></table></div>}
+          <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Completed</th><th className="px-4 py-3">Cancelled</th><th className="px-4 py-3">Final fares</th><th className="px-4 py-3">Net earnings</th></tr></thead><tbody className="divide-y divide-slate-100">{daily.map(day => <tr key={day.date}><td className="px-4 py-3 font-medium">{day.date}</td><td className="px-4 py-3 text-emerald-700">{day.completedRides}</td><td className="px-4 py-3">{day.cancelledRides}</td><td className="px-4 py-3 font-semibold">{money(day.fares)}</td><td className="px-4 py-3 font-semibold text-emerald-700">{money(day.netEarnings)}</td></tr>)}</tbody></table></div>}
       </section>
       <p className="mt-4 text-[11px] leading-5 text-slate-400">Report dates use the booking completion date for completed rides and the booking last-updated date for cancelled rides (the current booking schema does not store a separate cancellation timestamp). Offer responses use their last-updated date. Commission deducted is read from commission transactions associated with rides completed in the selected period; outstanding commission is the current unpaid balance.</p>
     </>}

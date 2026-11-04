@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  CalendarDays, Zap, Search, Info, Clock3,
+  Zap, Search, Info, Clock3,
   Route as RouteIcon, LoaderCircle, MapPin, ArrowLeftRight,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
@@ -53,11 +53,8 @@ async function calculateRoute(pickup, destination) {
 export default function BookingPanel({ initialDestination = null }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
-  const [mode, setMode] = useState('instant')
   const [pickup, setPickup] = useState(null)
   const [destination, setDestination] = useState(null)
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
   const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -97,16 +94,12 @@ export default function BookingPanel({ initialDestination = null }) {
       setError('Choose both locations from the Google suggestions.')
       return
     }
-    if (mode === 'schedule' && (!date || !time)) {
-      setError('Choose your preferred pickup date and time.')
-      return
-    }
 
     setBusy(true)
     try {
       const routeEstimate = await calculateRoute(pickup, destination)
       setEstimate(routeEstimate)
-      setBooking({ mode, pickup, destination, date, time, estimate: routeEstimate, vehicle: 'auto' })
+      setBooking({ mode: 'instant', pickup, destination, estimate: routeEstimate, vehicle: 'auto' })
       navigate('/travel-details')
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')
@@ -122,17 +115,10 @@ export default function BookingPanel({ initialDestination = null }) {
           <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Book your local auto</p>
           <h2 className="mt-1 text-xl font-extrabold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
         </div>
-        <div className="inline-flex w-fit rounded-xl bg-wayz-mist p-1">
-          <button type="button" onClick={() => { setMode('instant'); setEstimate(null) }} className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold ${mode === 'instant' ? 'bg-wayz-blue text-white shadow' : 'text-slate-600'}`}>
-            <Zap size={16} /> Instant
-          </button>
-          <button type="button" onClick={() => { setMode('schedule'); setEstimate(null) }} className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold ${mode === 'schedule' ? 'bg-wayz-blue text-white shadow' : 'text-slate-600'}`}>
-            <CalendarDays size={16} /> Schedule
-          </button>
-        </div>
+        <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-wayz-blue"><Zap size={16} /> Instant booking</span>
       </div>
 
-      <form onSubmit={submit} className={`relative z-20 mt-5 grid grid-cols-1 items-end gap-3 ${mode === "schedule" ? "lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,1.2fr)_.72fr_.72fr_auto]" : "md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"}`}>
+      <form onSubmit={submit} className="relative z-20 mt-5 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
         <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} />
         <button
           type="button"
@@ -145,19 +131,6 @@ export default function BookingPanel({ initialDestination = null }) {
           <ArrowLeftRight size={19} />
         </button>
         <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
-
-        {mode === 'schedule' && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:contents">
-            <label className="text-[11px] font-bold tracking-wider text-slate-600">
-              PICKUP DATE
-              <input type="date" min={new Date().toLocaleDateString('en-CA')} value={date} onChange={event => setDate(event.target.value)} className="mt-2 h-[58px] w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" />
-            </label>
-            <label className="text-[11px] font-bold tracking-wider text-slate-600">
-              PICKUP TIME
-              <input type="time" value={time} onChange={event => setTime(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" />
-            </label>
-          </div>
-        )}
 
         <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FileEdit, Globe, Layers3, Clock3 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { adminApi } from '../lib/adminApi'
+import DailyEarningsSummary from '../components/DailyEarningsSummary'
 
 export default function AdminDashboardPage() {
   const [sections,setSections] = useState([])
@@ -10,6 +11,7 @@ export default function AdminDashboardPage() {
   return <div className="mx-auto max-w-6xl"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Overview</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Dashboard</h1><p className="mt-2 text-sm text-slate-500">Manage your 2WAYZ website from one place.</p></div>
     {error && <p className="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
     <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Homepage sections</span><Layers3 className="text-wayz-blue"/></div><p className="mt-4 text-3xl font-extrabold text-wayz-ink">{sections.length}</p><p className="mt-1 text-xs text-slate-400">Available to manage</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Published sections</span><Globe className="text-emerald-600"/></div><p className="mt-4 text-3xl font-extrabold text-wayz-ink">{sections.filter(s=>s.isPublished).length}</p><p className="mt-1 text-xs text-slate-400">Visible status in CMS</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Last content update</span><Clock3 className="text-amber-600"/></div><p className="mt-4 text-lg font-bold text-wayz-ink">{sections.length?new Date(Math.max(...sections.map(s=>new Date(s.updatedAt).getTime()))).toLocaleDateString():'—'}</p><p className="mt-1 text-xs text-slate-400">Across homepage sections</p></div></div>
+    <DailyEarningsSummary role="ADMIN"/>
     <div className="mt-9 rounded-2xl border border-slate-200 bg-white"><div className="flex items-center justify-between border-b border-slate-100 p-5"><div><h2 className="font-bold text-wayz-ink">Home Page sections</h2><p className="mt-1 text-xs text-slate-500">Edit content and publication status</p></div><FileEdit className="text-wayz-blue"/></div><div className="divide-y divide-slate-100">{sections.map(section=><Link key={section.slug} to={`/admin/home-page/${section.slug}`} className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50"><div><p className="text-sm font-semibold text-slate-800">{section.title}</p><p className="mt-1 text-xs text-slate-400">/{section.slug}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${section.isPublished?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{section.isPublished?'Published':'Draft'}</span></Link>)}</div></div>
   </div>
 }

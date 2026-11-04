@@ -165,6 +165,8 @@ model WalletTransaction {
   type          String
   amount        Int
   settledAmount Int             @default(0)
+  commissionMode String?
+  commissionValue Float?
   status        String          @default("POSTED")
   description   String
   bookingId     String?         @unique

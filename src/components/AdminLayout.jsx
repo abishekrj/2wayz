@@ -101,10 +101,6 @@ export default function AdminLayout({ admin }) {
           <Ban size={18} />Booking Cancellations
         </NavLink>
 
-        <NavLink to="/admin/wallet" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
-          <Wallet size={18} />Driver Wallet
-        </NavLink>
-
         <section>
           <button type="button" onClick={() => setOpenSubmenu(value => value === 'home' ? null : 'home')} aria-expanded={openSubmenu === 'home'} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10">
             <span className="flex items-center gap-3"><Home size={18} />Home Page</span>

@@ -50,6 +50,7 @@ export const adminApi = {
   walletRecharges: (status = '') => request(`/wallet/admin/recharges${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   reviewWalletRecharge: (id, status) => request(`/wallet/admin/recharges/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   createBookingAdjustment: (data) => request('/wallet/admin/adjustments', { method: 'POST', body: JSON.stringify(data) }),
+  reverseGeocode: (lat, lng) => request(`/bookings/reverse-geocode?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`),
   createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
   activePassengerBooking: () => request('/bookings/active'),
   booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),

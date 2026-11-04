@@ -30,9 +30,20 @@ const defaults = {
   about:{eyebrow:'A local mobility partner',heading:'Getting around Tiruvannamalai, made simpler.',body:'From temple visits and market trips to everyday errands, 2WAYZ is being built around the way people travel in our town.',points:['Book an auto when you need one','Plan a ride for a later time','See an indicative fare before continuing']},
   drivers:{eyebrow:'BUILT WITH LOCAL DRIVERS IN MIND',heading:'A better way to connect with your next passenger.',body:"2WAYZ aims to help Tiruvannamalai's auto drivers connect with nearby customers through a straightforward local booking platform.",buttonText:'Join as a driver',benefits:['Connect with passengers in your local area','A simple app experience designed for auto drivers','Transparent trip and earning information','Build direct relationships with local customers']}
 }
+const HOMEPAGE_CACHE_KEY = 'twoWayz.publicHomepage.v1'
+function readHomepageCache() {
+  try { return JSON.parse(sessionStorage.getItem(HOMEPAGE_CACHE_KEY) || '{}') } catch { return {} }
+}
 function useHomepageSections(){
-  const [sections,setSections]=useState({})
-  useEffect(()=>{let active=true;fetch(`${API_BASE}/homepage/public`).then(r=>{if(!r.ok)throw new Error('CMS unavailable');return r.json()}).then(data=>{if(active){const next={};for(const section of data.sections||[])next[section.slug]=section.content;setSections(next)}}).catch(()=>{});return()=>{active=false}},[])
+  const [sections,setSections]=useState(readHomepageCache)
+  useEffect(()=>{
+    let active=true
+    fetch(`${API_BASE}/homepage/public`)
+      .then(r=>{if(!r.ok)throw new Error('CMS unavailable');return r.json()})
+      .then(data=>{if(active){const next={};for(const section of data.sections||[])next[section.slug]=section.content;setSections(next);try{sessionStorage.setItem(HOMEPAGE_CACHE_KEY,JSON.stringify(next))}catch{}}})
+      .catch(()=>{})
+    return()=>{active=false}
+  },[])
   return useMemo(()=>Object.fromEntries(Object.entries(defaults).map(([slug,content])=>[slug,sections[slug]||content])),[sections])
 }
 function SectionTitle({eyebrow,heading,description}){return <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">{eyebrow}</p><h2 className="mt-3 text-3xl font-extrabold text-wayz-ink sm:text-4xl">{heading}</h2>{description&&<p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>}</div>}
@@ -42,7 +53,7 @@ function Hero({data,destination}) {
  useEffect(()=>{if(active>=slides.length)setActive(0)},[active,slides.length])
  useEffect(()=>{const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),6500);return()=>window.clearInterval(timer)},[slides.length])
  const slide=slides[active]||slides[0]
- return <section className="hero-pattern relative isolate overflow-visible text-white"><div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>{slide.imageUrl&&<div className="absolute inset-0 bg-cover bg-center opacity-25" style={{backgroundImage: `url("${mediaUrl(slide.imageUrl)}")`}}/>}<div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12"><div className="flex items-start justify-between gap-5"><div key={active} className="max-w-3xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span><h1 className="mt-3 whitespace-pre-line text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[46px]">{slide.title}</h1><p className="mt-2 max-w-2xl text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={()=>setActive(i=>(i-1+slides.length)%slides.length)} aria-label="Previous slide" className="rounded-full border border-white/35 p-2"><ChevronLeft/></button><button type="button" onClick={()=>setActive(i=>(i+1)%slides.length)} aria-label="Next slide" className="rounded-full border border-white/35 p-2"><ChevronRight/></button></div></div><div className="relative z-20 mt-7 w-full sm:mt-8"><BookingPanel initialDestination={destination}/></div></div></section>
+ return <section className="hero-pattern relative isolate overflow-visible text-white"><div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>{slide.imageUrl&&<img src={mediaUrl(slide.imageUrl)} alt="" aria-hidden="true" loading="eager" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-center opacity-25"/>}<div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12"><div className="flex items-start justify-between gap-5"><div className="max-w-3xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span><h1 className="mt-3 whitespace-pre-line text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[46px]">{slide.title}</h1><p className="mt-2 max-w-2xl text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={()=>setActive(i=>(i-1+slides.length)%slides.length)} aria-label="Previous slide" className="rounded-full border border-white/35 p-2"><ChevronLeft/></button><button type="button" onClick={()=>setActive(i=>(i+1)%slides.length)} aria-label="Next slide" className="rounded-full border border-white/35 p-2"><ChevronRight/></button></div></div><div className="relative z-20 mt-7 w-full sm:mt-8"><BookingPanel initialDestination={destination}/></div></div></section>
 }
 function Events({data}){
  const events=Array.isArray(data.events)?data.events.filter(e=>e.title&&e.date):[]

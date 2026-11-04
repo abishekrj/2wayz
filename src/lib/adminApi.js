@@ -55,5 +55,14 @@ export const adminApi = {
   cancelPassengerBooking: (id, reason, details = '') => request(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
   adminCancellations: (search = '') => request(`/bookings/admin/cancellations?search=${encodeURIComponent(search)}`),
   cancelDriverBooking: (id, reason, details = '') => request(`/drivers/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
-  passengerBookings: () => request('/bookings')
+  passengerBookings: () => request('/bookings'),
+  passengerNotifications: () => request('/notifications/me'),
+  markPassengerNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
+  markAllPassengerNotificationsRead: () => request('/notifications/me/read-all', { method: 'POST' }),
+  driverNotifications: () => request('/notifications/me'),
+  markDriverNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
+  markAllDriverNotificationsRead: () => request('/notifications/me/read-all', { method: 'POST' }),
+  adminNotifications: () => request('/notifications/admin'),
+  markAdminNotificationRead: (id) => request(`/notifications/admin/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
+  markAllAdminNotificationsRead: () => request('/notifications/admin/read-all', { method: 'POST' })
 }

@@ -15,6 +15,7 @@ import bookingRoutes from './routes/bookings.js'
 import walletRoutes from './routes/wallet.js'
 import reportsRoutes from './routes/reports.js'
 import notificationsRoutes from './routes/notifications.js'
+import { startScheduledDispatchWorker } from './lib/scheduledDispatch.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('DATABASE_URL and a JWT_SECRET of at least 32 characters are required.')
@@ -48,4 +49,7 @@ app.use((error, req, res, next) => {
   console.error(error)
   res.status(500).json({ message: 'An unexpected server error occurred.' })
 })
-app.listen(port, () => console.log(`2WAYZ API listening on port ${port}`))
+app.listen(port, () => {
+  console.log(`2WAYZ API listening on port ${port}`)
+  startScheduledDispatchWorker()
+})

@@ -133,30 +133,59 @@ export default function HomePage(){
   </div>
 </section>
  <Events data={cms['upcoming-events']}/>
- <section id="about" className="relative overflow-hidden bg-[#f5f8fc] py-16 sm:py-20">
-  <div className="pointer-events-none absolute -left-24 top-8 h-64 w-64 rounded-full bg-blue-100/70 blur-3xl"/>
-  <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-amber-100/60 blur-3xl"/>
+ <section id="about" className="relative overflow-hidden bg-white py-16 sm:py-20">
+  <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-blue-50 blur-3xl"/>
   <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
-   <div className="grid items-center gap-9 lg:grid-cols-[.95fr_1.05fr] lg:gap-14">
-    <div className="relative">
-     <div className="relative min-h-[340px] overflow-hidden rounded-[30px] bg-[#0b3978] shadow-[0_18px_48px_rgba(7,45,100,0.18)] sm:min-h-[420px]">
-      {cms.about.imageUrl
-       ? <><img src={mediaUrl(cms.about.imageUrl)} alt={cms.about.heading} loading="lazy" className="absolute inset-0 h-full w-full object-cover"/><div className="absolute inset-0 bg-[#062c62]/45"/></>
-       : <><div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full border-[30px] border-white/[0.07]"/><div className="pointer-events-none absolute -bottom-28 -left-12 h-72 w-72 rounded-full border-[26px] border-white/[0.06]"/></>}
-      <div className="relative flex min-h-[340px] flex-col justify-between p-7 text-white sm:min-h-[420px] sm:p-10">
-       <div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.18em] text-blue-100"><MapPin size={13}/> Tiruvannamalai, Tamil Nadu</span><span className="rounded-full bg-wayz-yellow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-wayz-ink">Local first</span></div>
-       <div><p className="text-[11px] font-bold uppercase tracking-[.24em] text-blue-200">Your town. Your journeys.</p><p className="mt-2 text-5xl font-black tracking-[-.06em] sm:text-7xl">2WAYZ<span className="text-wayz-yellow">.</span></p><p className="mt-3 max-w-xs text-sm leading-6 text-blue-100">A simpler way to get around the places that make our town special.</p></div>
-       <div className="flex items-center gap-3 border-t border-white/15 pt-5"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-wayz-yellow text-wayz-ink"><HeartHandshake size={22}/></div><div><p className="text-sm font-extrabold">Built around local needs</p><p className="mt-1 text-xs text-blue-200">Connecting everyday trips across our town</p></div></div>
-      </div>
-     </div>
-     <div className="absolute -bottom-4 right-5 hidden items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg sm:flex"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-wayz-blue"><MapPin size={18}/></span><span className="text-xs font-extrabold text-wayz-ink">Made for Tiruvannamalai</span></div>
+   <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+    <div className="relative flex min-h-[280px] items-center justify-center rounded-[30px] bg-[#eef5fd] px-4 py-8 sm:min-h-[390px] sm:px-8">
+     <div className="pointer-events-none absolute left-6 top-6 h-20 w-20 rounded-full border border-blue-200/70"/>
+     <div className="pointer-events-none absolute bottom-7 right-7 h-28 w-28 rounded-full border border-amber-200/80"/>
+     <svg viewBox="0 0 520 370" role="img" aria-label="Illustration of a local auto rickshaw journey" className="relative z-10 h-auto w-full max-w-[500px]" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="260" cy="322" rx="190" ry="17" fill="#cbdcf0" opacity=".65"/>
+      <path d="M42 286c66-34 126-34 192 0s126 34 244-4" fill="none" stroke="#b8cde6" strokeWidth="5" strokeLinecap="round" strokeDasharray="10 12"/>
+      <path d="M72 95c0-23 19-42 42-42h58" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>
+      <circle cx="72" cy="95" r="8" fill="#f5bd36"/>
+      <path d="M396 75h42c17 0 30 13 30 30v23" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M468 128l-9-13h18z" fill="#9bb9dc"/>
+      <g transform="translate(88 112)">
+       <path d="M70 129h250l-15-92c-4-23-23-39-46-39H147c-18 0-34 10-42 26l-35 68z" fill="#f5bd36" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
+       <path d="M120 29c6-12 16-18 29-18h98c15 0 27 10 30 25l10 49H91z" fill="#dceafa" stroke="#173d70" strokeWidth="7" strokeLinejoin="round"/>
+       <path d="M181 14v70M254 14l14 70" stroke="#173d70" strokeWidth="6"/>
+       <path d="M62 94h258l22 45H48z" fill="#13845b" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
+       <path d="M48 139h296v27H48z" fill="#f5bd36" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
+       <path d="M84 166h53l-10 31H92zM270 166h48l-9 31h-48z" fill="#173d70"/>
+       <circle cx="112" cy="202" r="29" fill="#173d70"/><circle cx="112" cy="202" r="12" fill="#dceafa"/>
+       <circle cx="286" cy="202" r="29" fill="#173d70"/><circle cx="286" cy="202" r="12" fill="#dceafa"/>
+       <path d="M48 105H20c-10 0-18 8-18 18v17h47M344 105h20c10 0 18 8 18 18v17h-40" fill="none" stroke="#173d70" strokeWidth="8" strokeLinecap="round"/>
+       <path d="M78 116h28M302 116h22" stroke="#fff" strokeWidth="7" strokeLinecap="round"/>
+       <path d="M176 96h48" stroke="#173d70" strokeWidth="6" strokeLinecap="round"/>
+      </g>
+      <g transform="translate(354 24)">
+       <path d="M35 0C16 0 1 15 1 34c0 25 34 59 34 59s34-34 34-59C69 15 54 0 35 0z" fill="#2563a6"/>
+       <circle cx="35" cy="34" r="12" fill="#fff"/>
+      </g>
+      <g transform="translate(40 205)">
+       <circle cx="28" cy="28" r="27" fill="#fff" stroke="#d7e5f5" strokeWidth="3"/>
+       <path d="M28 12v18l12 7" fill="none" stroke="#2563a6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      </g>
+      <g transform="translate(412 220)">
+       <circle cx="27" cy="27" r="26" fill="#fff" stroke="#d7e5f5" strokeWidth="3"/>
+       <path d="M14 28l9 9 18-20" fill="none" stroke="#13845b" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      </g>
+     </svg>
+     <div className="absolute bottom-5 left-5 rounded-xl border border-white bg-white/95 px-3 py-2 shadow-sm sm:bottom-7 sm:left-7"><p className="text-[10px] font-extrabold uppercase tracking-[.15em] text-wayz-blue">Local rides</p><p className="mt-0.5 text-xs font-bold text-wayz-ink">Made for our town</p></div>
     </div>
-    <div className="py-2">
-     <p className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.2em] text-wayz-blue"><Sparkles size={13}/> {cms.about.eyebrow}</p>
-     <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-wayz-ink sm:text-4xl lg:text-[42px]">{cms.about.heading}</h2>
-     <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">{cms.about.body}</p>
-     <div className="mt-7 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-      {(cms.about.points||[]).map((point,i)=>{const Icon=[Zap,CalendarClock,BadgeIndianRupee,ShieldCheck][i%4];return <div key={i} className="group flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_5px_18px_rgba(15,45,80,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-wayz-blue transition-colors group-hover:bg-wayz-blue group-hover:text-white"><Icon size={20}/></span><span className="pt-1 text-sm font-bold leading-6 text-slate-700">{point}</span></div>})}
+    <div>
+     <p className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.2em] text-wayz-blue"><Sparkles size={15}/> THE 2WAYZ BENEFITS</p>
+     <h2 className="mt-3 max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-wayz-ink sm:text-4xl lg:text-[42px]">Everyday travel, made simpler.</h2>
+     <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">From temple visits and market trips to everyday errands, 2WAYZ is designed to make local auto travel in Tiruvannamalai easier for passengers and more connected for drivers.</p>
+     <div className="mt-7 grid gap-3 sm:grid-cols-2">
+      {[
+       {icon:MapPin,title:'Made for local journeys',text:'A service focused on getting around Tiruvannamalai.'},
+       {icon:Zap,title:'A simple booking experience',text:'Choose your pickup and destination in a few easy steps.'},
+       {icon:BadgeIndianRupee,title:'Fare estimate before you book',text:'Review an indicative fare before sending your request.'},
+       {icon:HeartHandshake,title:'Supporting local drivers',text:'Helping passengers connect with auto drivers in our town.'}
+      ].map(({icon:Icon,title,text:description})=><div key={title} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_5px_18px_rgba(15,45,80,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md sm:p-5"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-wayz-blue transition-colors group-hover:bg-wayz-blue group-hover:text-white"><Icon size={25} strokeWidth={2}/></div><h3 className="mt-4 text-sm font-extrabold text-wayz-ink">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{description}</p></div>)}
      </div>
      <a href="#book" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-6 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#174f91]">Book your auto <ArrowRight size={17}/></a>
     </div>

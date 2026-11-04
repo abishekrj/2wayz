@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import HomePage from './pages/HomePage'
 import PlacesPage from './pages/PlacesPage'
 import AdminPlacesPage from './pages/AdminPlacesPage'
+import AdminFaqsPage from './pages/AdminFaqsPage'
 import DriverRegistrationPage from './pages/DriverRegistrationPage'
 import DriverPortalPage from './pages/DriverPortalPage'
 import AdminDriversPage from './pages/AdminDriversPage'
@@ -56,6 +57,7 @@ function AdminRoutes() {
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
       <Route path="places" element={<AdminPlacesPage/>}/>
+      <Route path="faqs" element={<AdminFaqsPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>

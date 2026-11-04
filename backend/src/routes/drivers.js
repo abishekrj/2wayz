@@ -105,6 +105,7 @@ router.post('/availability', requireDriver, async (req, res, next) => {
       return res.status(400).json({ message: 'Share your current location first, then try going online.' })
     }
     const updated = await prisma.driver.update({ where: { id: driver.id }, data: { isOnline: online } })
+    if (driver.isOnline !== online) await prisma.driverActivity.create({ data: { driverId: driver.id, eventType: online ? 'ONLINE' : 'OFFLINE', description: online ? 'Driver went online.' : 'Driver went offline.' } })
     if (online && updated.currentLat != null && updated.currentLng != null) {
       // A driver who just came online can still receive recent pending requests.
       const recentBookings = await prisma.booking.findMany({
@@ -165,7 +166,8 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
     }
     await prisma.$transaction([
       prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId, status: 'OFFERED' }, data: { status: 'ACCEPTED' } }),
-      prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId: { not: driverId }, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
+      prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId: { not: driverId }, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } }),
+      prisma.driverActivity.create({ data: { driverId, eventType: 'RIDE_ACCEPTED', description: `Accepted ride ${offer.booking.reference}.`, bookingId: offer.bookingId } })
     ])
     res.json({ message: 'Ride accepted. You are assigned to this booking.', bookingReference: offer.booking.reference })
   } catch (error) { next(error) }
@@ -175,6 +177,8 @@ router.post('/offers/:offerId/decline', requireDriver, async (req, res, next) =>
   try {
     const result = await prisma.driverOffer.updateMany({ where: { id: req.params.offerId, driverId: req.driverAuth.sub, status: 'OFFERED' }, data: { status: 'DECLINED' } })
     if (!result.count) return res.status(404).json({ message: 'Ride offer not found.' })
+    const offer = await prisma.driverOffer.findUnique({ where: { id: req.params.offerId }, select: { bookingId: true, booking: { select: { reference: true } } } })
+    await prisma.driverActivity.create({ data: { driverId: req.driverAuth.sub, eventType: 'RIDE_DECLINED', description: `Declined ride ${offer?.booking?.reference || ''}.`, bookingId: offer?.bookingId || null } })
     res.json({ message: 'Ride declined.' })
   } catch (error) { next(error) }
 })
@@ -214,6 +218,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
         const settings = await tx.walletSettings.findUnique({ where: { id: 'default' } })
         const changed = await tx.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
         if (changed.count !== 1) throw Object.assign(new Error('This ride was updated elsewhere. Refresh your active rides.'), { statusCode: 409 })
+        await tx.driverActivity.create({ data: { driverId: req.driverAuth.sub, eventType: 'TRIP_COMPLETED', description: `Completed ride with final fare ₹${finalFare}.`, bookingId: booking.id } })
         let commission = 0
         let balanceAfter = 0
         if (settings?.isActive) {
@@ -243,6 +248,12 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     }
     const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
     if (updated.count !== 1) return res.status(409).json({ message: 'This ride was updated elsewhere. Refresh your active rides.' })
+    await prisma.driverActivity.create({ data: {
+      driverId: req.driverAuth.sub,
+      eventType: nextStatus === 'DRIVER_ARRIVED' ? 'DRIVER_ARRIVED' : 'TRIP_STARTED',
+      description: nextStatus === 'DRIVER_ARRIVED' ? 'Driver arrived at the pickup location.' : 'Trip started.',
+      bookingId: booking.id
+    } })
     res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : 'Trip started.', status: nextStatus, finalFare: null })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
@@ -273,6 +284,58 @@ router.get('/admin/live', requireAdmin, async (_req, res, next) => {
       })),
       serverTime: new Date(now).toISOString()
     })
+  } catch (error) { next(error) }
+})
+
+router.get('/admin/operations', requireAdmin, async (_req, res, next) => {
+  try {
+    const drivers = await prisma.driver.findMany({
+      where: { status: 'APPROVED' },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, isOnline: true, locationUpdatedAt: true, createdAt: true }
+    })
+    const now = new Date()
+    const startOfDay = new Date(now)
+    startOfDay.setHours(0, 0, 0, 0)
+    const results = await Promise.all(drivers.map(async driver => {
+      const events = await prisma.driverActivity.findMany({
+        where: { driverId: driver.id, eventType: { in: ['ONLINE', 'OFFLINE'] } },
+        orderBy: { createdAt: 'asc' },
+        select: { eventType: true, createdAt: true }
+      })
+      let todayMs = 0, totalMs = 0, activeSince = null
+      for (const event of events) {
+        if (event.eventType === 'ONLINE') {
+          if (!activeSince) activeSince = event.createdAt
+        } else if (activeSince) {
+          totalMs += event.createdAt - activeSince
+          const overlap = activeSince > startOfDay ? activeSince : startOfDay
+          if (event.createdAt > overlap) todayMs += event.createdAt - overlap
+          activeSince = null
+        }
+      }
+      if (activeSince) {
+        totalMs += now - activeSince
+        const overlap = activeSince > startOfDay ? activeSince : startOfDay
+        if (now > overlap) todayMs += now - overlap
+      }
+      const age = driver.locationUpdatedAt ? Math.max(0, Math.floor((now - driver.locationUpdatedAt) / 1000)) : null
+      const locationHealth = age == null ? 'NO_LOCATION' : age <= 60 ? 'HEALTHY' : age <= 180 ? 'DELAYED' : 'STALE'
+      return { ...driver, onlineTodayMs: todayMs, totalOnlineMs: totalMs, locationAgeSeconds: age, locationHealth }
+    }))
+    res.json({ drivers: results, serverTime: now.toISOString() })
+  } catch (error) { next(error) }
+})
+
+router.get('/admin/:id/activity', requireAdmin, async (req, res, next) => {
+  try {
+    const driver = await prisma.driver.findUnique({ where: { id: req.params.id }, select: { id: true, name: true, phone: true, vehicleNumber: true } })
+    if (!driver) return res.status(404).json({ message: 'Driver not found.' })
+    const activities = await prisma.driverActivity.findMany({
+      where: { driverId: driver.id }, orderBy: { createdAt: 'desc' }, take: 100,
+      select: { id: true, eventType: true, description: true, bookingId: true, createdAt: true }
+    })
+    res.json({ driver, activities })
   } catch (error) { next(error) }
 })
 

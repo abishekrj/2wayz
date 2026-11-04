@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import { rateLimit } from 'express-rate-limit'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
-import { notifyBooking } from '../lib/notifications.js'
+import { notify, notifyBooking } from '../lib/notifications.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -114,10 +114,13 @@ router.post('/availability', requireDriver, async (req, res, next) => {
         select: { id: true, pickupLat: true, pickupLng: true }
       })
       const nearby = recentBookings.filter(booking => distanceKm(updated.currentLat, updated.currentLng, booking.pickupLat, booking.pickupLng) <= 8)
-      if (nearby.length) await prisma.driverOffer.createMany({
-        data: nearby.map(booking => ({ bookingId: booking.id, driverId: updated.id })),
-        skipDuplicates: true
-      })
+      if (nearby.length) {
+        await prisma.driverOffer.createMany({
+          data: nearby.map(booking => ({ bookingId: booking.id, driverId: updated.id })),
+          skipDuplicates: true
+        })
+        await Promise.all(nearby.map(booking => notify({ role: 'DRIVER', recipientId: updated.id, type: 'RIDE_OFFER', title: 'New ride offer', message: 'A nearby ride request is available. Open your driver portal to review it.', bookingId: booking.id })))
+      }
     }
     res.json({ driver: publicDriver(updated) })
   } catch (error) { next(error) }

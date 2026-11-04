@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { CarFront, MapPin, Power, RefreshCw, LogOut, CheckCircle2, Clock3, Navigation, XCircle, Wallet, UploadCloud } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import AuthLayout from '../components/AuthLayout'
@@ -10,6 +10,8 @@ const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')
 
 export default function DriverPortalPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isLoginRoute = location.pathname === '/driver/login'
   const [driver, setDriver] = useState(null)
   const [checking, setChecking] = useState(true)
   const [form, setForm] = useState({ phone: '', password: '' })
@@ -82,6 +84,10 @@ export default function DriverPortalPage() {
   }, [])
 
   useEffect(() => {
+    if (!checking && driver && isLoginRoute) navigate('/driver', { replace: true })
+  }, [checking, driver, isLoginRoute, navigate])
+
+  useEffect(() => {
     if (!driver?.isOnline) return
     refreshOffers()
     const timer = window.setInterval(refreshOffers, 5000)
@@ -105,7 +111,7 @@ export default function DriverPortalPage() {
 
   async function login(event) {
     event.preventDefault(); setError(''); setBusy(true)
-    try { const result = await adminApi.driverLogin(form.phone, form.password); setDriver(result.driver); setNotice('Signed in successfully.') }
+    try { const result = await adminApi.driverLogin(form.phone, form.password); setDriver(result.driver); setNotice('Signed in successfully.'); navigate('/driver', { replace: true }) }
     catch (err) { setError(err.message || 'Sign in failed.') }
     finally { setBusy(false) }
   }
@@ -182,10 +188,10 @@ export default function DriverPortalPage() {
 
   async function logout() {
     try { await adminApi.driverLogout() } catch (err) { setError(err.message || 'Could not sign out.') }
-    setDriver(null); setOffers([]); setWalletData(null); setNotice(''); setError('')
+    setDriver(null); setOffers([]); setWalletData(null); setNotice(''); setError(''); navigate('/driver/login', { replace: true })
   }
 
-  if (checking) return <PageLayout><div className="mx-auto max-w-3xl px-5 py-20 text-center text-sm text-slate-500">Checking driver session…</div></PageLayout>
+  if (checking || (driver && isLoginRoute)) return <PageLayout><div className="mx-auto max-w-3xl px-5 py-20 text-center text-sm text-slate-500">Checking driver session…</div></PageLayout>
   if (!driver) return <AuthLayout title="Driver sign in" subtitle="Sign in to manage your availability and receive nearby ride offers." footer={<p>Not registered yet? <button onClick={() => navigate('/driver/register')} className="font-bold text-wayz-blue hover:underline">Register as a driver</button></p>}>
     <form onSubmit={login} className="space-y-5">
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}

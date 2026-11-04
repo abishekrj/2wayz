@@ -144,7 +144,7 @@ export default function BookingPanel({ initialDestination = null }) {
         <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-wayz-blue"><Zap size={16} /> Instant booking</span>
       </div>
 
-      <form onSubmit={submit} className="relative z-20 mt-5 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
+      <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
         <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} enableCurrentLocation />
         <button
           type="button"

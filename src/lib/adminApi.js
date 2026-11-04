@@ -49,6 +49,7 @@ export const adminApi = {
   walletDrivers: (search = '') => request(`/wallet/admin/drivers?search=${encodeURIComponent(search)}`),
   walletRecharges: (status = '') => request(`/wallet/admin/recharges${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   reviewWalletRecharge: (id, status) => request(`/wallet/admin/recharges/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  createBookingAdjustment: (data) => request('/wallet/admin/adjustments', { method: 'POST', body: JSON.stringify(data) }),
   createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
   booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),
   cancelPassengerBooking: (id, reason, details = '') => request(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),

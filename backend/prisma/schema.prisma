@@ -94,7 +94,7 @@ model Booking {
   status             String        @default("REQUESTED")
   requestedAt        DateTime      @default(now())
   acceptedAt         DateTime?
-  completedAt        DateTime?
+  arrivedAt          DateTime?\n  tripStartedAt      DateTime?\n  completedAt        DateTime?\n  finalFare          Int?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   passenger          PassengerUser @relation(fields: [passengerId], references: [id])

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, CarFront, CheckCircle2, Clock3, In
 import PageLayout from '../components/PageLayout'
 import RouteMap from '../components/RouteMap'
 import { useBooking } from '../context/BookingContext'
+import { adminApi } from '../lib/adminApi'
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')
 
@@ -12,6 +13,7 @@ export default function TravelDetailsPage() {
   const { booking, setBooking } = useBooking()
   const [vehicle, setVehicle] = useState('auto')
   const [confirming, setConfirming] = useState(false)
+  const [bookingError, setBookingError] = useState('')
   const estimate = booking?.estimate
   const pickup = booking?.pickup
   const destination = booking?.destination
@@ -22,10 +24,27 @@ export default function TravelDetailsPage() {
 
   if (!booking || !estimate || !pickup || !destination) return <PageLayout><div className="mx-auto max-w-3xl px-5 py-20 text-center"><h1 className="text-2xl font-extrabold text-wayz-ink">No travel estimate found</h1><p className="mt-2 text-sm text-slate-500">Please enter your pickup and destination to calculate a fare.</p><button onClick={() => navigate('/')} className="mt-6 rounded-xl bg-wayz-blue px-5 py-3 text-sm font-bold text-white">Back to booking</button></div></PageLayout>
 
-  function confirmBooking() {
+  async function confirmBooking() {
     setConfirming(true)
-    setBooking(current => ({ ...current, vehicle, bookingStatus: 'request-ready', reference: '2W-' + Date.now().toString().slice(-8) }))
-    navigate('/travel-tracking')
+    setBookingError('')
+    try {
+      const payload = {
+        pickup,
+        destination,
+        estimate: { distanceKm: estimate.km, durationMinutes: estimate.durationMinutes },
+        mode: booking.mode === 'schedule' ? 'schedule' : 'instant',
+        ...(booking.mode === 'schedule' && booking.date ? { scheduledAt: new Date(booking.date + 'T' + (booking.time || '09:00') + ':00').toISOString() } : {})
+      }
+      const result = await adminApi.createBooking(payload)
+      setBooking(current => ({ ...current, vehicle, bookingId: result.booking.id, bookingStatus: result.booking.status, reference: result.booking.reference, serverBooking: result.booking, dispatchMessage: result.message }))
+      navigate('/travel-tracking')
+    } catch (err) {
+      if (/log in/i.test(err.message || '')) {
+        setBookingError('Please sign in to submit and save your ride request.')
+      } else {
+        setBookingError(err.message || 'Your booking could not be submitted. Please try again.')
+      }
+    } finally { setConfirming(false) }
   }
 
   return <PageLayout>
@@ -42,7 +61,7 @@ export default function TravelDetailsPage() {
         </div>
         <aside className="space-y-5"><section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-lg font-extrabold text-wayz-ink">Indicative fare</h2><p className="mt-2 text-4xl font-black text-wayz-blue">{money(estimate.fare)}</p><p className="mt-1 text-xs text-slate-500">Estimated total for this route</p><div className="my-5 space-y-3 border-y border-slate-100 py-4 text-sm"><div className="flex justify-between text-slate-600"><span>Base fare</span><span>{money(30)}</span></div><div className="flex justify-between text-slate-600"><span>Distance component + rounding</span><span>{money(estimate.distanceCharge)}</span></div><div className="flex justify-between font-extrabold text-wayz-ink"><span>Estimated total</span><span>{money(estimate.fare)}</span></div></div><p className="text-[11px] leading-5 text-slate-500">Illustrative starter tariff only. Actual fare may vary and will need confirmation by the driver.</p><div className="mt-5 flex items-start gap-2 rounded-xl bg-emerald-50 p-3 text-xs leading-5 text-emerald-800"><ShieldCheck size={17} className="mt-0.5 shrink-0"/>Your route and estimate are ready to review. No payment is collected on this prototype.</div></section><section className="overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"><p className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Route preview</p><RouteMap route={estimate.route}/></section></aside>
       </div>
-      <div className="mt-7 flex flex-col-reverse gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"><p className="text-xs leading-5 text-slate-500">By continuing, you confirm the trip details above. A real driver assignment will be connected when booking services are enabled.</p><button onClick={confirmBooking} disabled={confirming} className="inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-7 py-4 text-sm font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:opacity-60">Confirm Booking <ArrowRight size={18}/></button></div>
+      <div className="mt-7 flex flex-col-reverse gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"><div><p className="text-xs leading-5 text-slate-500">By continuing, you submit a real ride request to nearby approved online drivers. No payment is collected.</p>{bookingError && <p role="alert" className="mt-2 text-sm font-semibold text-red-700">{bookingError} <button type="button" onClick={() => navigate(`/login?returnTo=${encodeURIComponent("/travel-details")}`)} className="underline">Sign in</button></p>}</div><button onClick={confirmBooking} disabled={confirming} className="inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-7 py-4 text-sm font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:opacity-60">Confirm Booking <ArrowRight size={18}/></button></div>
     </div></div>
   </PageLayout>
 }

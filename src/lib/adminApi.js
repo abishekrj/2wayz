@@ -53,6 +53,7 @@ export const adminApi = {
   createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
   booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),
   cancelPassengerBooking: (id, reason, details = '') => request(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
+  retryPassengerBooking: (id) => request(`/bookings/${encodeURIComponent(id)}/retry`, { method: 'POST' }),
   adminCancellations: (search = '') => request(`/bookings/admin/cancellations?search=${encodeURIComponent(search)}`),
   adminScheduledBookings: (search = '') => request(`/bookings/admin/scheduled?search=${encodeURIComponent(search)}`),
   cancelDriverBooking: (id, reason, details = '') => request(`/drivers/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),

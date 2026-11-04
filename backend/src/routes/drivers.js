@@ -226,7 +226,7 @@ router.get('/active', requireDriver, async (req, res, next) => {
     const bookings = await prisma.booking.findMany({
       where: { driverId: req.driverAuth.sub, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
       orderBy: { acceptedAt: 'asc' },
-      select: { id: true, reference: true, status: true, pickupName: true, pickupAddress: true, destinationName: true, destinationAddress: true, distanceKm: true, estimatedMinutes: true, estimatedFare: true, finalFare: true, acceptedAt: true, arrivedAt: true, tripStartedAt: true }
+      select: { id: true, reference: true, status: true, pickupName: true, pickupAddress: true, destinationName: true, destinationAddress: true, distanceKm: true, estimatedMinutes: true, estimatedFare: true, finalFare: true, mode: true, scheduledAt: true, acceptedAt: true, arrivedAt: true, tripStartedAt: true }
     })
     res.json({ bookings })
   } catch (error) { next(error) }

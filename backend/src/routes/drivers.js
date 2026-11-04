@@ -159,6 +159,42 @@ router.post('/offers/:offerId/decline', requireDriver, async (req, res, next) =>
   } catch (error) { next(error) }
 })
 
+router.get('/active', requireDriver, async (req, res, next) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      where: { driverId: req.driverAuth.sub, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+      orderBy: { acceptedAt: 'asc' },
+      select: { id: true, reference: true, status: true, pickupName: true, pickupAddress: true, destinationName: true, destinationAddress: true, distanceKm: true, estimatedMinutes: true, estimatedFare: true, finalFare: true, acceptedAt: true, arrivedAt: true, tripStartedAt: true }
+    })
+    res.json({ bookings })
+  } catch (error) { next(error) }
+})
+
+router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next) => {
+  try {
+    const nextStatus = String(req.body?.status || '').toUpperCase()
+    const transitions = {
+      DRIVER_ARRIVED: { from: 'DRIVER_ASSIGNED', timestamp: { arrivedAt: new Date() } },
+      IN_PROGRESS: { from: 'DRIVER_ARRIVED', timestamp: { tripStartedAt: new Date() } },
+      COMPLETED: { from: 'IN_PROGRESS', timestamp: { completedAt: new Date() } }
+    }
+    const transition = transitions[nextStatus]
+    if (!transition) return res.status(400).json({ message: 'Invalid trip status update.' })
+    const booking = await prisma.booking.findFirst({ where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: transition.from }, select: { id: true, estimatedFare: true } })
+    if (!booking) return res.status(409).json({ message: 'This ride is no longer in the expected stage. Refresh your active rides.' })
+    let finalFare
+    if (nextStatus === 'COMPLETED') {
+      finalFare = req.body?.finalFare == null || req.body?.finalFare === '' ? booking.estimatedFare : Number(req.body.finalFare)
+      if (!Number.isInteger(finalFare) || finalFare < 0 || finalFare > 100000) return res.status(400).json({ message: 'Enter a valid final fare between ₹0 and ₹1,00,000.' })
+    }
+    const data = { status: nextStatus, ...transition.timestamp }
+    if (nextStatus === 'COMPLETED') data.finalFare = finalFare
+    const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
+    if (updated.count !== 1) return res.status(409).json({ message: 'This ride was updated elsewhere. Refresh your active rides.' })
+    res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : nextStatus === 'IN_PROGRESS' ? 'Trip started.' : 'Trip completed successfully.', status: nextStatus, finalFare: finalFare ?? null })
+  } catch (error) { next(error) }
+})
+
 router.get('/admin', requireAdmin, async (req, res, next) => {
   try {
     const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined

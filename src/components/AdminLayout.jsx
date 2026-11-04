@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound } from 'lucide-react'
+import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -101,6 +101,7 @@ export default function AdminLayout({ admin }) {
           </button>
           {openSubmenu === 'home' && (
             <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
+              <NavLink to="/admin/places" onClick={() => setMobileOpen(false)} className={submenuClass}><MapPin size={14}/>Places to Explore</NavLink>
               {homeSections.map(([slug, title]) => (
                 <NavLink key={slug} to={`/admin/home-page/${slug}`} onClick={() => setMobileOpen(false)} className={submenuClass}>
                   <FileEdit size={14} />{title}

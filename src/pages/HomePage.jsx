@@ -55,6 +55,34 @@ function Hero({data,destination}) {
  const slide=slides[active]||slides[0]
  return <section className="hero-pattern relative isolate min-h-[430px] overflow-visible text-white sm:min-h-[450px]"><div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>{slide.imageUrl&&<img src={mediaUrl(slide.imageUrl)} alt="" aria-hidden="true" loading="eager" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-center opacity-25 transition-opacity duration-500"/>}<div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12"><div className="flex items-start justify-between gap-5"><div className="max-w-3xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span><h1 className="mt-3 whitespace-pre-line text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[46px]">{slide.title}</h1><p className="mt-2 max-w-2xl text-xs leading-5 text-blue-50 sm:text-sm">{slide.description}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={()=>setActive(i=>(i-1+slides.length)%slides.length)} aria-label="Previous slide" className="rounded-full border border-white/35 p-2"><ChevronLeft/></button><button type="button" onClick={()=>setActive(i=>(i+1)%slides.length)} aria-label="Next slide" className="rounded-full border border-white/35 p-2"><ChevronRight/></button></div></div><div className="relative z-20 mt-7 w-full sm:mt-8"><BookingPanel initialDestination={destination}/></div></div></section>
 }
+
+const defaultFaqs = [
+  { question: 'How do I book an auto with 2WAYZ?', answer: 'Enter your pickup location and destination, review the route and indicative fare, then continue to request an auto. You can track your booking from the travel page.' },
+  { question: 'How is my fare calculated?', answer: 'The fare estimate is based on the road route and the indicative tariff shown before you book. The final fare is confirmed for your completed trip.' },
+  { question: 'How do I pay for my ride?', answer: 'At present, passengers pay the driver directly for the completed trip. 2WAYZ does not collect the passenger fare online.' },
+  { question: 'Can I cancel a booking?', answer: 'You can cancel an eligible ride from the travel tracking page or My Bookings before the trip starts. A ride that is already in progress cannot be cancelled by the passenger.' },
+  { question: 'Can I book another auto while I have an active ride?', answer: 'Only one active booking is allowed at a time. Complete or cancel your current ride before requesting another auto.' },
+  { question: 'Where is 2WAYZ currently available?', answer: '2WAYZ is focused on local auto journeys in and around Tiruvannamalai.' }
+]
+function FaqSection() {
+ const [config,setConfig]=useState({heading:'Frequently Asked Questions',description:'Quick answers to common questions about booking and travelling with 2WAYZ.',faqs:defaultFaqs})
+ const [active,setActive]=useState(0)
+ useEffect(()=>{
+  let mounted=true
+  fetch(API_BASE+'/places/faqs/public').then(response=>{if(!response.ok)throw new Error('FAQ unavailable');return response.json()}).then(data=>{if(mounted)setConfig(data)}).catch(()=>{})
+  return()=>{mounted=false}
+ },[])
+ const faqs=Array.isArray(config.faqs)?config.faqs:[]
+ if(!faqs.length)return null
+ return <section id="faqs" className="bg-[#f5f8fc] py-16 sm:py-20">
+  <div className="mx-auto max-w-5xl px-5 lg:px-8">
+   <div className="mx-auto max-w-2xl text-center"><span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.2em] text-wayz-blue"><HelpCircle size={14}/> NEED A HAND?</span><h2 className="mt-4 text-3xl font-extrabold tracking-tight text-wayz-ink sm:text-4xl">{config.heading||'Frequently Asked Questions'}</h2>{config.description&&<p className="mt-3 text-sm leading-6 text-slate-500">{config.description}</p>}</div>
+   <div className="mt-9 space-y-3">{faqs.map((faq,index)=><article key={faq.id||faq.question||index} className={'overflow-hidden rounded-2xl border bg-white transition-colors '+(active===index?'border-blue-200 shadow-[0_8px_24px_rgba(15,45,80,0.06)]':'border-slate-200 shadow-sm')}><button type="button" aria-expanded={active===index} onClick={()=>setActive(current=>current===index?-1:index)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"><span className="flex items-start gap-3"><span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-extrabold text-wayz-blue">{String(index+1).padStart(2,'0')}</span><span className="text-sm font-extrabold leading-6 text-wayz-ink sm:text-base">{faq.question}</span></span><ChevronDown size={19} className={'shrink-0 text-wayz-blue transition-transform '+(active===index?'rotate-180':'')}/></button>{active===index&&<div className="border-t border-slate-100 px-5 pb-5 pt-4 pl-[4.25rem] text-sm leading-7 text-slate-600 sm:px-6 sm:pl-[4.75rem]">{faq.answer}</div>}</article>)}</div>
+   <div className="mt-8 text-center"><a href="#book" className="inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-6 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#174f91]">Still have questions? Book your auto <ArrowRight size={17}/></a></div>
+  </div>
+ </section>
+}
+
 function Events({data}){
  const events=Array.isArray(data.events)?data.events.filter(e=>e.title&&e.date):[]
  const [now,setNow]=useState(Date.now()),[active,setActive]=useState(0)
@@ -203,6 +231,6 @@ export default function HomePage(){
   </div>
  </section>
  <section id="drivers" className="bg-white py-16 sm:py-20"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="grid gap-10 rounded-[30px] bg-wayz-navy p-7 text-white sm:p-10 lg:grid-cols-[1fr_.85fr] lg:p-14"><div><span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-blue-100"><HeartHandshake size={15} className="text-wayz-yellow"/>{cms.drivers.eyebrow}</span><h2 className="mt-5 text-3xl font-bold sm:text-4xl">{cms.drivers.heading}</h2><p className="mt-4 text-sm leading-7 text-blue-100">{cms.drivers.body}</p><Link to="/driver/register" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-bold text-wayz-ink">{cms.drivers.buttonText||'Join as a driver'} <ArrowRight size={17}/></Link></div><div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8"><h3 className="text-lg font-bold">Why drive with 2WAYZ?</h3><div className="mt-5 space-y-4">{drivers.map((item,i)=><div key={i} className="flex gap-3 text-sm leading-6 text-blue-50"><CheckCircle2 className="mt-0.5 shrink-0 text-wayz-yellow" size={19}/>{item}</div>)}</div><div className="mt-7 flex items-center gap-3 rounded-xl bg-white/10 p-4"><Wallet className="text-wayz-yellow" size={25}/><p className="text-xs leading-5 text-blue-50">Clear trip details and earning information, designed around local auto drivers.</p></div></div></div></div></section>
- <section id="driver-registration" className="bg-wayz-mist py-12"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-5 sm:flex-row sm:items-center lg:px-8"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">For auto drivers in Tiruvannamalai</p><h2 className="mt-2 text-2xl font-bold text-wayz-ink sm:text-3xl">Ready to join the 2WAYZ driver network?</h2><p className="mt-2 text-sm text-slate-600">Register your interest and be part of local mobility.</p></div><Link to="/driver/register" className="inline-flex items-center gap-2 rounded-xl bg-wayz-yellow px-6 py-4 text-sm font-bold text-wayz-ink"><UserPlus size={18}/> Register as a driver</Link></div></section>
+  <FaqSection/>
  </main><div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_28px_rgba(15,45,80,0.12)] backdrop-blur-sm lg:hidden"><a href="#book" className="mx-auto flex min-h-12 max-w-7xl items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 text-sm font-extrabold text-wayz-ink shadow-sm"><Zap size={17}/> Book an auto</a></div><SiteFooter/></div>
 }

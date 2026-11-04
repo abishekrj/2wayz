@@ -91,7 +91,8 @@ async function dispatchOne(booking, now) {
       locationUpdatedAt: { gte: cutoff },
       currentLat: { not: null },
       currentLng: { not: null },
-      wallet: { is: { balance: { gte: settings.minimumBalance } } }
+      wallet: { is: { balance: { gte: settings.minimumBalance } } },
+      bookings: { none: { status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } } }
     },
     select: { id: true, currentLat: true, currentLng: true, wallet: { select: { id: true, balance: true } } }
   })
@@ -104,7 +105,19 @@ async function dispatchOne(booking, now) {
     }
   }
   eligible.sort((a, b) => a.km - b.km)
-  const selected = eligible.slice(0, MAX_DRIVERS_PER_ROUND)
+
+  const existingForBooking = eligible.length ? await prisma.driverOffer.findMany({
+    where: { bookingId: booking.id, driverId: { in: eligible.map(driver => driver.id) } },
+    select: { id: true, driverId: true, status: true }
+  }) : []
+  const existingByDriver = new Map(existingForBooking.map(offer => [offer.driverId, offer]))
+  // Do not repeatedly send to drivers who declined; expired unanswered offers can be renewed.
+  const selected = eligible
+    .filter(driver => {
+      const previous = existingByDriver.get(driver.id)
+      return !previous || previous.status === 'EXPIRED'
+    })
+    .slice(0, MAX_DRIVERS_PER_ROUND)
 
   if (!selected.length) {
     await prisma.booking.updateMany({
@@ -127,13 +140,10 @@ async function dispatchOne(booking, now) {
     return
   }
 
-  const driverIds = selected.map(driver => driver.id)
-  const existing = await prisma.driverOffer.findMany({
-    where: { bookingId: booking.id, driverId: { in: driverIds } },
-    select: { id: true, driverId: true, status: true }
-  })
-  const existingByDriver = new Map(existing.map(offer => [offer.driverId, offer]))
-  const toReopen = existing.filter(offer => offer.status === 'EXPIRED').map(offer => offer.id)
+  const toReopen = selected
+    .map(driver => existingByDriver.get(driver.id))
+    .filter(offer => offer?.status === 'EXPIRED')
+    .map(offer => offer.id)
   if (toReopen.length) {
     await prisma.driverOffer.updateMany({
       where: { id: { in: toReopen }, status: 'EXPIRED' },
@@ -147,15 +157,18 @@ async function dispatchOne(booking, now) {
       skipDuplicates: true
     })
   }
-  const offerableDrivers = selected.filter(driver => {
-    const old = existingByDriver.get(driver.id)
-    return !old || old.status === 'EXPIRED'
-  })
-  await prisma.booking.updateMany({
+  const offeredState = await prisma.booking.updateMany({
     where: { id: booking.id, status: 'REQUESTED', driverId: null },
     data: { dispatchStatus: 'OFFERED' }
   })
-  await Promise.all(offerableDrivers.map(driver => notify({
+  if (offeredState.count !== 1) {
+    await prisma.driverOffer.updateMany({
+      where: { bookingId: booking.id, status: 'OFFERED' },
+      data: { status: 'UNAVAILABLE' }
+    })
+    return
+  }
+  await Promise.all(selected.map(driver => notify({
     role: 'DRIVER',
     recipientId: driver.id,
     type: 'SCHEDULED_RIDE_OFFER',

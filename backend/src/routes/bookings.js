@@ -2,6 +2,7 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
+import { notifyBooking } from '../lib/notifications.js'
 
 const router = Router()
 function requirePassenger(req, res, next) {
@@ -87,6 +88,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
         }
       }
     }
+    await notifyBooking({ booking, type: 'BOOKING_CREATED', title: 'Ride request created', message: `Ride ${booking.reference} has been requested.`, includeDriver: false })
     res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt }, offersCreated, message: offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.' })
   } catch (error) { next(error) }
 })
@@ -109,7 +111,7 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
     const result = await prisma.$transaction(async tx => {
       const booking = await tx.booking.findFirst({
         where: { id: req.params.id, passengerId: req.passengerAuth.sub },
-        select: { id: true, status: true, driverId: true, reference: true }
+        select: { id: true, status: true, driverId: true, passengerId: true, reference: true }
       })
       if (!booking) throw Object.assign(new Error('Booking not found.'), { statusCode: 404 })
       if (!['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(booking.status)) {
@@ -125,8 +127,9 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
       if (booking.driverId) {
         await tx.driverActivity.create({ data: { driverId: booking.driverId, eventType: 'RIDE_CANCELLED', description: 'Passenger cancelled ride ' + booking.reference + '. Reason: ' + reason, bookingId: booking.id } })
       }
-      return { id: booking.id, reference: booking.reference, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : '') }
+      return { id: booking.id, reference: booking.reference, passengerId: booking.passengerId, driverId: booking.driverId, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : '') }
     })
+    await notifyBooking({ booking: result, type: 'BOOKING_CANCELLED', title: 'Ride cancelled', message: `Passenger cancelled ride ${result.reference}. Reason: ${result.cancellationReason}`, includePassenger: false })
     res.json({ booking: result, message: 'Booking cancelled. No automatic refund or cancellation fee has been applied.' })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })

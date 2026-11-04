@@ -32,7 +32,22 @@ export default function TravelDetailsPage() {
         mode: 'instant'
       }
       const result = await adminApi.createBooking(payload)
-      setBooking(current => ({ ...current, vehicle, bookingId: result.booking.id, bookingStatus: result.booking.status, reference: result.booking.reference, serverBooking: result.booking, dispatchMessage: result.message }))
+      setBooking(current => ({
+        ...current,
+        vehicle,
+        estimate: {
+          ...current.estimate,
+          km: Number(result.booking.distanceKm),
+          durationMinutes: Number(result.booking.estimatedMinutes),
+          fare: Number(result.booking.estimatedFare),
+          distanceCharge: Math.max(0, Number(result.booking.estimatedFare) - 30)
+        },
+        bookingId: result.booking.id,
+        bookingStatus: result.booking.status,
+        reference: result.booking.reference,
+        serverBooking: result.booking,
+        dispatchMessage: result.message
+      }))
       navigate('/travel-tracking')
     } catch (err) {
       if (/log in/i.test(err.message || '')) {

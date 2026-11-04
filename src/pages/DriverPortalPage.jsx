@@ -13,12 +13,30 @@ export default function DriverPortalPage() {
   const [checking, setChecking] = useState(true)
   const [form, setForm] = useState({ phone: '', password: '' })
   const [offers, setOffers] = useState([])
+  const [activeBookings, setActiveBookings] = useState([])
+  const [finalFareInputs, setFinalFareInputs] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [gpsError, setGpsError] = useState('')
   const watchId = useRef(null)
   const lastSentAt = useRef(0)
+
+  const refreshActiveBookings = useCallback(async () => {
+    try {
+      const result = await adminApi.driverActiveBookings()
+      setActiveBookings(result.bookings || [])
+    } catch (err) {
+      if (err.message && !/sign in/i.test(err.message)) setError(err.message)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!driver?.id) return
+    refreshActiveBookings()
+    const timer = window.setInterval(refreshActiveBookings, 5000)
+    return () => window.clearInterval(timer)
+  }, [driver?.id, refreshActiveBookings])
 
   const refreshOffers = useCallback(async () => {
     try { const result = await adminApi.driverOffers(); setOffers(result.offers || []) }
@@ -92,6 +110,19 @@ export default function DriverPortalPage() {
     finally { setBusy(false) }
   }
 
+  async function updateTripStatus(booking, status) {
+    setBusy(true); setError(''); setNotice('')
+    try {
+      const fare = status === 'COMPLETED' ? (finalFareInputs[booking.id] ?? String(booking.estimatedFare)) : undefined
+      const result = await adminApi.updateDriverBookingStatus(booking.id, status, fare)
+      setNotice(result.message)
+      await refreshActiveBookings()
+    } catch (err) {
+      setError(err.message || 'Could not update this trip.')
+      await refreshActiveBookings()
+    } finally { setBusy(false) }
+  }
+
   async function logout() {
     try { await adminApi.driverLogout() } catch (err) { setError(err.message || 'Could not sign out.') }
     setDriver(null); setOffers([]); setNotice(''); setError('')
@@ -118,6 +149,19 @@ export default function DriverPortalPage() {
       <div className="mt-8 flex items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold text-wayz-ink">Nearby ride offers</h2><p className="mt-1 text-sm text-slate-500">Offers refresh every 5 seconds while you are online.</p></div><button onClick={refreshOffers} className="rounded-lg p-2 text-wayz-blue hover:bg-white" aria-label="Refresh offers"><RefreshCw size={18}/></button></div>
       {!driver.isOnline && <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">Go online and share your location to receive ride offers.</div>}
       {driver.isOnline && offers.length === 0 && <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center"><CarFront className="mx-auto text-slate-400" size={32}/><p className="mt-3 font-bold text-slate-700">No ride offers right now</p><p className="mt-1 text-sm text-slate-500">Keep your status online. New nearby requests will appear here.</p></div>}
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold text-wayz-ink">Active rides</h2><p className="mt-1 text-sm text-slate-500">Update each ride as you arrive, start and finish the trip.</p></div><button onClick={refreshActiveBookings} className="rounded-lg p-2 text-wayz-blue hover:bg-white" aria-label="Refresh active rides"><RefreshCw size={18}/></button></div>
+        {activeBookings.length === 0
+          ? <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">Accepted rides will appear here.</div>
+          : <div className="mt-4 space-y-4">{activeBookings.map(item => <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">{item.reference}</span><span className="text-xs font-bold text-slate-600">{item.status.replaceAll('_', ' ')}</span></div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.pickupName}</p><p className="text-xs text-slate-500">{item.pickupAddress}</p></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.destinationName}</p><p className="text-xs text-slate-500">{item.destinationAddress}</p></div></div>
+              <p className="mt-3 text-sm font-semibold text-wayz-blue">Estimated fare: {money(item.estimatedFare)}</p>
+              {item.status === 'DRIVER_ASSIGNED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'DRIVER_ARRIVED')} className="mt-4 w-full rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink disabled:opacity-60">Mark arrived at pickup</button>}
+              {item.status === 'DRIVER_ARRIVED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'IN_PROGRESS')} className="mt-4 w-full rounded-xl bg-wayz-blue px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Start trip</button>}
+              {item.status === 'IN_PROGRESS' && <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600">FINAL FARE (₹)<input type="number" min="0" max="100000" step="1" value={finalFareInputs[item.id] ?? String(item.estimatedFare)} onChange={event => setFinalFareInputs(current => ({ ...current, [item.id]: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-wayz-blue"/></label><button disabled={busy} onClick={() => updateTripStatus(item, 'COMPLETED')} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Complete trip</button></div>}
+            </article>)}</div>}
+      </section>
       <div className="mt-4 space-y-4">{offers.map(offer => <article key={offer.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-3"><div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">Ride {offer.booking.reference}</span><p className="mt-3 text-2xl font-black text-wayz-blue">{money(offer.booking.estimatedFare)}</p><p className="mt-1 text-xs text-slate-500">{offer.booking.distanceKm.toFixed(1)} km · approx. {offer.booking.estimatedMinutes} min</p></div><span className="text-xs font-semibold text-slate-400">Auto request</span></div><div className="mt-4 space-y-3"><div className="flex gap-3"><MapPin className="mt-1 shrink-0 text-emerald-600" size={18}/><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="text-sm font-bold text-wayz-ink">{offer.booking.pickupName}</p><p className="text-xs text-slate-500">{offer.booking.pickupAddress}</p></div></div><div className="flex gap-3"><Navigation className="mt-1 shrink-0 text-rose-500" size={18}/><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="text-sm font-bold text-wayz-ink">{offer.booking.destinationName}</p><p className="text-xs text-slate-500">{offer.booking.destinationAddress}</p></div></div></div><div className="mt-5 grid grid-cols-2 gap-3"><button disabled={busy} onClick={() => actOnOffer(offer, true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60"><CheckCircle2 size={17}/> Accept ride</button><button disabled={busy} onClick={() => actOnOffer(offer, false)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 disabled:opacity-60"><XCircle size={17}/> Decline</button></div></article>)}</div>
     </>}
   </div></div></PageLayout>

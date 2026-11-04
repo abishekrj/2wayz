@@ -70,6 +70,8 @@ model Driver {
   updatedAt         DateTime      @updatedAt
   bookings          Booking[]
   offers            DriverOffer[]
+  wallet            DriverWallet?
+  walletRecharges   WalletRecharge[]
   @@index([status, isOnline, locationUpdatedAt])
 }
 
@@ -119,4 +121,58 @@ model DriverOffer {
   driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
   @@unique([bookingId, driverId])
   @@index([driverId, status, createdAt])
+}
+
+model DriverWallet {
+  id           String              @id @default(cuid())
+  driverId     String              @unique
+  balance      Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  driver       Driver              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
+
+model WalletSettings {
+  id             String   @id @default("default")
+  commissionMode String   @default("PERCENTAGE")
+  commissionValue Float   @default(0)
+  minimumBalance Int      @default(0)
+  isActive       Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+}
+
+model WalletRecharge {
+  id               String              @id @default(cuid())
+  driverId         String
+  amount           Int
+  paymentReference String
+  proofUrl         String?
+  status           String              @default("PENDING")
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  driver           Driver              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  transaction      WalletTransaction?
+  @@index([driverId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model WalletTransaction {
+  id            String          @id @default(cuid())
+  walletId      String
+  type          String
+  amount        Int
+  settledAmount Int             @default(0)
+  status        String          @default("POSTED")
+  description   String
+  bookingId     String?         @unique
+  rechargeId    String?         @unique
+  balanceAfter  Int
+  createdAt     DateTime        @default(now())
+  wallet        DriverWallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  recharge      WalletRecharge? @relation(fields: [rechargeId], references: [id], onDelete: SetNull)
+  @@index([walletId, createdAt])
+  @@index([type, status])
 }

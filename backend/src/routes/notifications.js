@@ -6,10 +6,12 @@ import { requireAdmin } from '../middleware/requireAdmin.js'
 const router = Router()
 
 function roleAuth(req, res, next) {
-  const candidates = [
-    ['twoWayzPassenger', 'PASSENGER'],
-    ['twoWayzDriver', 'DRIVER']
-  ]
+  const requestedRole = String(req.query.role || '').toUpperCase()
+  const candidates = requestedRole === 'DRIVER'
+    ? [['twoWayzDriver', 'DRIVER']]
+    : requestedRole === 'PASSENGER'
+      ? [['twoWayzPassenger', 'PASSENGER']]
+      : [['twoWayzPassenger', 'PASSENGER'], ['twoWayzDriver', 'DRIVER']]
   for (const [cookie, role] of candidates) {
     const token = req.cookies?.[cookie]
     if (!token) continue

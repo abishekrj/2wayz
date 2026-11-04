@@ -31,7 +31,7 @@ function normalizePlaces(value) {
       name,
       subtitle: typeof place.subtitle === 'string' ? place.subtitle.trim().slice(0, 120) : '',
       detail: typeof place.detail === 'string' ? place.detail.trim().slice(0, 500) : '',
-      imageUrl: typeof place.imageUrl === 'string' ? place.imageUrl.trim().slice(0, 1000) : '',
+      imageUrl: typeof (place.imageUrl || place.image) === 'string' ? (place.imageUrl || place.image).trim().slice(0, 1000) : '',
       isPublished: place.isPublished !== false,
       sortOrder: Number.isInteger(place.sortOrder) ? place.sortOrder : index
     })

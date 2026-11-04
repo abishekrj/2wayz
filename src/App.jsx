@@ -22,6 +22,7 @@ import AdminLiveDriverMapPage from './pages/AdminLiveDriverMapPage'
 import AdminDriverOperationsPage from './pages/AdminDriverOperationsPage'
 import AdminDriverReportsPage from './pages/AdminDriverReportsPage'
 import AdminCancellationsPage from './pages/AdminCancellationsPage'
+import AdminBookingsPage from './pages/AdminBookingsPage'
 import AdminNotificationsPage from './pages/AdminNotificationsPage'
 import CmsContentPage from './pages/CmsContentPage'
 import MyBookingsPage from './pages/MyBookingsPage'
@@ -55,6 +56,7 @@ function AdminRoutes() {
       <Route path="driver-operations" element={<AdminDriverOperationsPage/>}/>
       <Route path="driver-reports" element={<AdminDriverReportsPage/>}/>
       <Route path="wallet" element={<AdminWalletPage/>}/>
+      <Route path="bookings" element={<AdminBookingsPage/>}/>
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
       <Route path="places" element={<AdminPlacesPage/>}/>

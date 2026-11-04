@@ -84,6 +84,45 @@ async function calculateVerifiedRoute(origin, destination) {
   }
 }
 
+
+// Reverse-geocode GPS coordinates on the server so the browser key does not need
+// Geocoding API permission. Keep Geocoding API enabled on the server key.
+router.get('/reverse-geocode', async (req, res) => {
+  const lat = Number(req.query.lat)
+  const lng = Number(req.query.lng)
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+    return res.status(400).json({ message: 'Valid GPS coordinates are required.' })
+  }
+  const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY
+  if (!apiKey) return res.status(503).json({ message: 'Current-location lookup is not configured on the server.' })
+  try {
+    const url = new URL('https://maps.googleapis.com/maps/api/geocode/json')
+    url.searchParams.set('latlng', `${lat},${lng}`)
+    url.searchParams.set('key', apiKey)
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!response.ok) throw new Error(`Geocoding HTTP ${response.status}`)
+    const data = await response.json()
+    if (data.status !== 'OK' || !data.results?.length) {
+      console.error('Reverse geocoding failed:', data.status, data.error_message || '')
+      return res.status(502).json({ message: 'Could not identify your current address. You can edit the pickup location manually.' })
+    }
+    const result = data.results[0]
+    const name = result.address_components?.find(component =>
+      component.types.includes('premise') || component.types.includes('point_of_interest') ||
+      component.types.includes('establishment') || component.types.includes('sublocality')
+    )?.long_name || result.formatted_address
+    res.json({ place: {
+      placeId: result.place_id,
+      name,
+      address: result.formatted_address || name,
+      location: { lat, lng }
+    } })
+  } catch (error) {
+    console.error('Server reverse geocoding request failed:', error.message)
+    res.status(502).json({ message: 'Could not identify your current address. You can edit the pickup location manually.' })
+  }
+})
+
 router.post('/', requirePassenger, async (req, res, next) => {
   try {
     const { pickup, destination } = req.body || {}

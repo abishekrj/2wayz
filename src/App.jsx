@@ -9,6 +9,7 @@ import DriverPortalPage from './pages/DriverPortalPage'
 import AdminDriversPage from './pages/AdminDriversPage'
 import TravelDetailsPage from './pages/TravelDetailsPage'
 import TravelTrackingPage from './pages/TravelTrackingPage'
+import SharedTripPage from './pages/SharedTripPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminLoginPage from './pages/AdminLoginPage'
@@ -79,6 +80,7 @@ export default function App() {
       <Route path="/driver" element={<DriverPortalPage />} />
       <Route path="/travel-details" element={<TravelDetailsPage />} />
       <Route path="/travel-tracking" element={<TravelTrackingPage />} />
+      <Route path="/shared-trip/:token" element={<SharedTripPage />} />
       <Route path="/my-bookings" element={<MyBookingsPage />} />
       <Route path="*" element={<HomePage />} />
     </Routes>

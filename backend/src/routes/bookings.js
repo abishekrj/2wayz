@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
+import { ensureRideStartOtp } from '../lib/rideStartOtp.js'
 
 const router = Router()
 function requirePassenger(req, res, next) {
@@ -379,8 +380,9 @@ router.get('/:id', requirePassenger, async (req, res, next) => {
   try {
     const booking = await prisma.booking.findFirst({ where: { id: req.params.id, passengerId: req.passengerAuth.sub }, include: { driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, currentLat: true, currentLng: true, locationUpdatedAt: true, isOnline: true } } } })
     if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    const rideStartOtp = booking.status === 'DRIVER_ARRIVED' && !booking.rideStartOtpVerifiedAt ? await ensureRideStartOtp(booking.id) : null
     const locationIsFresh = booking.driver?.isOnline && booking.driver.locationUpdatedAt && Date.now() - booking.driver.locationUpdatedAt.getTime() <= 60000
-    res.json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, pickupName: booking.pickupName, pickupAddress: booking.pickupAddress, pickupLat: booking.pickupLat, pickupLng: booking.pickupLng, destinationName: booking.destinationName, destinationAddress: booking.destinationAddress, destinationLat: booking.destinationLat, destinationLng: booking.destinationLng, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, finalFare: booking.finalFare, cancelledAt: booking.cancelledAt, cancelledBy: booking.cancelledBy, cancellationReason: booking.cancellationReason, arrivedAt: booking.arrivedAt, tripStartedAt: booking.tripStartedAt, completedAt: booking.completedAt, mode: booking.mode, scheduledAt: booking.scheduledAt, driver: booking.driver ? { name: booking.driver.name, phone: booking.driver.phone, vehicleNumber: booking.driver.vehicleNumber, currentLat: locationIsFresh ? booking.driver.currentLat : null, currentLng: locationIsFresh ? booking.driver.currentLng : null, locationUpdatedAt: booking.driver.locationUpdatedAt, locationIsFresh: Boolean(locationIsFresh), isOnline: booking.driver.isOnline } : null } })
+    res.json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, pickupName: booking.pickupName, pickupAddress: booking.pickupAddress, pickupLat: booking.pickupLat, pickupLng: booking.pickupLng, destinationName: booking.destinationName, destinationAddress: booking.destinationAddress, destinationLat: booking.destinationLat, destinationLng: booking.destinationLng, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, finalFare: booking.finalFare, cancelledAt: booking.cancelledAt, cancelledBy: booking.cancelledBy, cancellationReason: booking.cancellationReason, rideStartOtp, arrivedAt: booking.arrivedAt, tripStartedAt: booking.tripStartedAt, completedAt: booking.completedAt, mode: booking.mode, scheduledAt: booking.scheduledAt, driver: booking.driver ? { name: booking.driver.name, phone: booking.driver.phone, vehicleNumber: booking.driver.vehicleNumber, currentLat: locationIsFresh ? booking.driver.currentLat : null, currentLng: locationIsFresh ? booking.driver.currentLng : null, locationUpdatedAt: booking.driver.locationUpdatedAt, locationIsFresh: Boolean(locationIsFresh), isOnline: booking.driver.isOnline } : null } })
   } catch (error) { next(error) }
 })
 

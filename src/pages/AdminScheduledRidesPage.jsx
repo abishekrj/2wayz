@@ -49,6 +49,6 @@ export default function AdminScheduledRidesPage() {
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-600"><span className="inline-flex items-center gap-1"><CalendarClock size={14}/>Pickup: {dateTime(item.scheduledAt)}</span><span>Estimated fare: {money(item.estimatedFare)}</span><span>Dispatch attempts: {item.dispatchAttemptCount}</span><span>Offers created: {item._count?.offers || 0}</span></div>
         {item.driver ? <p className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"><CheckCircle2 size={16}/>Assigned: {item.driver.name} · {item.driver.phone} · {item.driver.vehicleNumber}</p> : ['NO_DRIVERS', 'MISSED'].includes(item.dispatchStatus) ? <p className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800"><AlertTriangle size={16}/>No driver assigned. Please contact the passenger and arrange a driver.</p> : <p className="mt-3 flex items-center gap-2 text-xs text-slate-500"><Clock3 size={14}/>The dispatch worker will continue checking eligible drivers.</p>}
       </article>)}</div>}
-    <p className="mt-5 text-xs text-slate-400">This page refreshes every 15 seconds. Dispatch starts 15 minutes before pickup and retries every 60 seconds while the booking remains unassigned.</p>
+    <p className="mt-5 text-xs text-slate-400">This page refreshes every 15 seconds. Dispatch starts before pickup and retries automatically using the backend scheduled-dispatch settings.</p>
   </div>
 }

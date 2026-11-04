@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight } from 'lucide-react'
 import BookingPanel from '../components/BookingPanel'
 import { SiteHeader, SiteFooter } from '../components/SiteChrome'
@@ -69,7 +69,8 @@ export default function HomePage(){
  const cms=useHomepageSections(),[destination,setDestination]=useState(null)
  const benefits=cms.benefits.items||[]
  const steps=cms['how-it-works'].steps||[]
- const places=cms['nearby-places'].places||[]
+ const places=(cms['nearby-places'].places||[]).filter(place=>typeof place==='string'||place.isPublished!==false)
+ const featuredPlaces=places.slice(0,4)
  const drivers=cms.drivers.benefits||[]
  return <div className="min-h-screen overflow-x-clip bg-white"><SiteHeader/><main>
  <Hero data={cms['hero-banner']} destination={destination}/>
@@ -86,10 +87,10 @@ export default function HomePage(){
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-wayz-ink sm:text-4xl">{cms['nearby-places'].heading}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">Discover well-loved temples, peaceful retreats and special places around our town.</p>
       </div>
-      <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm"><MapPin size={15} className="text-wayz-blue"/>{places.length} places to explore</div>
+      <Link to="/places" className="inline-flex w-fit items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#174f91]">View all places <ArrowRight size={16}/></Link>
     </div>
     <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {places.map((entry,i)=>{
+      {featuredPlaces.map((entry,i)=>{
         const place=typeof entry==='string'?{name:entry}:entry;
         const PlaceIcon=[Landmark,Mountain,Leaf,Sun,Sparkles,Landmark,Leaf,Mountain][i%8];
         return <button key={place.name||i} onClick={()=>{setDestination({name:place.name,searchText:place.name+', Tiruvannamalai, Tamil Nadu, India',address:place.name+', Tiruvannamalai, Tamil Nadu, India',placeId:null,location:null});document.getElementById('book')?.scrollIntoView({behavior:'smooth',block:'center'})}} className="group relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white text-left shadow-[0_8px_28px_rgba(15,45,80,0.055)] transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(15,45,80,0.13)]">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight, ChevronDown, HelpCircle } from 'lucide-react'
 import BookingPanel from '../components/BookingPanel'
 import { SiteHeader, SiteFooter } from '../components/SiteChrome'
 

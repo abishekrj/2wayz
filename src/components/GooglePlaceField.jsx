@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle, LocateFixed } from 'lucide-react'
+import { MapPin, LoaderCircle } from 'lucide-react'
 
 let mapsPromise
 
@@ -26,6 +26,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   const inputRef = useRef(null)
   const placesRef = useRef(null)
   const requestRef = useRef(0)
+  const autoLocationRequested = useRef(false)
   const [editing, setEditing] = useState(!value)
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -129,6 +130,12 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 })
   }
 
+  useEffect(() => {
+    if (!enableCurrentLocation || loading || value || autoLocationRequested.current) return
+    autoLocationRequested.current = true
+    useCurrentLocation()
+  }, [enableCurrentLocation, loading, value])
+
   function startEditing() {
     setError('')
     setQuery(selectedName)
@@ -188,18 +195,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
         )}
         {(loading || searching) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
       </div>
-
-      {enableCurrentLocation && (
-        <button
-          type="button"
-          onClick={useCurrentLocation}
-          disabled={locating || loading}
-          className="mt-2 inline-flex items-center gap-2 rounded-lg px-1 py-1 text-xs font-bold text-wayz-blue transition hover:text-wayz-navy disabled:cursor-wait disabled:opacity-60"
-        >
-          {locating ? <LoaderCircle size={15} className="animate-spin" /> : <LocateFixed size={15} />}
-          {locating ? 'Finding your location…' : 'Use my current location'}
-        </button>
-      )}
 
       {editing && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-[1000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">

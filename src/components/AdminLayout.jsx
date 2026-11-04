@@ -22,9 +22,8 @@ const submenuClass = ({ isActive }) =>
   `flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium transition ${isActive ? 'bg-white/15 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`
 
 export default function AdminLayout({ admin }) {
-  const [homeOpen, setHomeOpen] = useState(true)
+  const [openSubmenu, setOpenSubmenu] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [cmsOpen, setCmsOpen] = useState(true)
   const [cmsPages, setCmsPages] = useState(defaultCmsPages)
   const navigate = useNavigate()
 
@@ -65,11 +64,11 @@ export default function AdminLayout({ admin }) {
         </NavLink>
 
         <section>
-          <button type="button" onClick={() => setHomeOpen(value => !value)} aria-expanded={homeOpen} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10">
+          <button type="button" onClick={() => setOpenSubmenu(value => value === 'home' ? null : 'home')} aria-expanded={openSubmenu === 'home'} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10">
             <span className="flex items-center gap-3"><Home size={18} />Home Page</span>
-            {homeOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+            {openSubmenu === 'home' ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
           </button>
-          {homeOpen && (
+          {openSubmenu === 'home' && (
             <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
               {homeSections.map(([slug, title]) => (
                 <NavLink key={slug} to={`/admin/home-page/${slug}`} onClick={() => setMobileOpen(false)} className={submenuClass}>
@@ -81,11 +80,11 @@ export default function AdminLayout({ admin }) {
         </section>
 
         <section>
-          <button type="button" onClick={() => setCmsOpen(value => !value)} aria-expanded={cmsOpen} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10">
+          <button type="button" onClick={() => setOpenSubmenu(value => value === 'cms' ? null : 'cms')} aria-expanded={openSubmenu === 'cms'} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-blue-100 hover:bg-white/10">
             <span className="flex items-center gap-3"><Files size={18} />CMS Pages</span>
-            {cmsOpen ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
+            {openSubmenu === 'cms' ? <ChevronDown size={17} /> : <ChevronRight size={17} />}
           </button>
-          {cmsOpen && (
+          {openSubmenu === 'cms' && (
             <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
               {cmsPages.map(page => (
                 <NavLink key={page.slug} to={`/admin/cms-pages/${page.slug}`} onClick={() => setMobileOpen(false)} className={submenuClass}>

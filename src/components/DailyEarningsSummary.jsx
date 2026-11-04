@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { IndianRupee, RefreshCw, TrendingUp, CarFront, Wallet } from 'lucide-react'
+import { RefreshCw, TrendingUp, CarFront } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')

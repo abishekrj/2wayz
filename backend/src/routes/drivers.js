@@ -314,10 +314,15 @@ router.get('/admin/operations', requireAdmin, async (_req, res, next) => {
           activeSince = null
         }
       }
-      if (activeSince) {
-        totalMs += now - activeSince
+        if (activeSince) {
+        // Driver GPS is sent about every 12 seconds. Stop counting an abandoned
+        // online session after 3 minutes without a location heartbeat.
+        const heartbeatEnd = driver.locationUpdatedAt ? new Date(driver.locationUpdatedAt.getTime() + 180000) : activeSince
+        const sessionEnd = driver.isOnline && heartbeatEnd < now ? heartbeatEnd : now
+        const safeEnd = sessionEnd > activeSince ? sessionEnd : activeSince
+        totalMs += safeEnd - activeSince
         const overlap = activeSince > startOfDay ? activeSince : startOfDay
-        if (now > overlap) todayMs += now - overlap
+        if (safeEnd > overlap) todayMs += safeEnd - overlap
       }
       const age = driver.locationUpdatedAt ? Math.max(0, Math.floor((now - driver.locationUpdatedAt) / 1000)) : null
       const locationHealth = age == null ? 'NO_LOCATION' : age <= 60 ? 'HEALTHY' : age <= 180 ? 'DELAYED' : 'STALE'
@@ -351,7 +356,10 @@ router.patch('/admin/:id/status', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.body?.status || '').toUpperCase()
     if (!['APPROVED', 'REJECTED', 'PENDING'].includes(status)) return res.status(400).json({ message: 'Invalid driver status.' })
+    const existing = await prisma.driver.findUnique({ where: { id: req.params.id }, select: { id: true, isOnline: true } })
+    if (!existing) return res.status(404).json({ message: 'Driver not found.' })
     const driver = await prisma.driver.update({ where: { id: req.params.id }, data: { status, isOnline: false }, select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true, isOnline: true } })
+    if (existing.isOnline) await prisma.driverActivity.create({ data: { driverId: driver.id, eventType: 'OFFLINE', description: 'Driver was taken offline by Super Admin.' } })
     res.json({ driver, message: 'Driver status updated.' })
   } catch (error) { if (error.code === 'P2025') return res.status(404).json({ message: 'Driver not found.' }); next(error) }
 })

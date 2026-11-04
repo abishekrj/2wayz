@@ -76,6 +76,9 @@ export const adminApi = {
   driverNotifications: () => request('/notifications/me?role=DRIVER'),
   markDriverNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read?role=DRIVER`, { method: 'PATCH' }),
   markAllDriverNotificationsRead: () => request('/notifications/me/read-all?role=DRIVER', { method: 'POST' }),
+  triggerSos: (data) => request('/sos/trigger', { method: 'POST', body: JSON.stringify(data) }),
+  adminSosAlerts: () => request('/sos/admin'),
+  updateSosAlert: (id, data) => request('/sos/admin/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify(data) }),
   adminNotifications: () => request('/notifications/admin'),
   markAdminNotificationRead: (id) => request(`/notifications/admin/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
   markAllAdminNotificationsRead: () => request('/notifications/admin/read-all', { method: 'POST' })

@@ -366,6 +366,44 @@ router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+router.get('/admin/list', requireAdmin, async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
+    const pageSize = 50
+    const search = String(req.query.search || '').trim().slice(0, 100)
+    const allowedStatuses = new Set(['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+    const status = allowedStatuses.has(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : ''
+    const where = {
+      ...(status ? { status } : {}),
+      ...(search ? { OR: [
+        { reference: { contains: search, mode: 'insensitive' } },
+        { pickupName: { contains: search, mode: 'insensitive' } },
+        { destinationName: { contains: search, mode: 'insensitive' } },
+        { passenger: { name: { contains: search, mode: 'insensitive' } } },
+        { passenger: { phone: { contains: search } } },
+        { driver: { is: { name: { contains: search, mode: 'insensitive' } } } },
+        { driver: { is: { phone: { contains: search } } } }
+      ] } : {})
+    }
+    const [total, bookings] = await Promise.all([
+      prisma.booking.count({ where }),
+      prisma.booking.findMany({
+        where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * pageSize, take: pageSize,
+        select: {
+          id: true, reference: true, status: true, pickupName: true, pickupAddress: true,
+          destinationName: true, destinationAddress: true, distanceKm: true, estimatedMinutes: true,
+          estimatedFare: true, finalFare: true, mode: true, requestedAt: true, acceptedAt: true,
+          arrivedAt: true, tripStartedAt: true, completedAt: true, cancelledAt: true,
+          passenger: { select: { name: true, phone: true } },
+          driver: { select: { name: true, phone: true, vehicleNumber: true } },
+          _count: { select: { offers: true } }
+        }
+      })
+    ])
+    res.json({ bookings, pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) } })
+  } catch (error) { next(error) }
+})
+
 router.get('/active', requirePassenger, async (req, res, next) => {
   try {
     const booking = await prisma.booking.findFirst({

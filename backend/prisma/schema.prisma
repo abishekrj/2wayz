@@ -188,6 +188,20 @@ model WalletTransaction {
 }
 
 
+model Notification {
+  id          String   @id @default(cuid())
+  recipientRole String
+  recipientId String?
+  type        String
+  title       String
+  message     String
+  bookingId   String?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  @@index([recipientRole, recipientId, readAt, createdAt])
+  @@index([type, createdAt])
+}
+
 model DriverActivity {
   id          String   @id @default(cuid())
   driverId    String

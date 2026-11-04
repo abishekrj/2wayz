@@ -219,7 +219,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
         if (settings?.isActive) {
           commission = settings.commissionMode === 'PERCENTAGE'
             ? Math.round(finalFare * settings.commissionValue / 100)
-            : Math.round(settings.commissionValue)
+            : Math.min(finalFare, Math.round(settings.commissionValue))
           if (commission > 0) {
             const wallet = await tx.driverWallet.upsert({ where: { driverId: req.driverAuth.sub }, create: { driverId: req.driverAuth.sub }, update: {} })
             const paid = Math.min(wallet.balance, commission)
@@ -229,7 +229,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
               walletId: wallet.id, type: 'COMMISSION', amount: commission, settledAmount: paid,
               commissionMode: settings.commissionMode, commissionValue: settings.commissionValue,
               status: paid >= commission ? 'POSTED' : 'DUE',
-              description: settings.commissionMode === 'PERCENTAGE' ? `Ride commission (${settings.commissionValue}% of ₹${finalFare})` : `Fixed ride commission (₹${settings.commissionValue})`,
+              description: settings.commissionMode === 'PERCENTAGE' ? `Ride commission (${settings.commissionValue}% of ₹${finalFare})` : `Fixed ride commission (configured ₹${settings.commissionValue}; applied ₹${commission})`,
               bookingId: booking.id, balanceAfter
             } })
           } else {

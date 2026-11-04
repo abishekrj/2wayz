@@ -5,6 +5,7 @@ import { rateLimit } from 'express-rate-limit'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
+import { createRideStartOtp, ensureRideStartOtp, hashRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -250,7 +251,28 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
       if (!Number.isInteger(finalFare) || finalFare < 0 || finalFare > 100000) return res.status(400).json({ message: 'Enter a valid final fare between ₹0 and ₹1,00,000.' })
     }
     const data = { status: nextStatus, ...transition.timestamp }
+    if (nextStatus === 'DRIVER_ARRIVED') {
+      const otp = createRideStartOtp()
+      data.rideStartOtpHash = hashRideStartOtp(otp)
+      data.rideStartOtpEncrypted = otp.encrypted
+      data.rideStartOtpAttempts = 0
+      data.rideStartOtpVerifiedAt = null
+    }
     if (nextStatus === 'COMPLETED') data.finalFare = finalFare
+    if (nextStatus === 'IN_PROGRESS') {
+      const submittedOtp = String(req.body?.otp || '').trim()
+      if (!/^\\d{4}$/.test(submittedOtp)) return res.status(400).json({ message: 'Enter the 4-digit OTP shared by the passenger before starting this ride.' })
+      const current = await prisma.booking.findUnique({ where: { id: booking.id }, select: { rideStartOtpHash: true, rideStartOtpAttempts: true, rideStartOtpVerifiedAt: true } })
+      if (current?.rideStartOtpVerifiedAt) return res.status(409).json({ message: 'This ride has already been verified. Refresh your active rides.' })
+      if (!current?.rideStartOtpHash) return res.status(409).json({ message: 'Ride OTP is not available yet. Ask the passenger to refresh their booking screen.' })
+      if ((current.rideStartOtpAttempts || 0) >= 5) return res.status(429).json({ message: 'Too many incorrect OTP attempts. Please contact 2WAYZ support.' })
+      if (!verifyRideStartOtp(submittedOtp, current.rideStartOtpHash)) {
+        await prisma.booking.updateMany({ where: { id: booking.id, status: 'DRIVER_ARRIVED', rideStartOtpVerifiedAt: null }, data: { rideStartOtpAttempts: { increment: 1 } } })
+        const attemptsLeft = Math.max(0, 4 - (current.rideStartOtpAttempts || 0))
+        return res.status(400).json({ message: attemptsLeft > 0 ? `Incorrect OTP. ${attemptsLeft} attempt(s) remaining.` : 'Incorrect OTP. Ride start is locked after 5 failed attempts; contact 2WAYZ support.' })
+      }
+      data.rideStartOtpVerifiedAt = new Date()
+    }
     if (nextStatus === 'COMPLETED') {
       const outcome = await prisma.$transaction(async tx => {
         const settings = await tx.walletSettings.findUnique({ where: { id: 'default' } })
@@ -286,17 +308,17 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
       await notifyBooking({ booking, type: 'TRIP_COMPLETED', title: 'Trip completed', message: `You completed ride ${booking.reference}.`, includePassenger: false, includeAdmin: false })
       return res.json({ message: 'Trip completed. Wallet commission processed.', status: nextStatus, finalFare, commissionDeducted: outcome.commission, walletBalance: outcome.balanceAfter })
     }
-    const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
+    const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from, ...(nextStatus === 'IN_PROGRESS' ? { rideStartOtpVerifiedAt: null } : {}) }, data })
     if (updated.count !== 1) return res.status(409).json({ message: 'This ride was updated elsewhere. Refresh your active rides.' })
     await prisma.driverActivity.create({ data: {
       driverId: req.driverAuth.sub,
       eventType: nextStatus === 'DRIVER_ARRIVED' ? 'DRIVER_ARRIVED' : 'TRIP_STARTED',
-      description: nextStatus === 'DRIVER_ARRIVED' ? 'Driver arrived at the pickup location.' : 'Trip started.',
+      description: nextStatus === 'DRIVER_ARRIVED' ? 'Driver arrived at the pickup location; ride-start OTP generated.' : 'Trip started after passenger OTP verification.',
       bookingId: booking.id
     } })
     await notifyBooking({ booking, type: nextStatus, title: nextStatus === 'DRIVER_ARRIVED' ? 'Driver has arrived' : 'Trip started', message: nextStatus === 'DRIVER_ARRIVED' ? `Your driver has arrived for ride ${booking.reference}.` : `Ride ${booking.reference} has started.`, includeDriver: false })
     await notifyBooking({ booking, type: nextStatus, title: nextStatus === 'DRIVER_ARRIVED' ? 'Marked as arrived' : 'Trip started', message: `Ride ${booking.reference} status updated to ${nextStatus.replaceAll('_', ' ').toLowerCase()}.`, includePassenger: false, includeAdmin: false })
-    res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : 'Trip started.', status: nextStatus, finalFare: null })
+    res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived. Ask them for the ride-start OTP.' : 'OTP verified. Trip started.', status: nextStatus, finalFare: null })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
 

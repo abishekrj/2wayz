@@ -24,5 +24,19 @@ export const adminApi = {
   registerUser: (name, phone, password) => request('/users/register', { method: 'POST', body: JSON.stringify({ name, phone, password }) }),
   passengerLogin: (phone, password) => request('/users/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
   passengerMe: () => request('/users/me'),
-  passengerLogout: () => request('/users/logout', { method: 'POST' })
+  passengerLogout: () => request('/users/logout', { method: 'POST' }),
+  registerDriver: (data) => request('/drivers/register', { method: 'POST', body: JSON.stringify(data) }),
+  driverLogin: (phone, password) => request('/drivers/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
+  driverMe: () => request('/drivers/me'),
+  driverLogout: () => request('/drivers/logout', { method: 'POST' }),
+  driverAvailability: (online) => request('/drivers/availability', { method: 'POST', body: JSON.stringify({ online }) }),
+  driverLocation: (lat, lng) => request('/drivers/location', { method: 'POST', body: JSON.stringify({ lat, lng }) }),
+  driverOffers: () => request('/drivers/offers'),
+  acceptDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/accept`, { method: 'POST' }),
+  declineDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/decline`, { method: 'POST' }),
+  adminDrivers: (status = '') => request(`/drivers/admin${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  updateDriverStatus: (id, status) => request(`/drivers/admin/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+  booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),
+  passengerBookings: () => request('/bookings')
 }

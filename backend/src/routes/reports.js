@@ -18,6 +18,14 @@ function indiaDateText(date) {
   return part('year') + '-' + part('month') + '-' + part('day')
 }
 
+function indiaDayRange(dateText) {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateText)) return null
+  const [year, month, day] = dateText.split('-').map(Number)
+  const start = new Date(Date.UTC(year, month - 1, day) - 330 * 60 * 1000)
+  if (indiaDateText(start) !== dateText) return null
+  return { gte: start, lt: new Date(start.getTime() + 24 * 60 * 60 * 1000) }
+}
+
 function sum(items, selector) {
   return items.reduce((total, item) => total + Number(selector(item) || 0), 0)
 }

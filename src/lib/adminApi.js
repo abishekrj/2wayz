@@ -37,6 +37,7 @@ export const adminApi = {
   acceptDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/accept`, { method: 'POST' }),
   declineDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/decline`, { method: 'POST' }),
   adminDrivers: (status = '') => request(`/drivers/admin${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  liveDrivers: () => request('/drivers/admin/live'),
   updateDriverStatus: (id, status) => request(`/drivers/admin/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   walletMe: () => request('/wallet/me'),
   submitWalletRecharge: async (form) => { const response = await fetch(`${API_BASE}/wallet/recharges`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Recharge request failed.'); return data },

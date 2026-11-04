@@ -15,7 +15,9 @@ const defaultCmsPages = [
   { slug: 'about', navLabel: 'About' },
   { slug: 'how-it-works', navLabel: 'How it works' },
   { slug: 'drivers', navLabel: 'For drivers' },
-  { slug: 'contact', navLabel: 'Contact' }
+  { slug: 'contact', navLabel: 'Contact' },
+  { slug: 'terms-and-conditions', navLabel: 'Terms and Conditions' },
+  { slug: 'privacy-policy', navLabel: 'Privacy Policy' }
 ]
 
 const submenuClass = ({ isActive }) =>

@@ -28,6 +28,7 @@ model HomePageSection {
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
 }
+
 model CmsPage {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -42,11 +43,77 @@ model CmsPage {
 }
 
 model PassengerUser {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  phone        String   @unique
+  phone        String    @unique
   passwordHash String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  bookings     Booking[]
+}
+
+model Driver {
+  id                String        @id @default(cuid())
+  name              String
+  phone             String        @unique
+  passwordHash      String
+  vehicleNumber     String        @unique
+  licenceNumber     String
+  serviceArea       String        @default("Tiruvannamalai")
+  status            String        @default("PENDING")
+  isOnline          Boolean       @default(false)
+  currentLat        Float?
+  currentLng        Float?
+  locationUpdatedAt DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  bookings          Booking[]
+  offers            DriverOffer[]
+  @@index([status, isOnline, locationUpdatedAt])
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  reference          String        @unique
+  passengerId        String
+  driverId           String?
+  pickupName         String
+  pickupAddress      String
+  pickupLat          Float
+  pickupLng          Float
+  destinationName    String
+  destinationAddress String
+  destinationLat     Float
+  destinationLng     Float
+  distanceKm         Float
+  estimatedMinutes   Int
+  estimatedFare      Int
+  mode               String        @default("instant")
+  scheduledAt        DateTime?
+  status             String        @default("REQUESTED")
+  requestedAt        DateTime      @default(now())
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  passenger          PassengerUser @relation(fields: [passengerId], references: [id])
+  driver             Driver?       @relation(fields: [driverId], references: [id])
+  offers             DriverOffer[]
+  @@index([passengerId, createdAt])
+  @@index([driverId, status])
+  @@index([status, requestedAt])
+}
+
+model DriverOffer {
+  id        String   @id @default(cuid())
+  bookingId String
+  driverId  String
+  status    String   @default("OFFERED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  @@unique([bookingId, driverId])
+  @@index([driverId, status, createdAt])
 }

@@ -70,6 +70,8 @@ export const adminApi = {
   cancelDriverBooking: (id, reason, details = '') => request(`/drivers/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
   passengerBookings: () => request('/bookings'),
   adminBookings: (params = {}) => { const query = new URLSearchParams(params).toString(); return request(`/bookings/admin/list${query ? `?${query}` : ''}`) },
+  eligibleAssignmentDrivers: (bookingId) => request(`/bookings/admin/${encodeURIComponent(bookingId)}/eligible-drivers`),
+  manuallyAssignDriver: (bookingId, driverId) => request(`/bookings/admin/${encodeURIComponent(bookingId)}/assign`, { method: 'POST', body: JSON.stringify({ driverId }) }),
   passengerNotifications: () => request('/notifications/me?role=PASSENGER'),
   markPassengerNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read?role=PASSENGER`, { method: 'PATCH' }),
   markAllPassengerNotificationsRead: () => request('/notifications/me/read-all?role=PASSENGER', { method: 'POST' }),

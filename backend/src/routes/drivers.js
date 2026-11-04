@@ -247,6 +247,35 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
 
+router.get('/admin/live', requireAdmin, async (_req, res, next) => {
+  try {
+    const now = Date.now()
+    const drivers = await prisma.driver.findMany({
+      where: { status: 'APPROVED', isOnline: true },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true,
+        currentLat: true, currentLng: true, locationUpdatedAt: true,
+        bookings: {
+          where: { status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+          orderBy: { acceptedAt: 'desc' },
+          take: 1,
+          select: { reference: true, status: true, pickupName: true, destinationName: true }
+        }
+      }
+    })
+    res.json({
+      drivers: drivers.map(driver => ({
+        ...driver,
+        isOnTrip: driver.bookings.length > 0,
+        activeBooking: driver.bookings[0] || null,
+        locationIsFresh: Boolean(driver.locationUpdatedAt && now - driver.locationUpdatedAt.getTime() <= 60000)
+      })),
+      serverTime: new Date(now).toISOString()
+    })
+  } catch (error) { next(error) }
+})
+
 router.get('/admin', requireAdmin, async (req, res, next) => {
   try {
     const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, CarFront, CheckCircle2, Clock3, MapPin, Route as RouteIcon, ShieldCheck, Users, RefreshCw, LoaderCircle, Search } from 'lucide-react'
+import { ArrowLeft, CarFront, CheckCircle2, Clock3, MapPin, Route as RouteIcon, ShieldCheck, Users, RefreshCw, LoaderCircle, Search, Share2, Copy, XCircle } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import RouteMap from '../components/RouteMap'
 import { useBooking } from '../context/BookingContext'
@@ -28,6 +28,9 @@ export default function TravelTrackingPage() {
   const [cancelling, setCancelling] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const [retryMessage, setRetryMessage] = useState('')
+  const [shareUrl, setShareUrl] = useState('')
+  const [shareBusy, setShareBusy] = useState(false)
+  const [shareMessage, setShareMessage] = useState('')
 
   useEffect(() => {
     if (!booking?.bookingId) return
@@ -83,6 +86,39 @@ export default function TravelTrackingPage() {
     }
   }
 
+  async function createTripShareLink() {
+    if (!booking?.bookingId || shareBusy) return
+    setShareBusy(true); setShareMessage('')
+    try {
+      const result = await adminApi.createTripShareLink(booking.bookingId)
+      const url = `${window.location.origin}/shared-trip/${result.token}`
+      setShareUrl(url)
+      setShareMessage('Secure link created. Anyone with this link can view the active trip.')
+    } catch (error) { setShareMessage(error.message || 'Unable to create a sharing link.') }
+    finally { setShareBusy(false) }
+  }
+
+  async function copyTripShareLink() {
+    if (!shareUrl) return
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setShareMessage('Trip link copied. You can now send it to family or friends.')
+    } catch {
+      window.prompt('Copy this trip sharing link:', shareUrl)
+    }
+  }
+
+  async function stopTripSharing() {
+    if (!booking?.bookingId || !window.confirm('Stop sharing this trip? Anyone with the existing link will lose access.')) return
+    setShareBusy(true); setShareMessage('')
+    try {
+      await adminApi.revokeTripShareLink(booking.bookingId)
+      setShareUrl('')
+      setShareMessage('Trip sharing has been stopped. The old link no longer works.')
+    } catch (error) { setShareMessage(error.message || 'Unable to stop trip sharing.') }
+    finally { setShareBusy(false) }
+  }
+
   async function refreshNow() {
     if (!booking.bookingId) return
     setRefreshing(true)
@@ -101,6 +137,14 @@ export default function TravelTrackingPage() {
     </div>
     {trackingError && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{trackingError}</p>}
     <div className="mb-5"><NotificationCenter role="PASSENGER"/></div>
+    {['DRIVER_ASSIGNED','DRIVER_ARRIVED','IN_PROGRESS'].includes(status) && <section className="mb-5 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-wayz-blue"><Share2 size={22}/></span><div><h2 className="font-extrabold text-wayz-ink">Share live trip with family</h2><p className="mt-1 text-xs text-slate-500">Let someone you trust follow your ride in real time.</p></div></div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">Create a private link to share your journey, ride status and the driver's latest available location. The link expires after 24 hours and stops working when the ride ends. Anyone with the link can view it, so share it only with people you trust.</p>
+      <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={createTripShareLink} disabled={shareBusy} className="inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{shareBusy ? <LoaderCircle size={16} className="animate-spin"/> : <Share2 size={16}/>} {shareUrl ? 'Generate a new link' : 'Create share link'}</button>{shareUrl && <button type="button" onClick={stopTripSharing} disabled={shareBusy} className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-700 disabled:opacity-60"><XCircle size={16}/> Stop sharing</button>}</div>
+      {shareUrl && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><input readOnly value={shareUrl} aria-label="Trip sharing link" className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600"/><button type="button" onClick={copyTripShareLink} className="inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink"><Copy size={16}/> Copy link</button></div>}
+      {shareMessage && <p role="status" className="mt-3 text-xs font-semibold text-wayz-blue">{shareMessage}</p>}
+    </section>}
+
     {['CANCELLED','CANCELED'].includes(status) ? <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><strong>This ride has been cancelled.</strong> You can now request another auto whenever you are ready.</div> : status !== 'COMPLETED' && <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900"><strong>One ride at a time:</strong> another booking will be available after this ride is completed or cancelled.</div>}
     <section className="mb-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Ride progress</p><h2 className="mt-1 text-base font-extrabold text-wayz-ink">{status === 'COMPLETED' ? 'You have reached your destination' : statusLabels[status] || 'Your ride status'}</h2></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Live updates · 5 sec</span></div>

@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import HomePage from './pages/HomePage'
+import PlacesPage from './pages/PlacesPage'
+import AdminPlacesPage from './pages/AdminPlacesPage'
 import DriverRegistrationPage from './pages/DriverRegistrationPage'
 import DriverPortalPage from './pages/DriverPortalPage'
 import AdminDriversPage from './pages/AdminDriversPage'
@@ -53,6 +55,7 @@ function AdminRoutes() {
       <Route path="wallet" element={<AdminWalletPage/>}/>
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
+      <Route path="places" element={<AdminPlacesPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>
@@ -65,6 +68,7 @@ export default function App() {
     <Routes>
       <Route path="/admin/*" element={<AdminRoutes/>}/>
       <Route path="/" element={<HomePage />} />
+      <Route path="/places" element={<PlacesPage />} />
       <Route path="/:slug" element={<CmsContentPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

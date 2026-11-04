@@ -14,6 +14,7 @@ import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
 import AdminCmsPageEditor from './pages/AdminCmsPageEditor'
 import AdminRegisteredUsersPage from './pages/AdminRegisteredUsersPage'
 import CmsContentPage from './pages/CmsContentPage'
+import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
 import { adminApi } from './lib/adminApi'
 import { BookingProvider } from './context/BookingContext'
@@ -60,6 +61,7 @@ export default function App() {
       <Route path="/driver" element={<DriverPortalPage />} />
       <Route path="/travel-details" element={<TravelDetailsPage />} />
       <Route path="/travel-tracking" element={<TravelTrackingPage />} />
+      <Route path="/my-bookings" element={<MyBookingsPage />} />
       <Route path="*" element={<HomePage />} />
     </Routes>
   </BrowserRouter></BookingProvider>

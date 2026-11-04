@@ -402,9 +402,10 @@ router.get('/', requirePassenger, async (req, res, next) => {
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, createdAt: true }
+      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, rideStartOtpVerifiedAt: true, createdAt: true }
     })
-    res.json({ bookings })
+    const passengerBookings = await Promise.all(bookings.map(async item => ({ ...item, rideStartOtp: item.status === 'DRIVER_ARRIVED' && !item.rideStartOtpVerifiedAt ? await ensureRideStartOtp(item.id) : null })))
+    res.json({ bookings: passengerBookings })
   } catch (error) { next(error) }
 })
 

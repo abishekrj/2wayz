@@ -124,8 +124,6 @@ export default function BookingPanel({ initialDestination = null }) {
     }
   }
 
-  if (checkingActiveRide) return <div id="book" className="rounded-[24px] border border-slate-100 bg-white p-8 text-center shadow-lg"><LoaderCircle className="mx-auto animate-spin text-wayz-blue" size={24}/><p className="mt-3 text-sm text-slate-500">Checking your current rides…</p></div>
-
   if (activeRide) return (
     <div id="book" className="relative z-30 w-full overflow-hidden rounded-[24px] border border-amber-200 bg-white text-left shadow-[0_18px_55px_rgba(3,25,58,.18)]">
       <div className="bg-wayz-navy px-5 py-5 text-white sm:px-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Your current ride</p><h2 className="mt-1 text-xl font-extrabold sm:text-2xl">You already have an active booking</h2><p className="mt-2 text-sm text-white/75">To keep driver assignments clear, finish or cancel this ride before booking another auto.</p></div>

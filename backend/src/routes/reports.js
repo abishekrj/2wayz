@@ -104,8 +104,12 @@ router.get('/', requireAdmin, async (req, res, next) => {
 
     const requestWhere = { requestedAt: dateRange, ...(driverId ? { driverId } : {}) }
     const totalRequests = await prisma.booking.count({ where: requestWhere })
+    const cancelledBookings = await prisma.booking.findMany({
+      where: { status: { in: cancelledStatuses }, updatedAt: dateRange, ...(driverId ? { driverId } : {}) },
+      select: { updatedAt: true }
+    })
     const totalCompleted = sum(rows, row => row.completedRides)
-    const totalCancelled = sum(rows, row => row.cancelledRides)
+    const totalCancelled = cancelledBookings.length
     const totalFares = sum(rows, row => row.finalFares)
     const totalNetEarnings = sum(rows, row => row.netEarnings)
     const totalCommission = sum(rows, row => row.commissionAmount)

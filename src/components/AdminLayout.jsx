@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Home, CarFront, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet } from 'lucide-react'
+import { LayoutDashboard, Users, Home, CarFront, MapPinned, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -57,6 +57,10 @@ export default function AdminLayout({ admin }) {
 
         <NavLink to="/admin/registered-users" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
           <Users size={18} />Registered Users
+        </NavLink>
+
+        <NavLink to="/admin/live-map" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
+          <MapPinned size={18} />Live Driver Map
         </NavLink>
 
         <NavLink to="/admin/drivers" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>

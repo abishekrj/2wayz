@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { rateLimit } from 'express-rate-limit'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
+import { notifyBooking } from '../lib/notifications.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -169,6 +170,8 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
       prisma.driverOffer.updateMany({ where: { bookingId: offer.bookingId, driverId: { not: driverId }, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } }),
       prisma.driverActivity.create({ data: { driverId, eventType: 'RIDE_ACCEPTED', description: `Accepted ride ${offer.booking.reference}.`, bookingId: offer.bookingId } })
     ])
+    await notifyBooking({ booking: { id: offer.booking.id, reference: offer.booking.reference, passengerId: offer.booking.passengerId, driverId }, type: 'DRIVER_ASSIGNED', title: 'Driver assigned', message: `A driver accepted ride ${offer.booking.reference}.` , includeDriver: false })
+    await notifyBooking({ booking: { id: offer.booking.id, reference: offer.booking.reference, passengerId: offer.booking.passengerId, driverId }, type: 'RIDE_ASSIGNED', title: 'New ride assigned', message: `You accepted ride ${offer.booking.reference}.`, includePassenger: false, includeAdmin: false })
     res.json({ message: 'Ride accepted. You are assigned to this booking.', bookingReference: offer.booking.reference })
   } catch (error) { next(error) }
 })
@@ -192,7 +195,7 @@ router.post('/bookings/:bookingId/cancel', requireDriver, async (req, res, next)
     const outcome = await prisma.$transaction(async tx => {
       const booking = await tx.booking.findFirst({
         where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'] } },
-        select: { id: true, status: true, reference: true }
+        select: { id: true, status: true, reference: true, passengerId: true, driverId: true }
       })
       if (!booking) throw Object.assign(new Error('Only an assigned ride that has not started can be cancelled by the driver.'), { statusCode: 409 })
       const now = new Date()
@@ -204,8 +207,9 @@ router.post('/bookings/:bookingId/cancel', requireDriver, async (req, res, next)
       if (changed.count !== 1) throw Object.assign(new Error('This ride changed while cancelling. Refresh your active rides.'), { statusCode: 409 })
       await tx.driverActivity.create({ data: { driverId: req.driverAuth.sub, eventType: 'RIDE_CANCELLED', description: 'Driver cancelled ride ' + booking.reference + '. Reason: ' + reason, bookingId: booking.id } })
       await tx.driverOffer.updateMany({ where: { bookingId: booking.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
-      return { id: booking.id, reference: booking.reference, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason }
+      return { id: booking.id, reference: booking.reference, passengerId: booking.passengerId, driverId: req.driverAuth.sub, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason }
     })
+    await notifyBooking({ booking: outcome, type: 'BOOKING_CANCELLED', title: 'Ride cancelled', message: `Driver cancelled ride ${outcome.reference}. Reason: ${outcome.cancellationReason}`, includeDriver: false })
     res.json({ booking: outcome, message: 'Ride cancelled and recorded for Super Admin review. No cancellation fee or wallet adjustment has been applied.' })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
@@ -231,7 +235,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     }
     const transition = transitions[nextStatus]
     if (!transition) return res.status(400).json({ message: 'Invalid trip status update.' })
-    const booking = await prisma.booking.findFirst({ where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: transition.from }, select: { id: true, estimatedFare: true } })
+    const booking = await prisma.booking.findFirst({ where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: transition.from }, select: { id: true, estimatedFare: true, reference: true, passengerId: true, driverId: true } })
     if (!booking) return res.status(409).json({ message: 'This ride is no longer in the expected stage. Refresh your active rides.' })
     let finalFare
     if (nextStatus === 'COMPLETED') {
@@ -271,6 +275,8 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
         }
         return { commission, balanceAfter }
       })
+      await notifyBooking({ booking, type: 'TRIP_COMPLETED', title: 'Trip completed', message: `Ride ${booking.reference} is completed. Final fare: ₹${finalFare}.`, includeDriver: false })
+      await notifyBooking({ booking, type: 'TRIP_COMPLETED', title: 'Trip completed', message: `You completed ride ${booking.reference}.`, includePassenger: false, includeAdmin: false })
       return res.json({ message: 'Trip completed. Wallet commission processed.', status: nextStatus, finalFare, commissionDeducted: outcome.commission, walletBalance: outcome.balanceAfter })
     }
     const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
@@ -281,6 +287,8 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
       description: nextStatus === 'DRIVER_ARRIVED' ? 'Driver arrived at the pickup location.' : 'Trip started.',
       bookingId: booking.id
     } })
+    await notifyBooking({ booking, type: nextStatus, title: nextStatus === 'DRIVER_ARRIVED' ? 'Driver has arrived' : 'Trip started', message: nextStatus === 'DRIVER_ARRIVED' ? `Your driver has arrived for ride ${booking.reference}.` : `Ride ${booking.reference} has started.`, includeDriver: false })
+    await notifyBooking({ booking, type: nextStatus, title: nextStatus === 'DRIVER_ARRIVED' ? 'Marked as arrived' : 'Trip started', message: `Ride ${booking.reference} status updated to ${nextStatus.replaceAll('_', ' ').toLowerCase()}.`, includePassenger: false, includeAdmin: false })
     res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : 'Trip started.', status: nextStatus, finalFare: null })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })

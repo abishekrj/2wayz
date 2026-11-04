@@ -7,8 +7,15 @@ const cancelledStatuses = ['CANCELLED', 'CANCELED']
 
 function parseDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null
-  const date = new Date(value + 'T00:00:00.000Z')
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null
+  const valid = new Date(value + 'T00:00:00.000Z')
+  if (!Number.isFinite(valid.getTime()) || valid.toISOString().slice(0, 10) !== value) return null
+  return new Date(value + 'T00:00:00+05:30')
+}
+
+function indiaDateText(date) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date)
+  const part = type => parts.find(item => item.type === type)?.value || ''
+  return part('year') + '-' + part('month') + '-' + part('day')
 }
 
 function sum(items, selector) {
@@ -18,8 +25,8 @@ function sum(items, selector) {
 router.get('/', requireAdmin, async (req, res, next) => {
   try {
     const today = new Date()
-    const todayText = today.toISOString().slice(0, 10)
-    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)).toISOString().slice(0, 10)
+    const todayText = indiaDateText(today)
+    const monthStart = todayText.slice(0, 8) + '01'
     const fromText = String(req.query.from || monthStart)
     const toText = String(req.query.to || todayText)
     const from = parseDate(fromText)
@@ -108,7 +115,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
     const daily = new Map()
     for (const row of rows) {
       for (const booking of row.completedRecords) {
-        const day = new Date(booking.date).toISOString().slice(0, 10)
+        const day = indiaDateText(new Date(booking.date))
         const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0 }
         entry.completedRides += 1
         entry.fares += Number(booking.fare || 0)

@@ -407,7 +407,7 @@ router.get('/admin/:bookingId/eligible-drivers', requireAdmin, async (req, res, 
       if (distance == null || distance > 8) reasons.push('Outside the 8 km pickup radius')
       if (activeRide) reasons.push('Already has an active ride')
       if (!settings?.isActive) reasons.push('Wallet commission settings are not active')
-      if (!driver.wallet || driver.wallet.balance < (settings?.minimumBalance || 0)) reasons.push('Wallet balance is below the minimum')
+      if ((driver.wallet?.balance || 0) < (settings?.minimumBalance || 0)) reasons.push('Wallet balance is below the minimum')
       if (outstanding > 0) reasons.push('Outstanding commission must be cleared')
       return {
         id: driver.id, name: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber,

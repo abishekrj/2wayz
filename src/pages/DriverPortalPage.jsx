@@ -18,6 +18,7 @@ export default function DriverPortalPage() {
   const [walletData, setWalletData] = useState(null)
   const [rechargeForm, setRechargeForm] = useState({ amount: '', paymentReference: '', proof: null })
   const [finalFareInputs, setFinalFareInputs] = useState({})
+  const [rideOtpInputs, setRideOtpInputs] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -164,11 +165,12 @@ export default function DriverPortalPage() {
     finally { setBusy(false) }
   }
 
-  async function updateTripStatus(booking, status) {
+  async function updateTripStatus(booking, status, otp) {
     setBusy(true); setError(''); setNotice('')
     try {
       const fare = status === 'COMPLETED' ? (finalFareInputs[booking.id] ?? String(booking.estimatedFare)) : undefined
-      const result = await adminApi.updateDriverBookingStatus(booking.id, status, fare)
+      const result = await adminApi.updateDriverBookingStatus(booking.id, status, fare, otp)
+      if (status === 'IN_PROGRESS') setRideOtpInputs(current => ({ ...current, [booking.id]: '' }))
       setNotice(result.message)
       await refreshActiveBookings()
       if (status === 'COMPLETED') await loadWallet()
@@ -232,7 +234,14 @@ export default function DriverPortalPage() {
               {item.mode === 'schedule' && item.scheduledAt && <p className="mt-2 rounded-lg bg-blue-50 p-3 text-xs font-semibold text-blue-800">Scheduled pickup: {new Date(item.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
               {['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(item.status) && <button disabled={busy} onClick={() => cancelActiveBooking(item)} className="mt-4 w-full rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-700 disabled:opacity-60">Cancel ride</button>}
               {item.status === 'DRIVER_ASSIGNED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'DRIVER_ARRIVED')} className="mt-4 w-full rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink disabled:opacity-60">Mark arrived at pickup</button>}
-              {item.status === 'DRIVER_ARRIVED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'IN_PROGRESS')} className="mt-4 w-full rounded-xl bg-wayz-blue px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Start trip</button>}
+              {item.status === 'DRIVER_ARRIVED' && <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm font-extrabold text-wayz-ink">Passenger ride-start OTP</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">Ask the passenger for the 4-digit code shown in their 2WAYZ booking screen. Enter it to verify the passenger and start the ride.</p>
+                <label className="mt-3 block text-xs font-bold text-slate-600">4-DIGIT OTP
+                  <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={4} pattern="[0-9]{4}" value={rideOtpInputs[item.id] || ''} onChange={event => setRideOtpInputs(current => ({ ...current, [item.id]: event.target.value.replace(/\\D/g, '').slice(0, 4) }))} placeholder="Enter passenger OTP" className="mt-1.5 h-12 w-full rounded-lg border border-blue-200 bg-white px-4 text-center text-xl font-extrabold tracking-[.5em] outline-none focus:border-wayz-blue"/>
+                </label>
+                <button disabled={busy || (rideOtpInputs[item.id] || '').length !== 4} onClick={() => updateTripStatus(item, 'IN_PROGRESS', rideOtpInputs[item.id])} className="mt-3 w-full rounded-xl bg-wayz-blue px-4 py-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">Verify OTP & start trip</button>
+              </div>}
               {item.status === 'IN_PROGRESS' && <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600">FINAL FARE (₹)<input type="number" min="0" max="100000" step="1" value={finalFareInputs[item.id] ?? String(item.estimatedFare)} onChange={event => setFinalFareInputs(current => ({ ...current, [item.id]: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-wayz-blue"/></label><button disabled={busy} onClick={() => updateTripStatus(item, 'COMPLETED')} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Complete trip</button></div>}
             </article>)}</div>}
       </section>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, CarFront, Clock3, MapPinned, RefreshCw, Search, Wifi, WifiOff } from 'lucide-react'
+import { AlertTriangle, CarFront, Clock3, MapPinned, RefreshCw, Search, Wifi } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 let mapsLoader

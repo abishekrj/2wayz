@@ -96,7 +96,7 @@ export default function HomePage(){
           <div className="relative aspect-[5/4] overflow-hidden bg-[#e8f0fb]">
             {place.imageUrl||place.image
               ? <img src={mediaUrl(place.imageUrl||place.image)} alt={place.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"/>
-              : <div className="relative flex h-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#eaf2fc] via-[#dce9f8] to-[#f7edda]">
+              : <div className="relative flex h-full items-center justify-center overflow-hidden bg-[#eaf2fc]">
                   <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[18px] border-white/35"/>
                   <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-white/35"/>
                   <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/70 bg-white/65 text-wayz-blue shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover:scale-110"><PlaceIcon size={43} strokeWidth={1.5}/></div>

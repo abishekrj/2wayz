@@ -115,7 +115,7 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
     const result = await prisma.$transaction(async tx => {
       const booking = await tx.booking.findFirst({
         where: { id: req.params.id, passengerId: req.passengerAuth.sub },
-        select: { id: true, status: true, driverId: true, passengerId: true, reference: true }
+        select: { id: true, status: true, driverId: true, passengerId: true, reference: true, mode: true }
       })
       if (!booking) throw Object.assign(new Error('Booking not found.'), { statusCode: 404 })
       if (!['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(booking.status)) {
@@ -124,7 +124,7 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
       const now = new Date()
       const updated = await tx.booking.updateMany({
         where: { id: booking.id, passengerId: req.passengerAuth.sub, status: booking.status },
-        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : '') }
+        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : ''), ...(booking.mode === 'schedule' ? { dispatchStatus: 'CANCELLED' } : {}) }
       })
       if (updated.count !== 1) throw Object.assign(new Error('The booking changed while cancelling. Refresh and try again.'), { statusCode: 409 })
       await tx.driverOffer.updateMany({ where: { bookingId: booking.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })

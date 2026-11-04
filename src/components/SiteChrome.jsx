@@ -62,7 +62,8 @@ export function SiteHeader() {
     }
   }
   const pages = useCmsNavigation()
-  const navigation = [{label:'Home',to:'/'},...(pages.length ? pages.map(page=>({label:page.navLabel,to:'/'+page.slug})) : fallbackNavigation)]
+  const navigationPages = pages.filter(page => !['terms-and-conditions', 'privacy-policy'].includes(page.slug))
+  const navigation = [{label:'Home',to:'/'},...(navigationPages.length ? navigationPages.map(page=>({label:page.navLabel,to:'/'+page.slug})) : fallbackNavigation)]
 
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">
@@ -122,7 +123,8 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const pages = useCmsNavigation()
-  const footerPages = pages.length ? pages : [{slug:'about',footerLabel:'About 2WAYZ'},{slug:'how-it-works',footerLabel:'How it works'},{slug:'drivers',footerLabel:'For drivers'},{slug:'contact',footerLabel:'Contact'},{slug:'terms-and-conditions',footerLabel:'Terms and Conditions'},{slug:'privacy-policy',footerLabel:'Privacy Policy'}]
+  const fallbackFooterPages = [{slug:'about',footerLabel:'About 2WAYZ'},{slug:'how-it-works',footerLabel:'How it works'},{slug:'drivers',footerLabel:'For drivers'},{slug:'contact',footerLabel:'Contact'},{slug:'terms-and-conditions',footerLabel:'Terms and Conditions'},{slug:'privacy-policy',footerLabel:'Privacy Policy'}]
+  const footerPages = [...fallbackFooterPages.map(fallback => pages.find(page => page.slug === fallback.slug) || fallback), ...pages.filter(page => !fallbackFooterPages.some(fallback => fallback.slug === page.slug))]
   return (
     <footer id="contact" className="bg-[#052f6c] text-white"><div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_.8fr_.8fr] lg:px-8"><div><Brand light/><p className="mt-4 max-w-xs text-sm leading-6 text-blue-100">Your local mobility partner in Tiruvannamalai. Ride local. Reach easy.</p></div><div><h3 className="font-bold">Explore</h3><div className="mt-4 grid gap-3 text-sm text-blue-100">{footerPages.map(page=><Link key={page.slug} to={'/'+page.slug} className="hover:text-wayz-yellow">{page.footerLabel}</Link>)}</div></div><div><h3 className="font-bold">Get in touch</h3><p className="mt-4 text-sm text-blue-100">Tiruvannamalai, Tamil Nadu</p><p className="mt-3 inline-flex items-center gap-2 text-sm text-blue-100"><MapPin size={16}/> Tiruvannamalai, Tamil Nadu</p></div></div><div className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-blue-200 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span>© {new Date().getFullYear()} 2WAYZ. All rights reserved.</span><span>Local mobility. Made simple.</span></div></div></footer>
   )

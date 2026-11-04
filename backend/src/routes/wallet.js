@@ -89,6 +89,47 @@ router.get('/admin/drivers', requireAdmin, async (req, res, next) => {
     res.json({ drivers: wallets })
   } catch (error) { next(error) }
 })
+router.post('/admin/adjustments', requireAdmin, async (req, res, next) => {
+  try {
+    const bookingId = String(req.body?.bookingId || '').trim()
+    const type = String(req.body?.type || '').toUpperCase()
+    const amount = Number(req.body?.amount)
+    const reason = String(req.body?.reason || '').trim().slice(0, 500)
+    if (!bookingId) return res.status(400).json({ message: 'Choose a booking.' })
+    if (!['WALLET_CREDIT', 'WALLET_DEBIT'].includes(type)) return res.status(400).json({ message: 'Choose wallet credit or wallet debit.' })
+    if (!Number.isInteger(amount) || amount < 1 || amount > 50000) return res.status(400).json({ message: 'Adjustment amount must be between ₹1 and ₹50,000.' })
+    if (reason.length < 5) return res.status(400).json({ message: 'Enter a reason of at least 5 characters for the audit record.' })
+    const result = await prisma.$transaction(async tx => {
+      const booking = await tx.booking.findUnique({ where: { id: bookingId }, select: { id: true, reference: true, status: true, driverId: true } })
+      if (!booking || !['CANCELLED', 'CANCELED'].includes(booking.status)) {
+        throw Object.assign(new Error('Financial adjustments can only be recorded against a cancelled booking.'), { statusCode: 409 })
+      }
+      if (!booking.driverId) throw Object.assign(new Error('This booking has no assigned driver, so a driver wallet adjustment cannot be applied.'), { statusCode: 409 })
+      const wallet = await tx.driverWallet.upsert({ where: { driverId: booking.driverId }, create: { driverId: booking.driverId }, update: {} })
+      const balanceAfter = type === 'WALLET_CREDIT' ? wallet.balance + amount : wallet.balance - amount
+      if (balanceAfter < 0) throw Object.assign(new Error('The driver wallet does not have enough balance for this debit.'), { statusCode: 409 })
+      const adjustment = await tx.bookingAdjustment.create({
+        data: { bookingId: booking.id, driverId: booking.driverId, type, amount, reason, createdBy: req.admin.sub || req.admin.id || 'SUPER_ADMIN' }
+      })
+      await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: balanceAfter } })
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: type === 'WALLET_CREDIT' ? 'ADJUSTMENT_CREDIT' : 'ADJUSTMENT_DEBIT',
+          amount,
+          settledAmount: 0,
+          status: 'POSTED',
+          description: (type === 'WALLET_CREDIT' ? 'Admin wallet credit' : 'Admin wallet debit') + ' for cancelled booking ' + booking.reference + ': ' + reason,
+          balanceAfter,
+          adjustmentId: adjustment.id
+        }
+      })
+      return { adjustment, transaction, balanceAfter, bookingReference: booking.reference }
+    })
+    res.status(201).json({ ...result, message: type === 'WALLET_CREDIT' ? 'Wallet credit recorded and applied.' : 'Wallet debit recorded and applied.' })
+  } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
+})
+
 router.get('/admin/recharges', requireAdmin, async (req, res, next) => {
   try {
     const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined

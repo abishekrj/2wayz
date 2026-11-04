@@ -19,6 +19,7 @@ import AdminDriverOperationsPage from './pages/AdminDriverOperationsPage'
 import AdminDriverReportsPage from './pages/AdminDriverReportsPage'
 import AdminCancellationsPage from './pages/AdminCancellationsPage'
 import AdminNotificationsPage from './pages/AdminNotificationsPage'
+import AdminScheduledRidesPage from './pages/AdminScheduledRidesPage'
 import CmsContentPage from './pages/CmsContentPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
@@ -52,6 +53,7 @@ function AdminRoutes() {
       <Route path="driver-reports" element={<AdminDriverReportsPage/>}/>
       <Route path="wallet" element={<AdminWalletPage/>}/>
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
+      <Route path="scheduled-rides" element={<AdminScheduledRidesPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>

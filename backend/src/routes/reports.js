@@ -19,7 +19,7 @@ function indiaDateText(date) {
 }
 
 function indiaDayRange(dateText) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateText)) return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateText)) return null
   const [year, month, day] = dateText.split('-').map(Number)
   const start = new Date(Date.UTC(year, month - 1, day) - 330 * 60 * 1000)
   if (indiaDateText(start) !== dateText) return null

@@ -60,7 +60,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
           select: {
             transactions: {
               where: { type: 'COMMISSION', createdAt: dateRange },
-              select: { amount: true, settledAmount: true, status: true }
+              select: { bookingId: true, amount: true, settledAmount: true, status: true }
             }
           }
         }
@@ -87,13 +87,14 @@ router.get('/', requireAdmin, async (req, res, next) => {
         declinedOffers,
         finalFares: sum(completed, booking => booking.finalFare ?? booking.estimatedFare),
         commissionAmount: sum(commissionRows, item => item.amount),
+        netEarnings: Math.max(0, sum(completed, booking => booking.finalFare ?? booking.estimatedFare) - sum(commissionRows, item => item.amount)),
         commissionDeducted: sum(commissionRows, item => item.settledAmount),
         outstandingCommission: Math.max(0, Number(dueAggregate._sum.amount || 0) - Number(dueAggregate._sum.settledAmount || 0)),
-        completedRecords: completed.map(booking => ({
-          reference: booking.reference,
-          fare: booking.finalFare ?? booking.estimatedFare,
-          date: booking.completedAt
-        })),
+        completedRecords: completed.map(booking => {
+          const commission = commissionRows.find(item => item.bookingId === booking.id)
+          const fare = booking.finalFare ?? booking.estimatedFare
+          return { reference: booking.reference, fare, commission: commission?.amount || 0, netEarnings: Math.max(0, fare - Number(commission?.amount || 0)), date: booking.completedAt }
+        }),
         cancelledRecords: cancelled.map(booking => ({
           reference: booking.reference,
           date: booking.updatedAt
@@ -106,6 +107,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
     const totalCompleted = sum(rows, row => row.completedRides)
     const totalCancelled = sum(rows, row => row.cancelledRides)
     const totalFares = sum(rows, row => row.finalFares)
+    const totalNetEarnings = sum(rows, row => row.netEarnings)
     const totalCommission = sum(rows, row => row.commissionAmount)
     const totalDeducted = sum(rows, row => row.commissionDeducted)
     const totalOutstanding = sum(rows, row => row.outstandingCommission)
@@ -116,14 +118,15 @@ router.get('/', requireAdmin, async (req, res, next) => {
     for (const row of rows) {
       for (const booking of row.completedRecords) {
         const day = indiaDateText(new Date(booking.date))
-        const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0 }
+        const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0, netEarnings: 0 }
         entry.completedRides += 1
         entry.fares += Number(booking.fare || 0)
+        entry.netEarnings += Number(booking.netEarnings || 0)
         daily.set(day, entry)
       }
       for (const booking of row.cancelledRecords) {
         const day = new Date(booking.date).toISOString().slice(0, 10)
-        const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0 }
+        const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0, netEarnings: 0 }
         entry.cancelledRides += 1
         daily.set(day, entry)
       }
@@ -133,7 +136,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
       period: { from: fromText, to: toText },
       summary: {
         totalRequests, totalCompleted, totalCancelled, totalFares,
-        totalCommission, totalDeducted, totalOutstanding,
+        totalCommission, totalDeducted, totalOutstanding, totalNetEarnings,
         totalAcceptedOffers, totalDeclinedOffers,
         offerAcceptanceRate: totalAcceptedOffers + totalDeclinedOffers ? Math.round(totalAcceptedOffers * 100 / (totalAcceptedOffers + totalDeclinedOffers)) : 0,
         averageFare: totalCompleted ? Math.round(totalFares / totalCompleted) : 0

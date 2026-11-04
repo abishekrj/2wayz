@@ -21,6 +21,13 @@ function requireDriver(req, res, next) {
   } catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
 }
 
+function distanceKm(aLat, aLng, bLat, bLng) {
+  const radians = value => value * Math.PI / 180
+  const dLat = radians(bLat - aLat), dLng = radians(bLng - aLng)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(aLat)) * Math.cos(radians(bLat)) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 const publicDriver = driver => ({ id: driver.id, name: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber, serviceArea: driver.serviceArea, status: driver.status, isOnline: driver.isOnline, currentLat: driver.currentLat, currentLng: driver.currentLng, locationUpdatedAt: driver.locationUpdatedAt })
 
 router.post('/register', registerLimiter, async (req, res, next) => {
@@ -82,6 +89,18 @@ router.post('/availability', requireDriver, async (req, res, next) => {
       return res.status(400).json({ message: 'Share your current location first, then try going online.' })
     }
     const updated = await prisma.driver.update({ where: { id: driver.id }, data: { isOnline: online } })
+    if (online && updated.currentLat != null && updated.currentLng != null) {
+      // A driver who just came online can still receive recent pending requests.
+      const recentBookings = await prisma.booking.findMany({
+        where: { status: 'REQUESTED', driverId: null, mode: 'instant', requestedAt: { gte: new Date(Date.now() - 2 * 60 * 1000) } },
+        select: { id: true, pickupLat: true, pickupLng: true }
+      })
+      const nearby = recentBookings.filter(booking => distanceKm(updated.currentLat, updated.currentLng, booking.pickupLat, booking.pickupLng) <= 8)
+      if (nearby.length) await prisma.driverOffer.createMany({
+        data: nearby.map(booking => ({ bookingId: booking.id, driverId: updated.id })),
+        skipDuplicates: true
+      })
+    }
     res.json({ driver: publicDriver(updated) })
   } catch (error) { next(error) }
 })

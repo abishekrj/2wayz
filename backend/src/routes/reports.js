@@ -128,12 +128,13 @@ router.get('/', requireAdmin, async (req, res, next) => {
         entry.netEarnings += Number(booking.netEarnings || 0)
         daily.set(day, entry)
       }
-      for (const booking of row.cancelledRecords) {
-        const day = new Date(booking.date).toISOString().slice(0, 10)
-        const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0, netEarnings: 0 }
-        entry.cancelledRides += 1
-        daily.set(day, entry)
-      }
+    }
+
+    for (const booking of cancelledBookings) {
+      const day = indiaDateText(new Date(booking.updatedAt))
+      const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0, netEarnings: 0 }
+      entry.cancelledRides += 1
+      daily.set(day, entry)
     }
 
     res.json({

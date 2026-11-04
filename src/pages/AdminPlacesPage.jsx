@@ -8,6 +8,7 @@ export default function AdminPlacesPage() {
   const [heading, setHeading] = useState('Places to Visit in Tiruvannamalai')
   const [places, setPlaces] = useState([])
   const [editing, setEditing] = useState(null)
+  const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState(emptyPlace())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -31,6 +32,7 @@ export default function AdminPlacesPage() {
   useEffect(() => { load() }, [])
 
   function openAdd() {
+    setEditorOpen(true)
     setEditing(null)
     setForm(emptyPlace())
     setError('')
@@ -38,6 +40,7 @@ export default function AdminPlacesPage() {
   }
 
   function openEdit(place, index) {
+    setEditorOpen(true)
     setEditing(index)
     setForm({ ...place })
     setError('')
@@ -45,6 +48,7 @@ export default function AdminPlacesPage() {
   }
 
   function closeEditor() {
+    setEditorOpen(false)
     setEditing(null)
     setForm(emptyPlace())
   }
@@ -118,8 +122,7 @@ export default function AdminPlacesPage() {
     {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
-    {editing !== null || form.name === '' && notice === '' ? null : null}
-    {(editing !== null || form.name !== '') && <form onSubmit={savePlace} className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:p-6">
+    {editorOpen && <form onSubmit={savePlace} className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-5 flex items-center justify-between"><h2 className="font-extrabold text-wayz-ink">{editing === null ? 'Add destination' : 'Edit destination'}</h2><button type="button" onClick={closeEditor} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close editor"><X size={18}/></button></div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-xs font-semibold text-slate-600">Place name<input required maxLength={120} value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none focus:border-wayz-blue"/></label>

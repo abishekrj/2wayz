@@ -6,6 +6,7 @@ import AuthLayout from '../components/AuthLayout'
 import { adminApi } from '../lib/adminApi'
 import NotificationCenter from '../components/NotificationCenter'
 import SosButton from '../components/SosButton'
+import DailyEarningsSummary from '../components/DailyEarningsSummary'
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')
 

@@ -147,6 +147,7 @@ export default function DriverPortalPage() {
       const result = await adminApi.updateDriverBookingStatus(booking.id, status, fare)
       setNotice(result.message)
       await refreshActiveBookings()
+      if (status === 'COMPLETED') await loadWallet()
     } catch (err) {
       setError(err.message || 'Could not update this trip.')
       await refreshActiveBookings()
@@ -155,7 +156,7 @@ export default function DriverPortalPage() {
 
   async function logout() {
     try { await adminApi.driverLogout() } catch (err) { setError(err.message || 'Could not sign out.') }
-    setDriver(null); setOffers([]); setNotice(''); setError('')
+    setDriver(null); setOffers([]); setWalletData(null); setNotice(''); setError('')
   }
 
   if (checking) return <PageLayout><div className="mx-auto max-w-3xl px-5 py-20 text-center text-sm text-slate-500">Checking driver session…</div></PageLayout>
@@ -181,6 +182,7 @@ export default function DriverPortalPage() {
         <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Available balance</p><p className="mt-1 text-2xl font-black text-wayz-blue">{money(walletData?.wallet?.balance)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Outstanding commission</p><p className="mt-1 text-2xl font-black text-amber-700">{money(walletData?.outstandingCommission)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Minimum balance</p><p className="mt-1 text-2xl font-black text-wayz-ink">{money(walletData?.settings?.minimumBalance)}</p></div></div>
         {walletData?.settings && <p className="mt-3 text-xs text-slate-500">Commission: {walletData.settings.commissionMode === 'PERCENTAGE' ? walletData.settings.commissionValue + '%' : money(walletData.settings.commissionValue)} per completed ride.</p>}
         {walletData?.outstandingCommission > 0 && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Recharge your wallet to clear outstanding commission before receiving new ride offers.</p>}
+        {walletData?.settings?.isActive && walletData.wallet?.balance < walletData.settings.minimumBalance && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Your wallet is below the minimum balance. New ride offers are paused until you recharge.</p>}
         {!walletData?.settings?.isActive && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Wallet setup is pending Super Admin activation.</p>}
         <form onSubmit={submitRecharge} className="mt-5 grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-bold text-slate-600">RECHARGE AMOUNT (₹)<input required type="number" min="50" max="50000" step="1" value={rechargeForm.amount} onChange={e=>setRechargeForm(v=>({...v,amount:e.target.value}))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Minimum ₹50"/></label>

@@ -194,7 +194,6 @@ export default function AdminLiveDriverMapPage() {
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-600">{driver.isOnTrip ? <CarFront size={14}/> : <Wifi size={14}/>} {driver.isOnTrip ? `On trip · ${driver.activeBooking?.reference || ''}` : 'Available for rides'}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400"><Clock3 size={13}/>{timeAgo(driver.locationUpdatedAt)}</p>
               </button>)}
-          }
         </div>
         {selected && <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4">
           <div className="flex items-center gap-2 font-bold text-wayz-ink"><MapPinned size={17}/> {selected.name}</div>

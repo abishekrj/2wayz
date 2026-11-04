@@ -202,14 +202,14 @@ router.post('/bookings/:bookingId/cancel', requireDriver, async (req, res, next)
     const outcome = await prisma.$transaction(async tx => {
       const booking = await tx.booking.findFirst({
         where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'] } },
-        select: { id: true, status: true, reference: true, passengerId: true, driverId: true }
+        select: { id: true, status: true, reference: true, passengerId: true, driverId: true, mode: true }
       })
       if (!booking) throw Object.assign(new Error('Only an assigned ride that has not started can be cancelled by the driver.'), { statusCode: 409 })
       const now = new Date()
       const cancellationReason = reason + (details ? ': ' + details : '')
       const changed = await tx.booking.updateMany({
         where: { id: booking.id, driverId: req.driverAuth.sub, status: booking.status },
-        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason }
+        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason, ...(booking.mode === 'schedule' ? { dispatchStatus: 'CANCELLED' } : {}) }
       })
       if (changed.count !== 1) throw Object.assign(new Error('This ride changed while cancelling. Refresh your active rides.'), { statusCode: 409 })
       await tx.driverActivity.create({ data: { driverId: req.driverAuth.sub, eventType: 'RIDE_CANCELLED', description: 'Driver cancelled ride ' + booking.reference + '. Reason: ' + reason, bookingId: booking.id } })

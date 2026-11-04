@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CarFront, MapPin, Power, RefreshCw, LogOut, CheckCircle2, Clock3, Navigation, XCircle } from 'lucide-react'
+import { CarFront, MapPin, Power, RefreshCw, LogOut, CheckCircle2, Clock3, Navigation, XCircle, Wallet, UploadCloud } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import AuthLayout from '../components/AuthLayout'
 import { adminApi } from '../lib/adminApi'
@@ -14,6 +14,8 @@ export default function DriverPortalPage() {
   const [form, setForm] = useState({ phone: '', password: '' })
   const [offers, setOffers] = useState([])
   const [activeBookings, setActiveBookings] = useState([])
+  const [walletData, setWalletData] = useState(null)
+  const [rechargeForm, setRechargeForm] = useState({ amount: '', paymentReference: '', proof: null })
   const [finalFareInputs, setFinalFareInputs] = useState({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -37,6 +39,34 @@ export default function DriverPortalPage() {
     const timer = window.setInterval(refreshActiveBookings, 5000)
     return () => window.clearInterval(timer)
   }, [driver?.id, refreshActiveBookings])
+
+  const loadWallet = useCallback(async () => {
+    try { setWalletData(await adminApi.walletMe()) }
+    catch (err) { if (err.message && !/sign in/i.test(err.message)) setError(err.message) }
+  }, [])
+
+  useEffect(() => {
+    if (!driver?.id) return
+    loadWallet()
+    const timer = window.setInterval(loadWallet, 15000)
+    return () => window.clearInterval(timer)
+  }, [driver?.id, loadWallet])
+
+  async function submitRecharge(event) {
+    event.preventDefault(); setBusy(true); setError(''); setNotice('')
+    try {
+      const form = new FormData()
+      form.append('amount', rechargeForm.amount)
+      form.append('paymentReference', rechargeForm.paymentReference)
+      if (rechargeForm.proof) form.append('proof', rechargeForm.proof)
+      const result = await adminApi.submitWalletRecharge(form)
+      setNotice(result.message)
+      setRechargeForm({ amount: '', paymentReference: '', proof: null })
+      event.target.reset()
+      await loadWallet()
+    } catch (err) { setError(err.message || 'Could not submit recharge request.') }
+    finally { setBusy(false) }
+  }
 
   const refreshOffers = useCallback(async () => {
     try { const result = await adminApi.driverOffers(); setOffers(result.offers || []) }
@@ -146,6 +176,21 @@ export default function DriverPortalPage() {
     <>
       <section className="mt-7 flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:p-6"><div className="flex items-center gap-4"><span className={'flex h-14 w-14 items-center justify-center rounded-2xl ' + (driver.isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}><Power size={28}/></span><div><p className="text-lg font-extrabold text-wayz-ink">{driver.isOnline ? 'You are online' : 'You are offline'}</p><p className="mt-1 text-sm text-slate-500">{driver.isOnline ? 'Your GPS location is shared for dispatch.' : 'Go online when you are ready to accept rides.'}</p></div></div><button disabled={busy} onClick={toggleOnline} className={'rounded-xl px-6 py-3.5 text-sm font-extrabold disabled:opacity-60 ' + (driver.isOnline ? 'border border-slate-200 bg-white text-slate-700' : 'bg-wayz-yellow text-wayz-ink')}>{busy ? 'Please wait…' : driver.isOnline ? 'Go offline' : 'Share location & go online'}</button></section>
       {gpsError && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{gpsError}</p>}
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="rounded-xl bg-blue-50 p-3 text-wayz-blue"><Wallet size={22}/></span><div><h2 className="text-lg font-extrabold text-wayz-ink">My wallet</h2><p className="text-xs text-slate-500">Manual recharge · Commission on completed rides</p></div></div><button onClick={loadWallet} className="rounded-lg p-2 text-wayz-blue" aria-label="Refresh wallet"><RefreshCw size={17}/></button></div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Available balance</p><p className="mt-1 text-2xl font-black text-wayz-blue">{money(walletData?.wallet?.balance)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Outstanding commission</p><p className="mt-1 text-2xl font-black text-amber-700">{money(walletData?.outstandingCommission)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Minimum balance</p><p className="mt-1 text-2xl font-black text-wayz-ink">{money(walletData?.settings?.minimumBalance)}</p></div></div>
+        {walletData?.settings && <p className="mt-3 text-xs text-slate-500">Commission: {walletData.settings.commissionMode === 'PERCENTAGE' ? walletData.settings.commissionValue + '%' : money(walletData.settings.commissionValue)} per completed ride.</p>}
+        {walletData?.outstandingCommission > 0 && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Recharge your wallet to clear outstanding commission before receiving new ride offers.</p>}
+        {!walletData?.settings?.isActive && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Wallet setup is pending Super Admin activation.</p>}
+        <form onSubmit={submitRecharge} className="mt-5 grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-bold text-slate-600">RECHARGE AMOUNT (₹)<input required type="number" min="50" max="50000" step="1" value={rechargeForm.amount} onChange={e=>setRechargeForm(v=>({...v,amount:e.target.value}))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Minimum ₹50"/></label>
+          <label className="text-xs font-bold text-slate-600">UPI / PAYMENT REFERENCE<input required minLength="4" maxLength="100" value={rechargeForm.paymentReference} onChange={e=>setRechargeForm(v=>({...v,paymentReference:e.target.value}))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Enter transaction reference"/></label>
+          <label className="text-xs font-bold text-slate-600 sm:col-span-2">PAYMENT SCREENSHOT (OPTIONAL)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setRechargeForm(v=>({...v,proof:e.target.files?.[0]||null}))} className="mt-2 block w-full rounded-xl border border-slate-200 p-2 text-xs"/></label>
+          <div className="sm:col-span-2"><button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60"><UploadCloud size={16}/>{busy?'Submitting…':'Submit recharge request'}</button><p className="mt-2 text-xs text-slate-500">Your recharge is credited only after Super Admin verifies the payment.</p></div>
+        </form>
+        {walletData?.recharges?.length>0 && <div className="mt-5"><h3 className="text-sm font-extrabold text-wayz-ink">Recent recharge requests</h3><div className="mt-2 divide-y rounded-xl border border-slate-100">{walletData.recharges.slice(0,5).map(item=><div key={item.id} className="flex justify-between gap-3 p-3 text-xs"><span>{money(item.amount)} · {item.paymentReference}</span><strong>{item.status}</strong></div>)}</div></div>}
+        {walletData?.transactions?.length>0 && <div className="mt-5"><h3 className="text-sm font-extrabold text-wayz-ink">Recent wallet transactions</h3><div className="mt-2 divide-y rounded-xl border border-slate-100">{walletData.transactions.slice(0,8).map(item=><div key={item.id} className="flex flex-wrap justify-between gap-2 p-3 text-xs"><span className="text-slate-600">{item.description}</span><span className="font-bold">{item.type==='COMMISSION'?'-':''}{money(item.type==='COMMISSION'?item.settledAmount:item.amount)} · Balance {money(item.balanceAfter)}</span></div>)}</div></div>}
+      </section>
       <div className="mt-8 flex items-center justify-between gap-3"><div><h2 className="text-xl font-extrabold text-wayz-ink">Nearby ride offers</h2><p className="mt-1 text-sm text-slate-500">Offers refresh every 5 seconds while you are online.</p></div><button onClick={refreshOffers} className="rounded-lg p-2 text-wayz-blue hover:bg-white" aria-label="Refresh offers"><RefreshCw size={18}/></button></div>
       {!driver.isOnline && <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">Go online and share your location to receive ride offers.</div>}
       {driver.isOnline && offers.length === 0 && <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center"><CarFront className="mx-auto text-slate-400" size={32}/><p className="mt-3 font-bold text-slate-700">No ride offers right now</p><p className="mt-1 text-sm text-slate-500">Keep your status online. New nearby requests will appear here.</p></div>}

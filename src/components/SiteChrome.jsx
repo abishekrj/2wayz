@@ -66,15 +66,15 @@ export function SiteHeader() {
 
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+      <div className="mx-auto flex min-h-[80px] max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
         <Brand />
-        <nav aria-label="Main navigation" className="hidden items-center gap-8 text-sm md:flex">
+        <nav aria-label="Main navigation" className="mx-4 hidden flex-1 items-center justify-center gap-6 text-sm md:flex lg:gap-8">
           {navigation.map((item) => {
             const active = pathname === item.to
             return <Link key={item.to} to={item.to} aria-current={active ? 'page' : undefined} className={navClass(active)}>{item.label}</Link>
           })}
         </nav>
-        <div className="relative hidden md:block">
+        <div className="relative hidden h-12 w-44 shrink-0 items-center justify-end md:flex">
           {checkingPassenger ? <div aria-hidden="true" className="h-12 w-36 rounded-xl bg-slate-100"/> : (passenger ? (
             <div className="relative">
               <button type="button" onClick={() => setProfileOpen(open => !open)} aria-expanded={profileOpen} aria-haspopup="menu" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-wayz-blue hover:bg-blue-50">

@@ -35,15 +35,16 @@ async function getWallet(driverId) {
 }
 router.get('/me', requireDriver, async (req, res, next) => {
   try {
-    const [wallet, settings, transactions, recharges, due] = await Promise.all([
+    const [wallet, settings, transactions, recharges, due, commissionTotal] = await Promise.all([
       getWallet(req.driverAuth.sub),
       prisma.walletSettings.findUnique({ where: { id: 'default' } }),
       prisma.walletTransaction.findMany({ where: { wallet: { is: { driverId: req.driverAuth.sub } } }, orderBy: { createdAt: 'desc' }, take: 30 }),
       prisma.walletRecharge.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 15 }),
-      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } }),
+      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION' }, _sum: { settledAmount: true } })
     ])
     const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
-    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, transactions, recharges })
+    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, transactions, recharges })
   } catch (error) { next(error) }
 })
 router.post('/recharges', requireDriver, upload.single('proof'), async (req, res, next) => {

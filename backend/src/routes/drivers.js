@@ -227,6 +227,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
             await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: balanceAfter } })
             await tx.walletTransaction.create({ data: {
               walletId: wallet.id, type: 'COMMISSION', amount: commission, settledAmount: paid,
+              commissionMode: settings.commissionMode, commissionValue: settings.commissionValue,
               status: paid >= commission ? 'POSTED' : 'DUE',
               description: settings.commissionMode === 'PERCENTAGE' ? `Ride commission (${settings.commissionValue}% of ₹${finalFare})` : `Fixed ride commission (₹${settings.commissionValue})`,
               bookingId: booking.id, balanceAfter

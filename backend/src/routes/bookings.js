@@ -91,7 +91,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
     }
     await notifyBooking({ booking, type: 'BOOKING_CREATED', title: 'Ride request created', message: `Ride ${booking.reference} has been requested.`, includeDriver: false })
     const responseMessage = mode === 'schedule'
-      ? 'Scheduled ride saved. 2WAYZ will start finding drivers 15 minutes before pickup.'
+      ? `Scheduled ride saved. 2WAYZ will start finding drivers ${Math.min(120, Math.max(1, Number(process.env.SCHEDULED_DISPATCH_LEAD_MINUTES) || 15))} minutes before pickup.`
       : offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.'
     res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt, dispatchStatus: booking.dispatchStatus }, offersCreated, message: responseMessage })
   } catch (error) { next(error) }

@@ -105,6 +105,10 @@ model Booking {
   cancelledAt        DateTime?
   cancelledBy        String?
   cancellationReason String?
+  dispatchStatus     String        @default("SCHEDULED")
+  dispatchLastAttemptAt DateTime?
+  dispatchAttemptCount Int         @default(0)
+  dispatchAlertedAt  DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   passenger          PassengerUser @relation(fields: [passengerId], references: [id])
@@ -114,6 +118,7 @@ model Booking {
   @@index([passengerId, createdAt])
   @@index([driverId, status])
   @@index([status, requestedAt])
+  @@index([mode, dispatchStatus, scheduledAt])
 }
 
 model DriverOffer {

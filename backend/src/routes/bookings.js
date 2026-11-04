@@ -148,8 +148,9 @@ router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
       orderBy: { cancelledAt: 'desc' },
       take: 200,
       select: {
-        id: true, reference: true, status: true, pickupName: true, destinationName: true,
+        id: true, reference: true, status: true, driverId: true, pickupName: true, destinationName: true,
         estimatedFare: true, finalFare: true, cancelledAt: true, cancelledBy: true, cancellationReason: true,
+        financialAdjustments: { orderBy: { createdAt: 'desc' }, select: { id: true, type: true, amount: true, reason: true, createdBy: true, createdAt: true } },
         passenger: { select: { name: true, phone: true } },
         driver: { select: { name: true, phone: true, vehicleNumber: true } }
       }

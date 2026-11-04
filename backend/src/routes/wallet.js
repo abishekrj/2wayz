@@ -106,12 +106,20 @@ router.post('/admin/adjustments', requireAdmin, async (req, res, next) => {
       }
       if (!booking.driverId) throw Object.assign(new Error('This booking has no assigned driver, so a driver wallet adjustment cannot be applied.'), { statusCode: 409 })
       const wallet = await tx.driverWallet.upsert({ where: { driverId: booking.driverId }, create: { driverId: booking.driverId }, update: {} })
-      const balanceAfter = type === 'WALLET_CREDIT' ? wallet.balance + amount : wallet.balance - amount
-      if (balanceAfter < 0) throw Object.assign(new Error('The driver wallet does not have enough balance for this debit.'), { statusCode: 409 })
+      if (type === 'WALLET_DEBIT') {
+        const debited = await tx.driverWallet.updateMany({
+          where: { id: wallet.id, balance: { gte: amount } },
+          data: { balance: { decrement: amount } }
+        })
+        if (debited.count !== 1) throw Object.assign(new Error('The driver wallet does not have enough balance for this debit.'), { statusCode: 409 })
+      } else {
+        await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: { increment: amount } } })
+      }
+      const updatedWallet = await tx.driverWallet.findUnique({ where: { id: wallet.id }, select: { balance: true } })
+      const balanceAfter = updatedWallet.balance
       const adjustment = await tx.bookingAdjustment.create({
         data: { bookingId: booking.id, driverId: booking.driverId, type, amount, reason, createdBy: req.admin.sub || req.admin.id || 'SUPER_ADMIN' }
       })
-      await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: balanceAfter } })
       const transaction = await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,

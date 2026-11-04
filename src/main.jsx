@@ -1,28 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import App from './App'
 import './index.css'
 
 const rootElement = document.getElementById('root')
-
-function StartupLoader() {
-  return (
-    <main className="wayz-startup-loader" role="status" aria-live="polite" aria-label="Loading 2WAYZ">
-      <div className="wayz-loader-content">
-        <div className="wayz-loader-brand" aria-label="2WAYZ">
-          <span>2WAYZ</span><i />
-        </div>
-        <div className="wayz-loader-route" aria-hidden="true">
-          <span className="wayz-loader-track" />
-          <span className="wayz-loader-dot wayz-loader-dot-one" />
-          <span className="wayz-loader-dot wayz-loader-dot-two" />
-          <span className="wayz-loader-auto">↗</span>
-        </div>
-        <p className="wayz-loader-title">Your ride is getting ready</p>
-        <p className="wayz-loader-subtitle">Local rides. Made easy.</p>
-      </div>
-    </main>
-  )
-}
 
 function StartupMessage({ title, message, details }) {
   return (
@@ -65,27 +46,10 @@ if (!rootElement) {
   const root = ReactDOM.createRoot(rootElement)
 
   root.render(
-    <StartupLoader />
+    <React.StrictMode>
+      <AppErrorBoundary>
+        <App />
+      </AppErrorBoundary>
+    </React.StrictMode>
   )
-
-  import('./App')
-    .then(({ default: App }) => {
-      root.render(
-        <React.StrictMode>
-          <AppErrorBoundary>
-            <App />
-          </AppErrorBoundary>
-        </React.StrictMode>
-      )
-    })
-    .catch((error) => {
-      console.error('2WAYZ application startup error:', error)
-      root.render(
-        <StartupMessage
-          title="2WAYZ could not start"
-          message={error.message || String(error)}
-          details={error.stack}
-        />
-      )
-    })
 }

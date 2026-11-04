@@ -59,7 +59,7 @@ export default function MyBookingsPage() {
     <div className="min-h-[70vh] bg-wayz-mist/50">
       <div className="mx-auto max-w-4xl px-5 py-10">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Your account</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">My bookings</h1><p className="mt-2 text-sm text-slate-500">View your recent rides and final fares.</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Your account</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">My bookings</h1><p className="mt-2 text-sm text-slate-500">View your rides and final fares. Cancelled rides remain visible for 14 days; older cancellations are hidden from this list.</p></div>
           <button onClick={load} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600"><RefreshCw size={16}/> Refresh</button>
         </div>
         {actionMessage && <div role="status" className="mt-6 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{actionMessage}</div>}

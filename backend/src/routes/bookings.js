@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma.js'
+import { requireAdmin } from '../middleware/requireAdmin.js'
 
 const router = Router()
 function requirePassenger(req, res, next) {
@@ -90,18 +91,85 @@ router.post('/', requirePassenger, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+const cancellationReasons = new Set([
+  'CHANGE_OF_PLANS',
+  'WRONG_PICKUP',
+  'WRONG_DESTINATION',
+  'DRIVER_UNAVAILABLE',
+  'VEHICLE_ISSUE',
+  'PASSENGER_UNAVAILABLE',
+  'OTHER'
+])
+
+router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
+  try {
+    const reason = String(req.body?.reason || '').toUpperCase()
+    const reasonDetails = String(req.body?.details || '').trim().slice(0, 500)
+    if (!cancellationReasons.has(reason)) return res.status(400).json({ message: 'Choose a valid cancellation reason.' })
+    const result = await prisma.$transaction(async tx => {
+      const booking = await tx.booking.findFirst({
+        where: { id: req.params.id, passengerId: req.passengerAuth.sub },
+        select: { id: true, status: true, driverId: true, reference: true }
+      })
+      if (!booking) throw Object.assign(new Error('Booking not found.'), { statusCode: 404 })
+      if (!['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(booking.status)) {
+        throw Object.assign(new Error('This booking can no longer be cancelled from the passenger app.'), { statusCode: 409 })
+      }
+      const now = new Date()
+      const updated = await tx.booking.updateMany({
+        where: { id: booking.id, passengerId: req.passengerAuth.sub, status: booking.status },
+        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : '') }
+      })
+      if (updated.count !== 1) throw Object.assign(new Error('The booking changed while cancelling. Refresh and try again.'), { statusCode: 409 })
+      await tx.driverOffer.updateMany({ where: { bookingId: booking.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
+      if (booking.driverId) {
+        await tx.driverActivity.create({ data: { driverId: booking.driverId, eventType: 'RIDE_CANCELLED', description: 'Passenger cancelled ride ' + booking.reference + '. Reason: ' + reason, bookingId: booking.id } })
+      }
+      return { id: booking.id, reference: booking.reference, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'PASSENGER', cancellationReason: reason + (reasonDetails ? ': ' + reasonDetails : '') }
+    })
+    res.json({ booking: result, message: 'Booking cancelled. No automatic refund or cancellation fee has been applied.' })
+  } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
+})
+
+router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
+  try {
+    const search = String(req.query.search || '').trim()
+    const bookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ['CANCELLED', 'CANCELED'] },
+        ...(search ? { OR: [
+          { reference: { contains: search, mode: 'insensitive' } },
+          { passenger: { name: { contains: search, mode: 'insensitive' } } },
+          { passenger: { phone: { contains: search } } },
+          { driver: { name: { contains: search, mode: 'insensitive' } } },
+          { driver: { phone: { contains: search } } }
+        ] } : {})
+      },
+      orderBy: { cancelledAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, reference: true, status: true, pickupName: true, destinationName: true,
+        estimatedFare: true, finalFare: true, cancelledAt: true, cancelledBy: true, cancellationReason: true,
+        passenger: { select: { name: true, phone: true } },
+        driver: { select: { name: true, phone: true, vehicleNumber: true } }
+      }
+    })
+    res.json({ bookings })
+  } catch (error) { next(error) }
+})
+
 router.get('/:id', requirePassenger, async (req, res, next) => {
   try {
     const booking = await prisma.booking.findFirst({ where: { id: req.params.id, passengerId: req.passengerAuth.sub }, include: { driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, currentLat: true, currentLng: true, locationUpdatedAt: true, isOnline: true } } } })
     if (!booking) return res.status(404).json({ message: 'Booking not found.' })
     const locationIsFresh = booking.driver?.isOnline && booking.driver.locationUpdatedAt && Date.now() - booking.driver.locationUpdatedAt.getTime() <= 60000
-    res.json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, pickupName: booking.pickupName, pickupAddress: booking.pickupAddress, pickupLat: booking.pickupLat, pickupLng: booking.pickupLng, destinationName: booking.destinationName, destinationAddress: booking.destinationAddress, destinationLat: booking.destinationLat, destinationLng: booking.destinationLng, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, finalFare: booking.finalFare, arrivedAt: booking.arrivedAt, tripStartedAt: booking.tripStartedAt, completedAt: booking.completedAt, mode: booking.mode, scheduledAt: booking.scheduledAt, driver: booking.driver ? { name: booking.driver.name, phone: booking.driver.phone, vehicleNumber: booking.driver.vehicleNumber, currentLat: locationIsFresh ? booking.driver.currentLat : null, currentLng: locationIsFresh ? booking.driver.currentLng : null, locationUpdatedAt: booking.driver.locationUpdatedAt, locationIsFresh: Boolean(locationIsFresh), isOnline: booking.driver.isOnline } : null } })
+    res.json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, pickupName: booking.pickupName, pickupAddress: booking.pickupAddress, pickupLat: booking.pickupLat, pickupLng: booking.pickupLng, destinationName: booking.destinationName, destinationAddress: booking.destinationAddress, destinationLat: booking.destinationLat, destinationLng: booking.destinationLng, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, finalFare: booking.finalFare, cancelledAt: booking.cancelledAt, cancelledBy: booking.cancelledBy, cancellationReason: booking.cancellationReason, arrivedAt: booking.arrivedAt, tripStartedAt: booking.tripStartedAt, completedAt: booking.completedAt, mode: booking.mode, scheduledAt: booking.scheduledAt, driver: booking.driver ? { name: booking.driver.name, phone: booking.driver.phone, vehicleNumber: booking.driver.vehicleNumber, currentLat: locationIsFresh ? booking.driver.currentLat : null, currentLng: locationIsFresh ? booking.driver.currentLng : null, locationUpdatedAt: booking.driver.locationUpdatedAt, locationIsFresh: Boolean(locationIsFresh), isOnline: booking.driver.isOnline } : null } })
   } catch (error) { next(error) }
 })
 
 router.get('/', requirePassenger, async (req, res, next) => {
   try {
-    const bookings = await prisma.booking.findMany({ where: { passengerId: req.passengerAuth.sub }, orderBy: { createdAt: 'desc' }, take: 50, select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, createdAt: true } })
+    const bookings = await prisma.booking.findMany({ where: { passengerId: req.passengerAuth.sub }, orderBy: { createdAt: 'desc' }, take: 50, select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, createdAt: true } })
     res.json({ bookings })
   } catch (error) { next(error) }
 })

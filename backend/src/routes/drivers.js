@@ -183,6 +183,33 @@ router.post('/offers/:offerId/decline', requireDriver, async (req, res, next) =>
   } catch (error) { next(error) }
 })
 
+router.post('/bookings/:bookingId/cancel', requireDriver, async (req, res, next) => {
+  try {
+    const reason = String(req.body?.reason || '').toUpperCase()
+    const allowedReasons = new Set(['PASSENGER_UNAVAILABLE', 'PASSENGER_REQUESTED', 'VEHICLE_ISSUE', 'SAFETY_CONCERN', 'WRONG_LOCATION', 'OTHER'])
+    if (!allowedReasons.has(reason)) return res.status(400).json({ message: 'Choose a valid cancellation reason.' })
+    const details = String(req.body?.details || '').trim().slice(0, 500)
+    const outcome = await prisma.$transaction(async tx => {
+      const booking = await tx.booking.findFirst({
+        where: { id: req.params.bookingId, driverId: req.driverAuth.sub, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'] } },
+        select: { id: true, status: true, reference: true }
+      })
+      if (!booking) throw Object.assign(new Error('Only an assigned ride that has not started can be cancelled by the driver.'), { statusCode: 409 })
+      const now = new Date()
+      const cancellationReason = reason + (details ? ': ' + details : '')
+      const changed = await tx.booking.updateMany({
+        where: { id: booking.id, driverId: req.driverAuth.sub, status: booking.status },
+        data: { status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason }
+      })
+      if (changed.count !== 1) throw Object.assign(new Error('This ride changed while cancelling. Refresh your active rides.'), { statusCode: 409 })
+      await tx.driverActivity.create({ data: { driverId: req.driverAuth.sub, eventType: 'RIDE_CANCELLED', description: 'Driver cancelled ride ' + booking.reference + '. Reason: ' + reason, bookingId: booking.id } })
+      await tx.driverOffer.updateMany({ where: { bookingId: booking.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
+      return { id: booking.id, reference: booking.reference, status: 'CANCELLED', cancelledAt: now, cancelledBy: 'DRIVER', cancellationReason }
+    })
+    res.json({ booking: outcome, message: 'Ride cancelled and recorded for Super Admin review. No cancellation fee or wallet adjustment has been applied.' })
+  } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
+})
+
 router.get('/active', requireDriver, async (req, res, next) => {
   try {
     const bookings = await prisma.booking.findMany({

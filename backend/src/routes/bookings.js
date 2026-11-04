@@ -347,7 +347,22 @@ router.get('/:id', requirePassenger, async (req, res, next) => {
 
 router.get('/', requirePassenger, async (req, res, next) => {
   try {
-    const bookings = await prisma.booking.findMany({ where: { passengerId: req.passengerAuth.sub }, orderBy: { createdAt: 'desc' }, take: 50, select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, createdAt: true } })
+    // Hide cancelled rides from passenger history after 14 days. Keep the
+    // underlying booking and audit/financial records for Super Admin reports.
+    const cancellationCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    const bookings = await prisma.booking.findMany({
+      where: {
+        passengerId: req.passengerAuth.sub,
+        OR: [
+          { status: { notIn: ['CANCELLED', 'CANCELED'] } },
+          { cancelledAt: { gte: cancellationCutoff } },
+          { cancelledAt: null }
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, createdAt: true }
+    })
     res.json({ bookings })
   } catch (error) { next(error) }
 })

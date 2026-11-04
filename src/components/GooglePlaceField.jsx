@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle } from 'lucide-react'
+import { MapPin, LoaderCircle, LocateFixed } from 'lucide-react'
 
 let mapsPromise
 
@@ -22,7 +22,7 @@ function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false }) {
   const inputRef = useRef(null)
   const placesRef = useRef(null)
   const requestRef = useRef(0)
@@ -31,6 +31,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [error, setError] = useState('')
   const selectedName = value?.name || ''
 
@@ -85,6 +86,48 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     }, 250)
     return () => window.clearTimeout(timer)
   }, [query, editing])
+
+  async function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      setError('Location is not supported by this browser. Please search for your pickup point.')
+      return
+    }
+    setError('')
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(async position => {
+      try {
+        if (!window.google?.maps?.Geocoder) throw new Error('Google Maps is still loading. Please try again.')
+        const geocoder = new window.google.maps.Geocoder()
+        const result = await geocoder.geocode({
+          location: { lat: position.coords.latitude, lng: position.coords.longitude },
+        })
+        const place = result.results?.[0]
+        if (!place) throw new Error('Could not identify your current location. Please search for your pickup point.')
+        const name = place.address_components?.find(component =>
+          component.types.includes('premise') || component.types.includes('point_of_interest') ||
+          component.types.includes('establishment') || component.types.includes('sublocality')
+        )?.long_name || place.formatted_address
+        onSelect({
+          placeId: place.place_id,
+          name,
+          address: place.formatted_address || name,
+          location: { lat: position.coords.latitude, lng: position.coords.longitude },
+        })
+      } catch (err) {
+        setError(err.message || 'Unable to identify your current location. Please search manually.')
+      } finally {
+        setLocating(false)
+      }
+    }, error => {
+      const message = error.code === 1
+        ? 'Location permission was denied. Allow location access in your browser or search for your pickup point.'
+        : error.code === 3
+          ? 'Getting your location took too long. Please try again.'
+          : 'Unable to get your location. Check your GPS or network and try again.'
+      setError(message)
+      setLocating(false)
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 })
+  }
 
   function startEditing() {
     setError('')
@@ -145,6 +188,18 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
         )}
         {(loading || searching) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
       </div>
+
+      {enableCurrentLocation && (
+        <button
+          type="button"
+          onClick={useCurrentLocation}
+          disabled={locating || loading}
+          className="mt-2 inline-flex items-center gap-2 rounded-lg px-1 py-1 text-xs font-bold text-wayz-blue transition hover:text-wayz-navy disabled:cursor-wait disabled:opacity-60"
+        >
+          {locating ? <LoaderCircle size={15} className="animate-spin" /> : <LocateFixed size={15} />}
+          {locating ? 'Finding your location…' : 'Use my current location'}
+        </button>
+      )}
 
       {editing && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-[1000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">

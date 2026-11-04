@@ -226,7 +226,6 @@ export default function BookingPanel({ initialDestination = null }) {
         </section>
       )}
 
-      <p className="mt-4 text-center text-[11px] text-slate-400">Location suggestions and route distance are provided by Google Maps Platform.</p>
     </div>
   )
 }

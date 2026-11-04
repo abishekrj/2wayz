@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate, Outlet } from 'rea
 import { useEffect, useState } from 'react'
 import HomePage from './pages/HomePage'
 import DriverRegistrationPage from './pages/DriverRegistrationPage'
+import DriverPortalPage from './pages/DriverPortalPage'
+import AdminDriversPage from './pages/AdminDriversPage'
 import TravelDetailsPage from './pages/TravelDetailsPage'
 import TravelTrackingPage from './pages/TravelTrackingPage'
 import LoginPage from './pages/LoginPage'
@@ -37,6 +39,7 @@ function AdminRoutes() {
       <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
       <Route path="registered-users" element={<AdminRegisteredUsersPage/>}/>
+      <Route path="drivers" element={<AdminDriversPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>
@@ -53,6 +56,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/driver/register" element={<DriverRegistrationPage />} />
+      <Route path="/driver/login" element={<DriverPortalPage />} />
+      <Route path="/driver" element={<DriverPortalPage />} />
       <Route path="/travel-details" element={<TravelDetailsPage />} />
       <Route path="/travel-tracking" element={<TravelTrackingPage />} />
       <Route path="*" element={<HomePage />} />

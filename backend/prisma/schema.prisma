@@ -82,6 +82,8 @@ model Booking {
   reference          String        @unique
   passengerId        String
   driverId           String?
+  assignedByAdminId  String?
+  manuallyAssignedAt DateTime?
   pickupName         String
   pickupAddress      String
   pickupLat          Float

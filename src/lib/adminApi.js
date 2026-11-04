@@ -38,6 +38,13 @@ export const adminApi = {
   declineDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/decline`, { method: 'POST' }),
   adminDrivers: (status = '') => request(`/drivers/admin${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   updateDriverStatus: (id, status) => request(`/drivers/admin/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  walletMe: () => request('/wallet/me'),
+  submitWalletRecharge: async (form) => { const response = await fetch(`${API_BASE}/wallet/recharges`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Recharge request failed.'); return data },
+  walletSettings: () => request('/wallet/admin/settings'),
+  saveWalletSettings: (settings) => request('/wallet/admin/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+  walletDrivers: (search = '') => request(`/wallet/admin/drivers?search=${encodeURIComponent(search)}`),
+  walletRecharges: (status = '') => request(`/wallet/admin/recharges${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  reviewWalletRecharge: (id, status) => request(`/wallet/admin/recharges/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
   booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),
   passengerBookings: () => request('/bookings')

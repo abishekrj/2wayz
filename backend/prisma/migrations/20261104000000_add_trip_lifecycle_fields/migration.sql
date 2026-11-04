@@ -1,4 +1,0 @@
-ALTER TABLE "Booking"
-ADD COLUMN "arrivedAt" TIMESTAMP(3),
-ADD COLUMN "tripStartedAt" TIMESTAMP(3),
-ADD COLUMN "finalFare" INTEGER;

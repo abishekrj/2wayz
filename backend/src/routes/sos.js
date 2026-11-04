@@ -46,7 +46,7 @@ router.post('/trigger', requireRideUser, async (req, res, next) => {
     if (!booking) return res.status(404).json({ message: 'This active ride could not be verified. Refresh your ride and try again.' })
 
     const recent = await prisma.sOSAlert.findFirst({
-      where: { bookingId, triggeredByRole: req.rideUser.role, triggeredById: req.rideUser.id, createdAt: { gte: new Date(Date.now() - 60 * 1000) } },
+      where: { bookingId, triggeredByRole: req.rideUser.role, triggeredById: req.rideUser.id, status: { not: 'RESOLVED' }, createdAt: { gte: new Date(Date.now() - 60 * 1000) } },
       orderBy: { createdAt: 'desc' }
     })
     if (recent) return res.status(200).json({ alert: recent, message: 'Your recent SOS alert is already recorded. Super Admin has been notified.' })
@@ -77,7 +77,7 @@ router.post('/trigger', requireRideUser, async (req, res, next) => {
 router.get('/admin', requireAdmin, async (_req, res, next) => {
   try {
     const alerts = await prisma.sOSAlert.findMany({
-      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      orderBy: { createdAt: 'desc' },
       take: 200,
       include: {
         booking: {

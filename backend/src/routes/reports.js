@@ -102,6 +102,8 @@ router.get('/', requireAdmin, async (req, res, next) => {
     const totalCommission = sum(rows, row => row.commissionAmount)
     const totalDeducted = sum(rows, row => row.commissionDeducted)
     const totalOutstanding = sum(rows, row => row.outstandingCommission)
+    const totalAcceptedOffers = sum(rows, row => row.acceptedOffers)
+    const totalDeclinedOffers = sum(rows, row => row.declinedOffers)
 
     const daily = new Map()
     for (const row of rows) {
@@ -125,6 +127,8 @@ router.get('/', requireAdmin, async (req, res, next) => {
       summary: {
         totalRequests, totalCompleted, totalCancelled, totalFares,
         totalCommission, totalDeducted, totalOutstanding,
+        totalAcceptedOffers, totalDeclinedOffers,
+        offerAcceptanceRate: totalAcceptedOffers + totalDeclinedOffers ? Math.round(totalAcceptedOffers * 100 / (totalAcceptedOffers + totalDeclinedOffers)) : 0,
         averageFare: totalCompleted ? Math.round(totalFares / totalCompleted) : 0
       },
       drivers: rows.map(({ completedRecords, cancelledRecords, ...row }) => row),

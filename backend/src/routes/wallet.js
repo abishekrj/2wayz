@@ -40,7 +40,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
       prisma.walletSettings.findUnique({ where: { id: 'default' } }),
       prisma.walletTransaction.findMany({ where: { wallet: { driverId: req.driverAuth.sub } }, orderBy: { createdAt: 'desc' }, take: 30 }),
       prisma.walletRecharge.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 15 }),
-      prisma.walletTransaction.aggregate({ where: { wallet: { driverId: req.driverAuth.sub }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
     ])
     const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
     res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, transactions, recharges })
@@ -82,7 +82,7 @@ router.get('/admin/drivers', requireAdmin, async (req, res, next) => {
       orderBy: { name: 'asc' }, select: { id: true, name: true, phone: true, vehicleNumber: true, status: true, wallet: { select: { balance: true } } }
     })
     const wallets = await Promise.all(drivers.map(async driver => {
-      const due = await prisma.walletTransaction.aggregate({ where: { wallet: { driverId: driver.id }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+      const due = await prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: driver.id } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
       return { ...driver, balance: driver.wallet?.balance || 0, outstandingCommission: Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0)) }
     }))
     res.json({ drivers: wallets })

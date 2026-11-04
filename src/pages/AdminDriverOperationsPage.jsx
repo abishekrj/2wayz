@@ -17,7 +17,7 @@ function ageLabel(seconds) {
 const eventLabels = {
   ONLINE: 'Went online', OFFLINE: 'Went offline', RIDE_ACCEPTED: 'Accepted a ride',
   RIDE_DECLINED: 'Declined a ride', DRIVER_ARRIVED: 'Arrived at pickup',
-  TRIP_STARTED: 'Trip started', TRIP_COMPLETED: 'Trip completed'
+  TRIP_STARTED: 'Trip started · passenger OTP verified', TRIP_COMPLETED: 'Trip completed'
 }
 const healthStyles = {
   HEALTHY: 'bg-emerald-50 text-emerald-700', DELAYED: 'bg-amber-50 text-amber-700',

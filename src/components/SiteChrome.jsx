@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from '../lib/adminApi'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, MapPin } from 'lucide-react'
+import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut } from 'lucide-react'
 import Brand from './Brand'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
@@ -21,6 +21,7 @@ function navClass(active) {
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [passenger, setPassenger] = useState(null)
   const [checkingPassenger, setCheckingPassenger] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -63,9 +64,17 @@ export function SiteHeader() {
         </nav>
         <div className="relative hidden md:block">
           {!checkingPassenger && (passenger ? (
-            <div className="flex items-center gap-3">
-              <span className="max-w-36 truncate text-sm font-semibold text-slate-700">Hi, {passenger.name}</span>
-              <button type="button" onClick={logout} disabled={loggingOut} className="rounded-xl border border-wayz-blue px-4 py-3 text-sm font-semibold text-wayz-blue transition hover:bg-blue-50 disabled:opacity-60">{loggingOut ? 'Logging out…' : 'Logout'}</button>
+            <div className="relative">
+              <button type="button" onClick={() => setProfileOpen(open => !open)} aria-expanded={profileOpen} aria-haspopup="menu" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-wayz-blue hover:bg-blue-50">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-wayz-blue"><UserRound size={16}/></span>
+                <span className="max-w-36 truncate">{passenger.name}</span>
+                <ChevronDown size={15} className={profileOpen ? 'rotate-180 transition-transform' : 'transition-transform'}/>
+              </button>
+              {profileOpen && <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl">
+                <Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><UserRound size={17}/> My Profile</Link>
+                <Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><CalendarCheck size={17}/> My Bookings</Link>
+                <button role="menuitem" type="button" onClick={logout} disabled={loggingOut} className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60"><LogOut size={17}/>{loggingOut ? 'Logging out…' : 'Logout'}</button>
+              </div>}
             </div>
           ) : (
             <>
@@ -84,7 +93,9 @@ export function SiteHeader() {
         {!checkingPassenger && (passenger ? (
           <div className="border-t border-slate-100 pt-3">
             <p className="px-3 py-2 text-sm font-semibold text-slate-700">Signed in as {passenger.name}</p>
-            <button type="button" onClick={logout} disabled={loggingOut} className="w-full rounded-xl border border-wayz-blue px-4 py-3 text-center text-wayz-blue disabled:opacity-60">{loggingOut ? 'Logging out…' : 'Logout'}</button>
+            <Link onClick={() => setMenuOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><UserRound size={17}/> My Profile</Link>
+            <Link onClick={() => setMenuOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><CalendarCheck size={17}/> My Bookings</Link>
+            <button type="button" onClick={logout} disabled={loggingOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-rose-600 hover:bg-rose-50 disabled:opacity-60"><LogOut size={17}/>{loggingOut ? 'Logging out…' : 'Logout'}</button>
           </div>
         ) : (
           <>

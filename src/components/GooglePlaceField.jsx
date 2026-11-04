@@ -163,7 +163,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
-        className={`relative flex min-h-[58px] items-center rounded-xl border border-slate-200 bg-white pl-[64px] pr-3 transition focus-within:border-2 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
+        className={`relative flex min-h-[58px] items-center rounded-xl border-2 border-slate-300 bg-white pl-[64px] pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
       >
         <Icon size={36} className="absolute left-3 top-1/2 z-[99] box-content h-10 w-10 -translate-y-1/2 bg-white" />
         {editing ? (

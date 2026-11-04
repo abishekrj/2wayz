@@ -78,14 +78,16 @@ export default function DriverPortalPage() {
   }, [])
 
   useEffect(() => {
+    if (isLoginRoute) {
+      setDriver(null)
+      setChecking(false)
+      return
+    }
     let active = true
+    setChecking(true)
     adminApi.driverMe().then(result => { if (active) setDriver(result.driver) }).catch(() => {}).finally(() => { if (active) setChecking(false) })
     return () => { active = false }
-  }, [])
-
-  useEffect(() => {
-    if (!checking && driver && isLoginRoute) navigate('/driver', { replace: true })
-  }, [checking, driver, isLoginRoute, navigate])
+  }, [isLoginRoute])
 
   useEffect(() => {
     if (!driver?.isOnline) return

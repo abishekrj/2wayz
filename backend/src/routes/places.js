@@ -72,4 +72,73 @@ router.put('/admin', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+
+const DEFAULT_FAQS = [
+  { id: 'faq-1', question: 'How do I book an auto with 2WAYZ?', answer: 'Enter your pickup location and destination, review the route and indicative fare, then continue to request an auto. You can track your booking from the travel page.', isPublished: true, sortOrder: 0 },
+  { id: 'faq-2', question: 'How is my fare calculated?', answer: 'The fare estimate is based on the road route and the current indicative tariff shown before you book. The final fare is confirmed for your completed trip.', isPublished: true, sortOrder: 1 },
+  { id: 'faq-3', question: 'How do I pay for my ride?', answer: 'At present, passengers pay the driver directly for the completed trip. 2WAYZ does not collect the passenger fare online.', isPublished: true, sortOrder: 2 },
+  { id: 'faq-4', question: 'Can I cancel a booking?', answer: 'You can cancel an eligible ride from the travel tracking page or My Bookings before the trip starts. A ride that is already in progress cannot be cancelled by the passenger.', isPublished: true, sortOrder: 3 },
+  { id: 'faq-5', question: 'Can I book another auto while I have an active ride?', answer: 'Only one active booking is allowed at a time. Complete or cancel your current ride before requesting another auto.', isPublished: true, sortOrder: 4 },
+  { id: 'faq-6', question: 'Where is 2WAYZ currently available?', answer: '2WAYZ is focused on local auto journeys in and around Tiruvannamalai.', isPublished: true, sortOrder: 5 }
+]
+
+function normalizeFaqs(value) {
+  if (!Array.isArray(value)) return null
+  const seen = new Set()
+  const faqs = []
+  for (let index = 0; index < value.length; index += 1) {
+    const raw = value[index]
+    if (!raw || typeof raw.question !== 'string' || typeof raw.answer !== 'string') continue
+    const question = raw.question.trim().slice(0, 240)
+    const answer = raw.answer.trim().slice(0, 2000)
+    if (!question || !answer || seen.has(question.toLowerCase())) continue
+    seen.add(question.toLowerCase())
+    faqs.push({
+      id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.slice(0, 80) : 'faq-' + (index + 1),
+      question,
+      answer,
+      isPublished: raw.isPublished !== false,
+      sortOrder: Number.isInteger(raw.sortOrder) ? raw.sortOrder : index
+    })
+  }
+  return faqs.sort((a, b) => a.sortOrder - b.sortOrder)
+}
+
+async function readFaqConfig() {
+  const section = await prisma.homePageSection.findUnique({ where: { slug: 'faqs' } })
+  const content = section?.content && typeof section.content === 'object' ? section.content : {}
+  return {
+    heading: typeof content.heading === 'string' && content.heading.trim() ? content.heading : 'Frequently Asked Questions',
+    description: typeof content.description === 'string' ? content.description : 'Quick answers to common questions about booking and travelling with 2WAYZ.',
+    faqs: normalizeFaqs(content.faqs) || DEFAULT_FAQS
+  }
+}
+
+router.get('/faqs/public', async (req, res, next) => {
+  try {
+    const config = await readFaqConfig()
+    res.json({ ...config, faqs: config.faqs.filter(faq => faq.isPublished) })
+  } catch (error) { next(error) }
+})
+
+router.get('/faqs/admin', requireAdmin, async (req, res, next) => {
+  try { res.json(await readFaqConfig()) }
+  catch (error) { next(error) }
+})
+
+router.put('/faqs/admin', requireAdmin, async (req, res, next) => {
+  try {
+    const heading = typeof req.body?.heading === 'string' ? req.body.heading.trim().slice(0, 140) : ''
+    const description = typeof req.body?.description === 'string' ? req.body.description.trim().slice(0, 300) : ''
+    const faqs = normalizeFaqs(req.body?.faqs)
+    if (!heading || !faqs) return res.status(400).json({ message: 'A section heading and valid FAQ list are required.' })
+    const section = await prisma.homePageSection.upsert({
+      where: { slug: 'faqs' },
+      create: { slug: 'faqs', title: 'FAQs', content: { heading, description, faqs }, isPublished: true, sortOrder: 10 },
+      update: { title: 'FAQs', content: { heading, description, faqs } }
+    })
+    res.json({ heading, description, faqs, message: 'FAQ configuration saved.', sectionId: section.id })
+  } catch (error) { next(error) }
+})
+
 export default router

@@ -22,6 +22,66 @@ function sum(items, selector) {
   return items.reduce((total, item) => total + Number(selector(item) || 0), 0)
 }
 
+
+router.get('/daily-earnings', requireAdmin, async (req, res, next) => {
+  try {
+    const date = String(req.query.date || indiaDateText(new Date()))
+    const range = indiaDayRange(date)
+    if (!range) return res.status(400).json({ message: 'Choose a valid date in YYYY-MM-DD format.' })
+    const bookings = await prisma.booking.findMany({
+      where: { status: 'COMPLETED', completedAt: range, driverId: { not: null } },
+      select: {
+        id: true, reference: true, driverId: true, finalFare: true, estimatedFare: true,
+        completedAt: true, driver: { select: { id: true, name: true, phone: true, vehicleNumber: true } }
+      },
+      orderBy: { completedAt: 'desc' }
+    })
+    const commissionRows = bookings.length ? await prisma.walletTransaction.findMany({
+      where: { type: 'COMMISSION', bookingId: { in: bookings.map(item => item.id) } },
+      select: { bookingId: true, amount: true, settledAmount: true }
+    }) : []
+    const commissionByBooking = new Map(commissionRows.map(row => [row.bookingId, row]))
+    const byDriver = new Map()
+    let totalFare = 0, totalCommission = 0, totalSettled = 0
+    for (const booking of bookings) {
+      const fare = Number(booking.finalFare ?? booking.estimatedFare ?? 0)
+      const commission = commissionByBooking.get(booking.id)
+      const commissionAmount = Number(commission?.amount || 0)
+      const settled = Number(commission?.settledAmount || 0)
+      const driver = booking.driver
+      const row = byDriver.get(driver.id) || {
+        driverId: driver.id, driverName: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber,
+        completedRides: 0, totalFare: 0, commission: 0, commissionSettled: 0, commissionDue: 0, netEarnings: 0
+      }
+      row.completedRides += 1
+      row.totalFare += fare
+      row.commission += commissionAmount
+      row.commissionSettled += settled
+      row.commissionDue += Math.max(0, commissionAmount - settled)
+      row.netEarnings += fare - commissionAmount
+      byDriver.set(driver.id, row)
+      totalFare += fare
+      totalCommission += commissionAmount
+      totalSettled += settled
+    }
+    const drivers = [...byDriver.values()].sort((a, b) => b.netEarnings - a.netEarnings)
+    res.json({
+      date, summary: {
+        completedRides: bookings.length, totalFare, totalCommission,
+        commissionSettled: totalSettled, commissionDue: Math.max(0, totalCommission - totalSettled),
+        netEarnings: totalFare - totalCommission, activeDrivers: drivers.length
+      },
+      drivers,
+      rides: bookings.map(booking => {
+        const commission = commissionByBooking.get(booking.id)
+        const fare = Number(booking.finalFare ?? booking.estimatedFare ?? 0)
+        const commissionAmount = Number(commission?.amount || 0)
+        return { reference: booking.reference, driverName: booking.driver.name, fare, commission: commissionAmount, netEarnings: fare - commissionAmount, completedAt: booking.completedAt }
+      })
+    })
+  } catch (error) { next(error) }
+})
+
 router.get('/', requireAdmin, async (req, res, next) => {
   try {
     const today = new Date()

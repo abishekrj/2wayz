@@ -51,6 +51,7 @@ export const adminApi = {
   reviewWalletRecharge: (id, status) => request(`/wallet/admin/recharges/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   createBookingAdjustment: (data) => request('/wallet/admin/adjustments', { method: 'POST', body: JSON.stringify(data) }),
   createBooking: (data) => request('/bookings', { method: 'POST', body: JSON.stringify(data) }),
+  activePassengerBooking: () => request('/bookings/active'),
   booking: (id) => request(`/bookings/${encodeURIComponent(id)}`),
   cancelPassengerBooking: (id, reason, details = '') => request(`/bookings/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason, details }) }),
   retryPassengerBooking: (id) => request(`/bookings/${encodeURIComponent(id)}/retry`, { method: 'POST' }),

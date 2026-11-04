@@ -108,6 +108,20 @@ export default function TravelTrackingPage() {
     }
   }
 
+  async function shareTripLink() {
+    if (!shareUrl) return
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'My 2WAYZ live trip', text: 'Follow my live 2WAYZ ride:', url: shareUrl })
+        setShareMessage('Trip sharing link is ready to send.')
+        return
+      } catch (error) {
+        if (error.name === 'AbortError') return
+      }
+    }
+    await copyTripShareLink()
+  }
+
   async function stopTripSharing() {
     if (!booking?.bookingId || !window.confirm('Stop sharing this trip? Anyone with the existing link will lose access.')) return
     setShareBusy(true); setShareMessage('')
@@ -141,7 +155,7 @@ export default function TravelTrackingPage() {
       <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-wayz-blue"><Share2 size={22}/></span><div><h2 className="font-extrabold text-wayz-ink">Share live trip with family</h2><p className="mt-1 text-xs text-slate-500">Let someone you trust follow your ride in real time.</p></div></div>
       <p className="mt-3 text-sm leading-6 text-slate-600">Create a private link to share your journey, ride status and the driver's latest available location. The link expires after 24 hours and stops working when the ride ends. Anyone with the link can view it, so share it only with people you trust.</p>
       <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={createTripShareLink} disabled={shareBusy} className="inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{shareBusy ? <LoaderCircle size={16} className="animate-spin"/> : <Share2 size={16}/>} {shareUrl ? 'Generate a new link' : 'Create share link'}</button>{shareUrl && <button type="button" onClick={stopTripSharing} disabled={shareBusy} className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-700 disabled:opacity-60"><XCircle size={16}/> Stop sharing</button>}</div>
-      {shareUrl && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><input readOnly value={shareUrl} aria-label="Trip sharing link" className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600"/><button type="button" onClick={copyTripShareLink} className="inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink"><Copy size={16}/> Copy link</button></div>}
+      {shareUrl && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><input readOnly value={shareUrl} aria-label="Trip sharing link" className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600"/><div className="flex gap-2"><button type="button" onClick={shareTripLink} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink"><Share2 size={16}/> Share</button><button type="button" onClick={copyTripShareLink} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700"><Copy size={16}/> Copy</button></div></div>}
       {shareMessage && <p role="status" className="mt-3 text-xs font-semibold text-wayz-blue">{shareMessage}</p>}
     </section>}
 

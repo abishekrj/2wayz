@@ -119,7 +119,7 @@ export default function BookingPanel({ initialDestination = null }) {
       </div>
 
       <form onSubmit={submit} className="relative z-20 mt-5 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} />
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} enableCurrentLocation />
         <button
           type="button"
           onClick={swapLocations}

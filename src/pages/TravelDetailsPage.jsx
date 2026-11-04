@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CalendarDays, CarFront, CheckCircle2, Clock3, IndianRupee, MapPin, Route as RouteIcon, ShieldCheck, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CarFront, CheckCircle2, Clock3, IndianRupee, MapPin, Route as RouteIcon, ShieldCheck, Users } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import RouteMap from '../components/RouteMap'
 import { useBooking } from '../context/BookingContext'
@@ -17,10 +17,7 @@ export default function TravelDetailsPage() {
   const estimate = booking?.estimate
   const pickup = booking?.pickup
   const destination = booking?.destination
-  const dateLabel = useMemo(() => {
-    if (booking?.mode !== 'schedule' || !booking.date) return 'As soon as a driver accepts'
-    return new Date(booking.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + (booking.time ? ' · ' + booking.time : '')
-  }, [booking])
+  const dateLabel = 'As soon as a driver accepts'
 
   if (!booking || !estimate || !pickup || !destination) return <PageLayout><div className="mx-auto max-w-3xl px-5 py-20 text-center"><h1 className="text-2xl font-extrabold text-wayz-ink">No travel estimate found</h1><p className="mt-2 text-sm text-slate-500">Please enter your pickup and destination to calculate a fare.</p><button onClick={() => navigate('/')} className="mt-6 rounded-xl bg-wayz-blue px-5 py-3 text-sm font-bold text-white">Back to booking</button></div></PageLayout>
 
@@ -32,8 +29,7 @@ export default function TravelDetailsPage() {
         pickup,
         destination,
         estimate: { distanceKm: estimate.km, durationMinutes: estimate.durationMinutes },
-        mode: booking.mode === 'schedule' ? 'schedule' : 'instant',
-        ...(booking.mode === 'schedule' && booking.date ? { scheduledAt: new Date(booking.date + 'T' + (booking.time || '09:00') + ':00').toISOString() } : {})
+        mode: 'instant'
       }
       const result = await adminApi.createBooking(payload)
       setBooking(current => ({ ...current, vehicle, bookingId: result.booking.id, bookingStatus: result.booking.status, reference: result.booking.reference, serverBooking: result.booking, dispatchMessage: result.message }))
@@ -53,7 +49,7 @@ export default function TravelDetailsPage() {
       <div className="mb-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Review your journey</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Travel details</h1><p className="mt-2 text-sm text-slate-500">Check your route, estimated fare and vehicle before continuing.</p></div>
       <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-extrabold text-wayz-ink">Your trip</h2><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">{booking.mode === 'schedule' ? 'Scheduled ride' : 'Instant ride'}</span></div>
+          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-extrabold text-wayz-ink">Your trip</h2><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">Instant ride</span></div>
             <div className="mt-5 rounded-xl bg-wayz-mist/60 p-4"><div className="flex gap-3"><span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-emerald-500"/><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup location</p><p className="mt-1 break-words text-sm font-bold text-wayz-ink">{pickup.name}</p><p className="mt-1 text-xs text-slate-500">{pickup.address || ''}</p></div></div><div className="ml-1.5 my-3 h-7 border-l-2 border-dashed border-slate-300"/><div className="flex gap-3"><span className="mt-1.5 h-3 w-3 shrink-0 rounded-full bg-rose-500"/><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="mt-1 break-words text-sm font-bold text-wayz-ink">{destination.name}</p><p className="mt-1 text-xs text-slate-500">{destination.address || ''}</p></div></div></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-3"><div className="rounded-xl border border-slate-100 p-3"><RouteIcon size={18} className="text-wayz-blue"/><p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.km.toFixed(1)} km</p><p className="text-xs text-slate-500">Distance</p></div><div className="rounded-xl border border-slate-100 p-3"><Clock3 size={18} className="text-wayz-blue"/><p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.durationMinutes} min</p><p className="text-xs text-slate-500">Travel time</p></div><div className="rounded-xl border border-slate-100 p-3"><CalendarDays size={18} className="text-wayz-blue"/><p className="mt-2 text-sm font-extrabold text-wayz-ink">{dateLabel}</p><p className="text-xs text-slate-500">Pickup time</p></div></div>
           </section>

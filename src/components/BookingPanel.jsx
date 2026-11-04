@@ -31,9 +31,13 @@ async function calculateRoute(pickup, destination) {
     origin,
     destination: end,
     travelMode: 'DRIVING',
+    computeAlternativeRoutes: true,
     fields: ['distanceMeters', 'durationMillis', 'path'],
   })
-  const route = response.routes?.[0]
+  const routes = (response.routes || [])
+    .filter(route => Number.isFinite(route.distanceMeters) && route.distanceMeters > 0)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters || (a.durationMillis || 0) - (b.durationMillis || 0))
+  const route = routes[0]
   if (!route) throw new Error('No driving route found between these locations.')
 
   const km = route.distanceMeters / 1000

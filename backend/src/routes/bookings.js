@@ -35,8 +35,16 @@ router.post('/', requirePassenger, async (req, res, next) => {
   try {
     const { pickup, destination } = req.body || {}
     if (!validPoint(pickup) || !validPoint(destination)) return res.status(400).json({ message: 'Choose pickup and destination locations with map coordinates.' })
-    const distanceKmValue = distanceKm(pickup.location.lat, pickup.location.lng, destination.location.lat, destination.location.lng)
-    if (distanceKmValue < 0.05 || distanceKmValue > 100) return res.status(400).json({ message: 'Choose a valid local route up to 100 km.' })
+    const straightLineKm = distanceKm(pickup.location.lat, pickup.location.lng, destination.location.lat, destination.location.lng)
+    // The passenger app calculates the actual Google Maps driving-route distance.
+    // Use that same distance for the server-side fare so the confirmed and tracked fares match.
+    const submittedRouteKm = Number(req.body?.estimate?.distanceKm)
+    const distanceKmValue = Number.isFinite(submittedRouteKm) && submittedRouteKm > 0
+      ? submittedRouteKm
+      : straightLineKm
+    if (straightLineKm < 0.05 || distanceKmValue < straightLineKm * 0.8 || distanceKmValue > 100) {
+      return res.status(400).json({ message: 'The route distance is invalid. Please calculate the route again.' })
+    }
     const mode = req.body?.mode === 'schedule' ? 'schedule' : 'instant'
     let scheduledAt = null
     if (mode === 'schedule') {

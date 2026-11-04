@@ -163,7 +163,7 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
     const offer = await prisma.driverOffer.findFirst({ where: { id: req.params.offerId, driverId, status: 'OFFERED' }, include: { booking: true } })
     if (!offer || offer.booking.status !== 'REQUESTED') return res.status(409).json({ message: 'This ride is no longer available.' })
     const now = new Date()
-    const result = await prisma.booking.updateMany({ where: { id: offer.bookingId, status: 'REQUESTED', driverId: null }, data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now } })
+    const result = await prisma.booking.updateMany({ where: { id: offer.bookingId, status: 'REQUESTED', driverId: null }, data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now, ...(offer.booking.mode === 'schedule' ? { dispatchStatus: 'ASSIGNED' } : {}) } })
     if (result.count !== 1) {
       await prisma.driverOffer.updateMany({ where: { id: offer.id, status: 'OFFERED' }, data: { status: 'UNAVAILABLE' } })
       return res.status(409).json({ message: 'Another driver has already accepted this ride.' })

@@ -5,7 +5,7 @@ import { rateLimit } from 'express-rate-limit'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
-import { createRideStartOtp, ensureRideStartOtp, hashRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
+import { createRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -253,7 +253,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     const data = { status: nextStatus, ...transition.timestamp }
     if (nextStatus === 'DRIVER_ARRIVED') {
       const otp = createRideStartOtp()
-      data.rideStartOtpHash = hashRideStartOtp(otp)
+      data.rideStartOtpHash = otp.hash
       data.rideStartOtpEncrypted = otp.encrypted
       data.rideStartOtpAttempts = 0
       data.rideStartOtpVerifiedAt = null

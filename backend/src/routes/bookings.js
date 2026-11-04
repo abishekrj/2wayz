@@ -66,12 +66,24 @@ router.post('/', requirePassenger, async (req, res, next) => {
     // Scheduled rides are kept pending for a future scheduled-dispatch worker.
     let offersCreated = 0
     if (mode === 'instant') {
+      const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
       const cutoff = new Date(Date.now() - 3 * 60 * 1000)
-      const drivers = await prisma.driver.findMany({ where: { status: 'APPROVED', isOnline: true, locationUpdatedAt: { gte: cutoff }, currentLat: { not: null }, currentLng: { not: null } }, select: { id: true, currentLat: true, currentLng: true } })
-      const eligible = drivers.map(driver => ({ id: driver.id, km: distanceKm(booking.pickupLat, booking.pickupLng, driver.currentLat, driver.currentLng) })).filter(driver => driver.km <= 8).sort((a, b) => a.km - b.km).slice(0, 10)
-      if (eligible.length) {
-        await prisma.driverOffer.createMany({ data: eligible.map(driver => ({ bookingId: booking.id, driverId: driver.id })) , skipDuplicates: true })
-        offersCreated = eligible.length
+      if (settings?.isActive) {
+        const drivers = await prisma.driver.findMany({
+          where: { status: 'APPROVED', isOnline: true, locationUpdatedAt: { gte: cutoff }, currentLat: { not: null }, currentLng: { not: null }, wallet: { is: { balance: { gte: settings.minimumBalance } } } },
+          select: { id: true, currentLat: true, currentLng: true, wallet: { select: { id: true } } }
+        })
+        const withNoDue = await Promise.all(drivers.map(async driver => {
+          const due = await prisma.walletTransaction.aggregate({ where: { walletId: driver.wallet.id, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+          return { ...driver, outstanding: Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0)) }
+        }))
+        const eligible = withNoDue.filter(driver => driver.outstanding === 0)
+          .map(driver => ({ id: driver.id, km: distanceKm(booking.pickupLat, booking.pickupLng, driver.currentLat, driver.currentLng) }))
+          .filter(driver => driver.km <= 8).sort((a, b) => a.km - b.km).slice(0, 10)
+        if (eligible.length) {
+          await prisma.driverOffer.createMany({ data: eligible.map(driver => ({ bookingId: booking.id, driverId: driver.id })), skipDuplicates: true })
+          offersCreated = eligible.length
+        }
       }
     }
     res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt }, offersCreated, message: offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.' })

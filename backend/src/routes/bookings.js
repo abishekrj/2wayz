@@ -141,8 +141,8 @@ router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
           { reference: { contains: search, mode: 'insensitive' } },
           { passenger: { name: { contains: search, mode: 'insensitive' } } },
           { passenger: { phone: { contains: search } } },
-          { driver: { name: { contains: search, mode: 'insensitive' } } },
-          { driver: { phone: { contains: search } } }
+          { driver: { is: { name: { contains: search, mode: 'insensitive' } } } },
+          { driver: { is: { phone: { contains: search } } } }
         ] } : {})
       },
       orderBy: { cancelledAt: 'desc' },

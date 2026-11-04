@@ -39,7 +39,7 @@ export const adminApi = {
   driverLocation: (lat, lng) => request('/drivers/location', { method: 'POST', body: JSON.stringify({ lat, lng }) }),
   driverOffers: () => request('/drivers/offers'),
   driverActiveBookings: () => request('/drivers/active'),
-  updateDriverBookingStatus: (bookingId, status, finalFare) => request(`/drivers/bookings/${encodeURIComponent(bookingId)}/status`, { method: 'PATCH', body: JSON.stringify({ status, finalFare }) }),
+  updateDriverBookingStatus: (bookingId, status, finalFare, otp) => request(`/drivers/bookings/${encodeURIComponent(bookingId)}/status`, { method: 'PATCH', body: JSON.stringify({ status, finalFare, otp }) }),
   acceptDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/accept`, { method: 'POST' }),
   declineDriverOffer: (offerId) => request(`/drivers/offers/${encodeURIComponent(offerId)}/decline`, { method: 'POST' }),
   adminDrivers: (status = '') => request(`/drivers/admin${status ? `?status=${encodeURIComponent(status)}` : ''}`),

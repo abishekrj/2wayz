@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
+import { adminApi } from '../lib/adminApi'
 
 const FARE = { base: 30, includedKm: 1, perKm: 18, minimum: 50, rounding: 5 }
 
@@ -62,6 +63,17 @@ export default function BookingPanel({ initialDestination = null }) {
   const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [activeRide, setActiveRide] = useState(null)
+  const [checkingActiveRide, setCheckingActiveRide] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+    adminApi.activePassengerBooking()
+      .then(result => { if (mounted) setActiveRide(result.booking || null) })
+      .catch(() => {})
+      .finally(() => { if (mounted) setCheckingActiveRide(false) })
+    return () => { mounted = false }
+  }, [])
 
   useEffect(() => {
     if (!initialDestination) return
@@ -111,6 +123,18 @@ export default function BookingPanel({ initialDestination = null }) {
       setBusy(false)
     }
   }
+
+  if (checkingActiveRide) return <div id="book" className="rounded-[24px] border border-slate-100 bg-white p-8 text-center shadow-lg"><LoaderCircle className="mx-auto animate-spin text-wayz-blue" size={24}/><p className="mt-3 text-sm text-slate-500">Checking your current rides…</p></div>
+
+  if (activeRide) return (
+    <div id="book" className="relative z-30 w-full overflow-hidden rounded-[24px] border border-amber-200 bg-white text-left shadow-[0_18px_55px_rgba(3,25,58,.18)]">
+      <div className="bg-wayz-navy px-5 py-5 text-white sm:px-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Your current ride</p><h2 className="mt-1 text-xl font-extrabold sm:text-2xl">You already have an active booking</h2><p className="mt-2 text-sm text-white/75">To keep driver assignments clear, finish or cancel this ride before booking another auto.</p></div>
+      <div className="p-5 sm:p-7"><div className="flex flex-wrap items-center justify-between gap-3"><span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">{({ REQUESTED: 'Finding a driver', DRIVER_ASSIGNED: 'Driver accepted', DRIVER_ARRIVED: 'Driver arrived', IN_PROGRESS: 'Trip in progress' })[activeRide.status] || activeRide.status}</span><span className="text-xs font-bold text-slate-400">{activeRide.reference}</span></div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-xl bg-emerald-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{activeRide.pickupName}</p></div><div className="rounded-xl bg-rose-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{activeRide.destinationName}</p></div></div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5"><div><p className="text-xs text-slate-500">Estimated fare</p><p className="text-2xl font-black text-wayz-blue">₹{Number(activeRide.estimatedFare || 0).toLocaleString('en-IN')}</p></div><button type="button" onClick={() => navigate('/my-bookings')} className="rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-extrabold text-wayz-ink transition hover:bg-amber-300">View my active ride</button></div>
+      </div>
+    </div>
+  )
 
   return (
     <div id="book" className="relative z-30 w-full rounded-[24px] border border-slate-100 bg-white p-5 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:p-7">

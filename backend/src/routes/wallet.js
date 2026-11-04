@@ -33,6 +33,48 @@ function requireDriver(req, res, next) {
 async function getWallet(driverId) {
   return prisma.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })
 }
+
+router.get('/daily-earnings', requireDriver, async (req, res, next) => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
+    const part = type => parts.find(item => item.type === type)?.value || ''
+    const date = part('year') + '-' + part('month') + '-' + part('day')
+    const [year, month, day] = date.split('-').map(Number)
+    const start = new Date(Date.UTC(year, month - 1, day) - 330 * 60 * 1000)
+    const range = { gte: start, lt: new Date(start.getTime() + 24 * 60 * 60 * 1000) }
+    const bookings = await prisma.booking.findMany({
+      where: { driverId: req.driverAuth.sub, status: 'COMPLETED', completedAt: range },
+      select: { id: true, reference: true, pickupName: true, destinationName: true, finalFare: true, estimatedFare: true, completedAt: true },
+      orderBy: { completedAt: 'desc' }
+    })
+    const commissions = bookings.length ? await prisma.walletTransaction.findMany({
+      where: { type: 'COMMISSION', bookingId: { in: bookings.map(item => item.id) } },
+      select: { bookingId: true, amount: true, settledAmount: true }
+    }) : []
+    const commissionByBooking = new Map(commissions.map(item => [item.bookingId, item]))
+    const rides = bookings.map(booking => {
+      const fare = Number(booking.finalFare ?? booking.estimatedFare ?? 0)
+      const commission = commissionByBooking.get(booking.id)
+      const commissionAmount = Number(commission?.amount || 0)
+      const settled = Number(commission?.settledAmount || 0)
+      return {
+        reference: booking.reference, pickupName: booking.pickupName, destinationName: booking.destinationName,
+        fare, commission: commissionAmount, commissionSettled: settled,
+        commissionDue: Math.max(0, commissionAmount - settled), netEarnings: fare - commissionAmount,
+        completedAt: booking.completedAt
+      }
+    })
+    const total = key => rides.reduce((sum, ride) => sum + Number(ride[key] || 0), 0)
+    res.json({
+      date, summary: {
+        completedRides: rides.length, totalFare: total('fare'), commission: total('commission'),
+        commissionSettled: total('commissionSettled'), commissionDue: total('commissionDue'),
+        netEarnings: total('netEarnings')
+      }, rides
+    })
+  } catch (error) { next(error) }
+})
+
 router.get('/me', requireDriver, async (req, res, next) => {
   try {
     const [wallet, settings, transactions, recharges, due, commissionTotal] = await Promise.all([

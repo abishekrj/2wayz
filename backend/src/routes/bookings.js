@@ -139,6 +139,58 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
 })
 
 
+
+router.post('/:id/retry', requirePassenger, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { id: req.params.id, passengerId: req.passengerAuth.sub },
+      select: { id: true, reference: true, status: true, driverId: true, pickupLat: true, pickupLng: true }
+    })
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    if (booking.status !== 'REQUESTED' || booking.driverId) return res.status(409).json({ message: 'This ride is no longer waiting for a driver. Refresh the booking status.' })
+
+    const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
+    if (!settings?.isActive) return res.status(409).json({ message: 'Driver matching is temporarily unavailable. Please try again shortly.' })
+
+    const cutoff = new Date(Date.now() - 3 * 60 * 1000)
+    const drivers = await prisma.driver.findMany({
+      where: { status: 'APPROVED', isOnline: true, locationUpdatedAt: { gte: cutoff }, currentLat: { not: null }, currentLng: { not: null }, wallet: { is: { balance: { gte: settings.minimumBalance } } } },
+      select: { id: true, currentLat: true, currentLng: true, wallet: { select: { id: true } } }
+    })
+    const withNoDue = await Promise.all(drivers.map(async driver => {
+      const due = await prisma.walletTransaction.aggregate({ where: { walletId: driver.wallet.id, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+      return { ...driver, outstanding: Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0)) }
+    }))
+    const eligible = withNoDue.filter(driver => driver.outstanding === 0)
+      .map(driver => ({ id: driver.id, km: distanceKm(booking.pickupLat, booking.pickupLng, driver.currentLat, driver.currentLng) }))
+      .filter(driver => driver.km <= 8)
+      .sort((a, b) => a.km - b.km)
+      .slice(0, 10)
+
+    if (!eligible.length) return res.json({ offersCreated: 0, message: 'No eligible nearby driver is online right now. You can try again in a little while.' })
+
+    const eligibleIds = eligible.map(driver => driver.id)
+    const now = new Date()
+    await prisma.$transaction(async tx => {
+      await tx.driverOffer.updateMany({
+        where: { bookingId: booking.id, driverId: { in: eligibleIds }, status: { in: ['DECLINED', 'UNAVAILABLE', 'EXPIRED'] } },
+        data: { status: 'OFFERED', createdAt: now, updatedAt: now }
+      })
+      await tx.driverOffer.createMany({
+        data: eligibleIds.map(driverId => ({ bookingId: booking.id, driverId, status: 'OFFERED' })),
+        skipDuplicates: true
+      })
+    })
+    await Promise.all(eligibleIds.map(driverId => notify({
+      role: 'DRIVER', recipientId: driverId, type: 'RIDE_OFFER',
+      title: 'Ride request available again',
+      message: `Passenger has retried ride ${booking.reference}. Open your driver portal to review it.`,
+      bookingId: booking.id
+    })))
+    res.json({ offersCreated: eligibleIds.length, message: `Ride request sent again to ${eligibleIds.length} nearby driver(s).` })
+  } catch (error) { next(error) }
+})
+
 router.get('/admin/scheduled', requireAdmin, async (req, res, next) => {
   try {
     const search = String(req.query.search || '').trim()

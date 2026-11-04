@@ -34,8 +34,9 @@ export default function AdminLayout({ admin }) {
     let mounted = true
     adminApi.pages()
       .then(data => {
-        if (mounted && Array.isArray(data.pages) && data.pages.length) {
-          setCmsPages(data.pages)
+        if (mounted && Array.isArray(data.pages)) {
+          const merged = [...defaultCmsPages.map(fallback => data.pages.find(page => page.slug === fallback.slug) || fallback), ...data.pages.filter(page => !defaultCmsPages.some(fallback => fallback.slug === page.slug))]
+          setCmsPages(merged)
         }
       })
       .catch(error => console.error('Unable to load CMS page menu:', error))

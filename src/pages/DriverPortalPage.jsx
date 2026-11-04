@@ -5,6 +5,7 @@ import PageLayout from '../components/PageLayout'
 import AuthLayout from '../components/AuthLayout'
 import { adminApi } from '../lib/adminApi'
 import NotificationCenter from '../components/NotificationCenter'
+import SosButton from '../components/SosButton'
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')
 
@@ -239,6 +240,7 @@ export default function DriverPortalPage() {
               <div className="flex flex-wrap items-center justify-between gap-3"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">{item.reference}</span><span className="text-xs font-bold text-slate-600">{item.status.replaceAll('_', ' ')}</span></div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.pickupName}</p><p className="text-xs text-slate-500">{item.pickupAddress}</p></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.destinationName}</p><p className="text-xs text-slate-500">{item.destinationAddress}</p></div></div>
               <p className="mt-3 text-sm font-semibold text-wayz-blue">Estimated fare: {money(item.estimatedFare)}</p>
+              <div className="mt-4"><SosButton bookingId={item.id} role="DRIVER"/></div>
               {item.mode === 'schedule' && item.scheduledAt && <p className="mt-2 rounded-lg bg-blue-50 p-3 text-xs font-semibold text-blue-800">Scheduled pickup: {new Date(item.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
               {['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(item.status) && <button disabled={busy} onClick={() => cancelActiveBooking(item)} className="mt-4 w-full rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-700 disabled:opacity-60">Cancel ride</button>}
               {item.status === 'DRIVER_ASSIGNED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'DRIVER_ARRIVED')} className="mt-4 w-full rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink disabled:opacity-60">Mark arrived at pickup</button>}

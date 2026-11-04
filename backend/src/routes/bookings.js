@@ -88,6 +88,13 @@ router.post('/', requirePassenger, async (req, res, next) => {
   try {
     const { pickup, destination } = req.body || {}
     if (!validPoint(pickup) || !validPoint(destination)) return res.status(400).json({ message: 'Choose pickup and destination locations with map coordinates.' })
+    const existingActiveRide = await prisma.booking.findFirst({
+      where: { passengerId: req.passengerAuth.sub, status: { in: ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true }
+    })
+    if (existingActiveRide) return res.status(409).json({ message: `You already have an active ride (${existingActiveRide.reference}). Complete or cancel it before booking another ride.`, activeBooking: existingActiveRide })
+
     const straightLineKm = distanceKm(pickup.location.lat, pickup.location.lng, destination.location.lat, destination.location.lng)
     if (straightLineKm < 0.05) return res.status(400).json({ message: 'Pickup and destination must be different locations.' })
 
@@ -107,24 +114,34 @@ router.post('/', requirePassenger, async (req, res, next) => {
     const estimatedMinutes = Math.min(600, Math.max(1, verifiedRoute.durationMinutes || Math.round(distanceKmValue * 4)))
     const fare = fareFor(distanceKmValue)
     const reference = '2W-' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 90 + 10)
-    const booking = await prisma.booking.create({ data: {
-      reference,
-      passengerId: req.passengerAuth.sub,
-      pickupName: pickup.name.trim().slice(0, 200),
-      pickupAddress: String(pickup.address || pickup.name).trim().slice(0, 500),
-      pickupLat: Number(pickup.location.lat),
-      pickupLng: Number(pickup.location.lng),
-      destinationName: destination.name.trim().slice(0, 200),
-      destinationAddress: String(destination.address || destination.name).trim().slice(0, 500),
-      destinationLat: Number(destination.location.lat),
-      destinationLng: Number(destination.location.lng),
-      distanceKm: Number(distanceKmValue.toFixed(2)),
-      estimatedMinutes,
-      estimatedFare: fare,
-      mode,
-      scheduledAt,
-      ...(mode === 'schedule' ? { dispatchStatus: 'SCHEDULED' } : {})
-    } })
+    const booking = await prisma.$transaction(async tx => {
+      // Serialize booking creation per passenger so two simultaneous requests cannot create duplicate active rides.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${req.passengerAuth.sub}, 0))`
+      const activeRide = await tx.booking.findFirst({
+        where: { passengerId: req.passengerAuth.sub, status: { in: ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, reference: true, status: true, pickupName: true, destinationName: true }
+      })
+      if (activeRide) throw Object.assign(new Error(`You already have an active ride (${activeRide.reference}). Complete or cancel it before booking another ride.`), { statusCode: 409 })
+      return tx.booking.create({ data: {
+        reference,
+        passengerId: req.passengerAuth.sub,
+        pickupName: pickup.name.trim().slice(0, 200),
+        pickupAddress: String(pickup.address || pickup.name).trim().slice(0, 500),
+        pickupLat: Number(pickup.location.lat),
+        pickupLng: Number(pickup.location.lng),
+        destinationName: destination.name.trim().slice(0, 200),
+        destinationAddress: String(destination.address || destination.name).trim().slice(0, 500),
+        destinationLat: Number(destination.location.lat),
+        destinationLng: Number(destination.location.lng),
+        distanceKm: Number(distanceKmValue.toFixed(2)),
+        estimatedMinutes,
+        estimatedFare: fare,
+        mode,
+        scheduledAt,
+        ...(mode === 'schedule' ? { dispatchStatus: 'SCHEDULED' } : {})
+      } })
+    })
     // Instant rides are offered immediately. Scheduled rides are picked up by the background dispatch worker.
     let offersCreated = 0
     if (mode === 'instant') {
@@ -305,6 +322,17 @@ router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
       }
     })
     res.json({ bookings })
+  } catch (error) { next(error) }
+})
+
+router.get('/active', requirePassenger, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findFirst({
+      where: { passengerId: req.passengerAuth.sub, status: { in: ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, reference: true, status: true, pickupName: true, pickupAddress: true, destinationName: true, destinationAddress: true, estimatedFare: true, distanceKm: true, estimatedMinutes: true, createdAt: true }
+    })
+    res.json({ booking })
   } catch (error) { next(error) }
 })
 

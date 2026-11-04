@@ -58,6 +58,7 @@ export default function AdminSosPage() {
       <div className="space-y-4">{alerts.slice().sort((a, b) => ({ OPEN: 0, ACKNOWLEDGED: 1, RESOLVED: 2 }[a.status] - { OPEN: 0, ACKNOWLEDGED: 1, RESOLVED: 2 }[b.status])).map(item => {
         const booking = item.booking
         const person = item.triggeredByRole === 'PASSENGER' ? booking?.passenger : booking?.driver
+        const otherPerson = item.triggeredByRole === 'PASSENGER' ? booking?.driver : booking?.passenger
         const mapUrl = item.latitude != null && item.longitude != null ? 'https://www.google.com/maps?q=' + item.latitude + ',' + item.longitude : ''
         return <article key={item.id} className={'rounded-2xl border bg-white p-5 shadow-sm ' + (item.status === 'OPEN' ? 'border-rose-300 ring-1 ring-rose-100' : 'border-slate-200')}>
           <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-100 text-rose-700"><Siren size={23}/></span><div><p className="font-extrabold text-slate-900">{item.triggeredByRole === 'PASSENGER' ? 'Passenger SOS' : 'Driver SOS'}</p><p className="mt-0.5 text-xs text-slate-500">{dateText(item.createdAt)}</p></div></div><span className={'rounded-full px-3 py-1 text-xs font-extrabold ' + (item.status === 'OPEN' ? 'bg-rose-100 text-rose-800' : item.status === 'ACKNOWLEDGED' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')}>{item.status.replaceAll('_', ' ')}</span></div>

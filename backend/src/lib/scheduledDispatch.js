@@ -1,12 +1,17 @@
 import { prisma } from './prisma.js'
 import { notify, notifyBooking } from './notifications.js'
 
-const DISPATCH_LEAD_MINUTES = 15
-const RETRY_SECONDS = 60
-const OFFER_LIFETIME_SECONDS = 60
+function envNumber(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name])
+  return Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, value)) : fallback
+}
+
+const DISPATCH_LEAD_MINUTES = envNumber('SCHEDULED_DISPATCH_LEAD_MINUTES', 15, 1, 120)
+const RETRY_SECONDS = envNumber('SCHEDULED_DISPATCH_RETRY_SECONDS', 60, 15, 300)
+const OFFER_LIFETIME_SECONDS = envNumber('SCHEDULED_DISPATCH_OFFER_SECONDS', 60, 15, 300)
 const DRIVER_LOCATION_MAX_AGE_SECONDS = 180
-const MAX_DRIVERS_PER_ROUND = 10
-const MAX_PICKUP_DISTANCE_KM = 8
+const MAX_DRIVERS_PER_ROUND = envNumber('SCHEDULED_DISPATCH_MAX_DRIVERS', 10, 1, 30)
+const MAX_PICKUP_DISTANCE_KM = envNumber('SCHEDULED_DISPATCH_RADIUS_KM', 8, 1, 25)
 
 function distanceKm(aLat, aLng, bLat, bLng) {
   const radians = value => value * Math.PI / 180
@@ -218,7 +223,7 @@ export async function processScheduledDispatch() {
 }
 
 export function startScheduledDispatchWorker() {
-  console.log('[scheduled-dispatch] Worker started: dispatch window 15 minutes before pickup; retries every 60 seconds.')
+  console.log(`[scheduled-dispatch] Worker started: dispatch ${DISPATCH_LEAD_MINUTES} minutes before pickup; retry every ${RETRY_SECONDS} seconds; offer expiry ${OFFER_LIFETIME_SECONDS} seconds; radius ${MAX_PICKUP_DISTANCE_KM} km.`)
   processScheduledDispatch()
   const timer = setInterval(processScheduledDispatch, 15000)
   timer.unref?.()

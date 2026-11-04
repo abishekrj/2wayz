@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, CarFront, CheckCircle2, Clock3, MapPin, Route as RouteIcon, ShieldCheck, Users, RefreshCw } from 'lucide-react'
+import { ArrowLeft, CarFront, CheckCircle2, Clock3, MapPin, Route as RouteIcon, ShieldCheck, Users, RefreshCw, LoaderCircle, Search } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import RouteMap from '../components/RouteMap'
 import { useBooking } from '../context/BookingContext'
@@ -26,6 +26,8 @@ export default function TravelTrackingPage() {
   const [cancelReason, setCancelReason] = useState('CHANGE_OF_PLANS')
   const [cancelDetails, setCancelDetails] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [retrying, setRetrying] = useState(false)
+  const [retryMessage, setRetryMessage] = useState('')
 
   useEffect(() => {
     if (!booking?.bookingId) return
@@ -65,6 +67,22 @@ export default function TravelTrackingPage() {
     finally { setCancelling(false) }
   }
 
+  async function retryDriverSearch() {
+    if (!booking?.bookingId || retrying) return
+    setRetrying(true)
+    setRetryMessage('')
+    setTrackingError('')
+    try {
+      const result = await adminApi.retryPassengerBooking(booking.bookingId)
+      setRetryMessage(result.message || 'Your request has been sent to nearby drivers again.')
+      await refreshNow()
+    } catch (error) {
+      setRetryMessage(error.message || 'Unable to retry driver search. Please refresh and try again.')
+    } finally {
+      setRetrying(false)
+    }
+  }
+
   async function refreshNow() {
     if (!booking.bookingId) return
     setRefreshing(true)
@@ -80,8 +98,14 @@ export default function TravelTrackingPage() {
     <div className="mb-5"><NotificationCenter role="PASSENGER"/></div>
     <div className="grid gap-6 lg:grid-cols-[1fr_.9fr]"><div className="space-y-5">
       {['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(status) && <section className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-base font-extrabold text-wayz-ink">Cancel this booking</h2><p className="mt-1 text-sm text-slate-500">You can cancel before the trip starts. The cancellation reason will be recorded. No automatic fee or refund is applied.</p><label className="mt-4 block text-xs font-bold text-slate-600">REASON<select value={cancelReason} onChange={event => setCancelReason(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm"><option value="CHANGE_OF_PLANS">Change of plans</option><option value="WRONG_PICKUP">Wrong pickup location</option><option value="WRONG_DESTINATION">Wrong destination</option><option value="DRIVER_UNAVAILABLE">Driver unavailable</option><option value="OTHER">Other</option></select></label><label className="mt-3 block text-xs font-bold text-slate-600">ADDITIONAL DETAILS (OPTIONAL)<input value={cancelDetails} onChange={event => setCancelDetails(event.target.value)} maxLength={500} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Add a short explanation"/></label><button disabled={cancelling} onClick={cancelBooking} className="mt-4 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{cancelling ? 'Cancelling…' : 'Cancel booking'}</button></section>}
-      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle2 size={23}/></span><div><p className="text-lg font-extrabold text-wayz-ink">Ride request submitted</p><p className="mt-1 text-sm text-slate-500">Reference: <span className="font-bold text-wayz-ink">{serverBooking?.reference || booking.reference || 'Not generated'}</span></p></div></div>
-        <div className={'mt-5 rounded-xl p-4 ' + (driver ? 'bg-emerald-50' : 'bg-amber-50')}><p className={'text-sm font-bold ' + (driver ? 'text-emerald-900' : 'text-amber-900')}>{statusLabels[status] || status.replaceAll('_', ' ')}</p><p className={'mt-1 text-xs leading-5 ' + (driver ? 'text-emerald-800' : 'text-amber-800')}>{driver ? 'Your driver has accepted the request. Their location is updated automatically while they are online and sharing GPS.' : (booking.dispatchMessage || 'Your request is saved. The system is waiting for an eligible online driver to accept it.')}</p></div>
+      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex items-start gap-3"><span className={'flex h-11 w-11 shrink-0 items-center justify-center rounded-full ' + (driver ? 'bg-emerald-50 text-emerald-600' : status === 'REQUESTED' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600')}>{driver ? <CheckCircle2 size={23}/> : status === 'REQUESTED' ? <Search size={22}/> : <CheckCircle2 size={23}/>}</span><div><p className="text-lg font-extrabold text-wayz-ink">{status === 'REQUESTED' && !driver ? 'Finding your driver' : 'Ride request submitted'}</p><p className="mt-1 text-sm text-slate-500">Reference: <span className="font-bold text-wayz-ink">{serverBooking?.reference || booking.reference || 'Not generated'}</span></p></div></div>
+        {status === 'REQUESTED' && !driver ? <div className="mt-5 rounded-xl bg-amber-50 p-4">
+          <div className="flex items-center gap-3"><span className="relative flex h-3 w-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-60"/><span className="relative inline-flex h-3 w-3 rounded-full bg-amber-600"/></span><p className="text-sm font-bold text-amber-950">Searching for an available auto nearby…</p></div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-amber-100"><div className="h-full w-2/3 animate-pulse rounded-full bg-amber-500"/></div>
+          <p className="mt-3 text-xs leading-5 text-amber-900">{retryMessage || booking.dispatchMessage || 'Your request is active. Nearby approved drivers who are online and eligible can accept it.'} Booking status checks automatically every 5 seconds.</p>
+          <button type="button" onClick={retryDriverSearch} disabled={retrying} className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-blue px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">{retrying ? <><LoaderCircle size={16} className="animate-spin"/> Searching again…</> : <><RefreshCw size={16}/> Retry driver search</>}</button>
+        </div> : <div className={'mt-5 rounded-xl p-4 ' + (driver ? 'bg-emerald-50' : 'bg-slate-100')}><p className={'text-sm font-bold ' + (driver ? 'text-emerald-900' : 'text-slate-800')}>{statusLabels[status] || status.replaceAll('_', ' ')}</p><p className={'mt-1 text-xs leading-5 ' + (driver ? 'text-emerald-800' : 'text-slate-600')}>{driver ? 'Your driver has accepted the request. Their location is updated automatically while they are online and sharing GPS.' : (booking.dispatchMessage || 'Your booking status is updated.')}</p></div>}
       </section>
       <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-lg font-extrabold text-wayz-ink">Travel details</h2><div className="mt-4 space-y-4"><div className="flex gap-3"><MapPin className="mt-1 shrink-0 text-emerald-600" size={19}/><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{pickup.name}</p><p className="text-xs text-slate-500">{pickup.address || ''}</p></div></div><div className="flex gap-3"><MapPin className="mt-1 shrink-0 text-rose-500" size={19}/><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{destination.name}</p><p className="text-xs text-slate-500">{destination.address || ''}</p></div></div></div><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-xl bg-wayz-mist/70 p-3"><RouteIcon size={17} className="text-wayz-blue"/><p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.km.toFixed(1)} km</p><p className="text-xs text-slate-500">Distance</p></div><div className="rounded-xl bg-wayz-mist/70 p-3"><Clock3 size={17} className="text-wayz-blue"/><p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.durationMinutes} min</p><p className="text-xs text-slate-500">Estimated travel time</p></div></div></section>
       <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-lg font-extrabold text-wayz-ink">Assigned driver</h2>{driver ? <div className="mt-4 flex items-center gap-4 rounded-xl bg-emerald-50 p-4"><span className="flex h-14 w-16 items-center justify-center rounded-xl bg-wayz-yellow/40 text-wayz-navy"><CarFront size={34}/></span><div className="min-w-0 flex-1"><p className="font-extrabold text-wayz-ink">{driver.name}</p><p className="mt-1 text-sm text-slate-600">{driver.phone}</p><p className="mt-1 text-xs font-semibold text-emerald-700">Vehicle: {driver.vehicleNumber}</p><p className="mt-1 text-xs text-slate-500">{liveDriverLocation ? "Live location updating" : "Waiting for the driver’s next GPS update"}</p></div></div> : <div className="mt-4 flex items-center gap-4 rounded-xl bg-wayz-mist/60 p-4"><span className="flex h-14 w-16 items-center justify-center rounded-xl bg-wayz-yellow/30 text-wayz-navy"><CarFront size={34}/></span><div className="flex-1"><p className="font-extrabold text-wayz-ink">Auto rickshaw</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Users size={13}/> Up to 3 passengers</p><p className="mt-1 text-xs font-semibold text-amber-700">Waiting for a driver</p></div></div>}</section>

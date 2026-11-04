@@ -46,7 +46,14 @@ app.use('/api/reports', reportsRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use((error, req, res, next) => {
   console.error(error)
-  res.status(500).json({ message: 'An unexpected server error occurred.' })
+  const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400 && error.statusCode <= 599
+    ? error.statusCode
+    : 500
+  res.status(statusCode).json({
+    message: statusCode === 500 && !error.statusCode
+      ? 'An unexpected server error occurred.'
+      : error.message || 'An unexpected server error occurred.'
+  })
 })
 app.listen(port, () => {
   console.log(`2WAYZ API listening on port ${port}`)

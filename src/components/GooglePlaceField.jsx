@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, LoaderCircle } from 'lucide-react'
+import { adminApi } from '../lib/adminApi'
 
 let mapsPromise
 
@@ -97,23 +98,9 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     setLocating(true)
     navigator.geolocation.getCurrentPosition(async position => {
       try {
-        if (!window.google?.maps?.Geocoder) throw new Error('Google Maps is still loading. Please try again.')
-        const geocoder = new window.google.maps.Geocoder()
-        const result = await geocoder.geocode({
-          location: { lat: position.coords.latitude, lng: position.coords.longitude },
-        })
-        const place = result.results?.[0]
-        if (!place) throw new Error('Could not identify your current location. Please search for your pickup point.')
-        const name = place.address_components?.find(component =>
-          component.types.includes('premise') || component.types.includes('point_of_interest') ||
-          component.types.includes('establishment') || component.types.includes('sublocality')
-        )?.long_name || place.formatted_address
-        onSelect({
-          placeId: place.place_id,
-          name,
-          address: place.formatted_address || name,
-          location: { lat: position.coords.latitude, lng: position.coords.longitude },
-        })
+        const result = await adminApi.reverseGeocode(position.coords.latitude, position.coords.longitude)
+        if (!result.place) throw new Error('Could not identify your current location. Please search for your pickup point.')
+        onSelect(result.place)
       } catch (err) {
         setError(err.message || 'Unable to identify your current location. Please search manually.')
       } finally {

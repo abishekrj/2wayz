@@ -366,6 +366,143 @@ router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+
+router.get('/admin/:bookingId/eligible-drivers', requireAdmin, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.bookingId },
+      select: { id: true, status: true, driverId: true, mode: true, pickupLat: true, pickupLng: true }
+    })
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    if (booking.status !== 'REQUESTED' || booking.driverId) return res.status(409).json({ message: 'Only unassigned booking requests can be manually assigned.' })
+    if (booking.mode !== 'instant') return res.status(409).json({ message: 'Manual assignment is currently available for instant rides only.' })
+
+    const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
+    const drivers = await prisma.driver.findMany({
+      where: { status: 'APPROVED' },
+      orderBy: [{ isOnline: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true,
+        isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true,
+        wallet: { select: { id: true, balance: true } }
+      }
+    })
+    const now = Date.now()
+    const evaluated = await Promise.all(drivers.map(async driver => {
+      const distance = driver.currentLat == null || driver.currentLng == null
+        ? null : distanceKm(booking.pickupLat, booking.pickupLng, driver.currentLat, driver.currentLng)
+      const ageSeconds = driver.locationUpdatedAt ? Math.max(0, Math.floor((now - driver.locationUpdatedAt.getTime()) / 1000)) : null
+      const due = driver.wallet?.id ? await prisma.walletTransaction.aggregate({
+        where: { walletId: driver.wallet.id, type: 'COMMISSION', status: 'DUE' },
+        _sum: { amount: true, settledAmount: true }
+      }) : { _sum: { amount: 0, settledAmount: 0 } }
+      const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
+      const activeRide = await prisma.booking.findFirst({
+        where: { driverId: driver.id, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+        select: { id: true, reference: true }
+      })
+      const reasons = []
+      if (!driver.isOnline) reasons.push('Driver is offline')
+      if (ageSeconds == null || ageSeconds > 180) reasons.push('GPS location is not recent (last 3 minutes required)')
+      if (distance == null || distance > 8) reasons.push('Outside the 8 km pickup radius')
+      if (activeRide) reasons.push('Already has an active ride')
+      if (!settings?.isActive) reasons.push('Wallet commission settings are not active')
+      if (!driver.wallet || driver.wallet.balance < (settings?.minimumBalance || 0)) reasons.push('Wallet balance is below the minimum')
+      if (outstanding > 0) reasons.push('Outstanding commission must be cleared')
+      return {
+        id: driver.id, name: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber,
+        serviceArea: driver.serviceArea, isOnline: driver.isOnline, distanceKm: distance == null ? null : Number(distance.toFixed(2)),
+        locationAgeSeconds: ageSeconds, walletBalance: driver.wallet?.balance || 0,
+        outstandingCommission: outstanding, eligible: reasons.length === 0, reasons
+      }
+    }))
+    res.json({
+      eligibleDrivers: evaluated.filter(driver => driver.eligible).sort((a, b) => a.distanceKm - b.distanceKm),
+      unavailableDrivers: evaluated.filter(driver => !driver.eligible),
+      rules: { radiusKm: 8, gpsMaxAgeSeconds: 180, minimumBalance: settings?.minimumBalance || 0, walletSettingsActive: Boolean(settings?.isActive) }
+    })
+  } catch (error) { next(error) }
+})
+
+router.post('/admin/:bookingId/assign', requireAdmin, async (req, res, next) => {
+  try {
+    const driverId = String(req.body?.driverId || '').trim()
+    if (!driverId) return res.status(400).json({ message: 'Choose a driver to assign.' })
+    const assigned = await prisma.$transaction(async tx => {
+      // Serialize admin assignment and driver offer acceptance for this driver.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${driverId}, 0))::text`
+      const booking = await tx.booking.findUnique({
+        where: { id: req.params.bookingId },
+        select: { id: true, reference: true, status: true, driverId: true, mode: true, passengerId: true, pickupLat: true, pickupLng: true }
+      })
+      if (!booking) throw Object.assign(new Error('Booking not found.'), { statusCode: 404 })
+      if (booking.status !== 'REQUESTED' || booking.driverId) throw Object.assign(new Error('This booking has already been assigned or is no longer waiting for a driver. Refresh Booking Management.'), { statusCode: 409 })
+      if (booking.mode !== 'instant') throw Object.assign(new Error('Manual assignment is currently available for instant rides only.'), { statusCode: 409 })
+
+      const driver = await tx.driver.findUnique({
+        where: { id: driverId },
+        select: { id: true, name: true, status: true, isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true, wallet: { select: { id: true, balance: true } } }
+      })
+      if (!driver || driver.status !== 'APPROVED') throw Object.assign(new Error('This driver is not approved.'), { statusCode: 409 })
+      if (!driver.isOnline) throw Object.assign(new Error('This driver is offline. Ask them to go online before assigning.'), { statusCode: 409 })
+      if (driver.currentLat == null || driver.currentLng == null || !driver.locationUpdatedAt || Date.now() - driver.locationUpdatedAt.getTime() > 180000) {
+        throw Object.assign(new Error('The driver GPS location is missing or older than 3 minutes. Ask the driver to refresh their location.'), { statusCode: 409 })
+      }
+      const pickupDistance = distanceKm(booking.pickupLat, booking.pickupLng, driver.currentLat, driver.currentLng)
+      if (pickupDistance > 8) throw Object.assign(new Error('The driver is outside the 8 km pickup radius.'), { statusCode: 409 })
+
+      const activeRide = await tx.booking.findFirst({
+        where: { driverId, status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
+        select: { reference: true }
+      })
+      if (activeRide) throw Object.assign(new Error(`This driver already has an active ride (${activeRide.reference}).`), { statusCode: 409 })
+
+      const settings = await tx.walletSettings.findUnique({ where: { id: 'default' } })
+      if (!settings?.isActive) throw Object.assign(new Error('Wallet commission settings are not active. Manual assignment is blocked.'), { statusCode: 409 })
+      const wallet = driver.wallet || await tx.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })
+      if (wallet.balance < settings.minimumBalance) throw Object.assign(new Error(`Driver wallet balance must be at least ₹${settings.minimumBalance}.`), { statusCode: 409 })
+      const due = await tx.walletTransaction.aggregate({ where: { walletId: wallet.id, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+      const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
+      if (outstanding > 0) throw Object.assign(new Error('This driver has outstanding commission and cannot receive a new ride.'), { statusCode: 409 })
+
+      const now = new Date()
+      const changed = await tx.booking.updateMany({
+        where: { id: booking.id, status: 'REQUESTED', driverId: null },
+        data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now, assignedByAdminId: req.admin.sub, manuallyAssignedAt: now }
+      })
+      if (changed.count !== 1) throw Object.assign(new Error('Another driver or administrator has already assigned this booking. Refresh and try again.'), { statusCode: 409 })
+
+      await tx.driverOffer.upsert({
+        where: { bookingId_driverId: { bookingId: booking.id, driverId } },
+        create: { bookingId: booking.id, driverId, status: 'ACCEPTED' },
+        update: { status: 'ACCEPTED' }
+      })
+      await tx.driverOffer.updateMany({
+        where: { bookingId: booking.id, driverId: { not: driverId }, status: 'OFFERED' },
+        data: { status: 'UNAVAILABLE' }
+      })
+      await tx.driverActivity.create({
+        data: { driverId, eventType: 'RIDE_ACCEPTED', description: `Super Admin manually assigned ride ${booking.reference}.`, bookingId: booking.id }
+      })
+      return { id: booking.id, reference: booking.reference, passengerId: booking.passengerId, driverId, driverName: driver.name, status: 'DRIVER_ASSIGNED', manuallyAssignedAt: now }
+    })
+
+    await notifyBooking({
+      booking: assigned, type: 'DRIVER_ASSIGNED', title: 'Driver assigned',
+      message: `A 2WAYZ administrator assigned a driver to ride ${assigned.reference}.`, includeDriver: false
+    })
+    await notifyBooking({
+      booking: assigned, type: 'RIDE_ASSIGNED', title: 'New ride assigned',
+      message: `The Super Admin assigned ride ${assigned.reference} to you. Open your Driver Portal to view the trip.`,
+      includePassenger: false, includeAdmin: false
+    })
+    res.json({ booking: assigned, message: `Ride ${assigned.reference} assigned to ${assigned.driverName} successfully.` })
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message })
+    next(error)
+  }
+})
+
 router.get('/admin/list', requireAdmin, async (req, res, next) => {
   try {
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
@@ -393,7 +530,7 @@ router.get('/admin/list', requireAdmin, async (req, res, next) => {
           id: true, reference: true, status: true, pickupName: true, pickupAddress: true,
           destinationName: true, destinationAddress: true, distanceKm: true, estimatedMinutes: true,
           estimatedFare: true, finalFare: true, mode: true, requestedAt: true, acceptedAt: true,
-          arrivedAt: true, tripStartedAt: true, completedAt: true, cancelledAt: true,
+          arrivedAt: true, tripStartedAt: true, completedAt: true, cancelledAt: true, manuallyAssignedAt: true, assignedByAdminId: true,
           passenger: { select: { name: true, phone: true } },
           driver: { select: { name: true, phone: true, vehicleNumber: true } },
           _count: { select: { offers: true } }

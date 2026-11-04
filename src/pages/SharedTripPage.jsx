@@ -31,7 +31,7 @@ export default function SharedTripPage() {
       } catch (err) {
         if (!active) return
         setError(err.message || 'This trip sharing link is unavailable.')
-        if (/expired|stopped|ended|invalid/i.test(err.message || '')) window.clearInterval(timer)
+        if (/expired|stopped|ended|invalid/i.test(err.message || '')) { setTrip(null); window.clearInterval(timer) }
       }
     }
     load()

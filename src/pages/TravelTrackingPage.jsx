@@ -12,7 +12,8 @@ const statusLabels = {
   DRIVER_ARRIVED: 'Driver arrived at pickup',
   IN_PROGRESS: 'Trip in progress',
   COMPLETED: 'Trip completed',
-  CANCELLED: 'Booking cancelled'
+  CANCELLED: 'Booking cancelled',
+  CANCELED: 'Booking cancelled'
 }
 
 export default function TravelTrackingPage() {
@@ -21,6 +22,9 @@ export default function TravelTrackingPage() {
   const [serverBooking, setServerBooking] = useState(booking?.serverBooking || null)
   const [refreshing, setRefreshing] = useState(false)
   const [trackingError, setTrackingError] = useState('')
+  const [cancelReason, setCancelReason] = useState('CHANGE_OF_PLANS')
+  const [cancelDetails, setCancelDetails] = useState('')
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     if (!booking?.bookingId) return
@@ -48,6 +52,18 @@ export default function TravelTrackingPage() {
   const driver = serverBooking?.driver || null
   const liveDriverLocation = driver?.locationIsFresh && Number.isFinite(Number(driver.currentLat)) && Number.isFinite(Number(driver.currentLng)) ? { lat: Number(driver.currentLat), lng: Number(driver.currentLng) } : null
 
+  async function cancelBooking() {
+    if (!booking?.bookingId || !window.confirm('Cancel this booking? This action will be recorded for Super Admin review.')) return
+    setCancelling(true); setTrackingError('')
+    try {
+      const result = await adminApi.cancelPassengerBooking(booking.bookingId, cancelReason, cancelDetails)
+      setServerBooking(current => ({ ...(current || {}), ...(result.booking || {}) }))
+      setBooking(current => current ? ({ ...current, bookingStatus: 'CANCELLED', serverBooking: { ...(current.serverBooking || {}), ...(result.booking || {}) } }) : current)
+      setCancelDetails('')
+    } catch (error) { setTrackingError(error.message || 'Unable to cancel booking.') }
+    finally { setCancelling(false) }
+  }
+
   async function refreshNow() {
     if (!booking.bookingId) return
     setRefreshing(true)
@@ -61,6 +77,7 @@ export default function TravelTrackingPage() {
     <div className="mb-7 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Your journey</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Travel tracking</h1><p className="mt-2 text-sm text-slate-500">Booking status refreshes automatically while this page is open.</p></div>{booking.bookingId && <button onClick={refreshNow} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600"><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/> Refresh status</button>}</div>
     {trackingError && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{trackingError}</p>}
     <div className="grid gap-6 lg:grid-cols-[1fr_.9fr]"><div className="space-y-5">
+      {['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(status) && <section className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-base font-extrabold text-wayz-ink">Cancel this booking</h2><p className="mt-1 text-sm text-slate-500">You can cancel before the trip starts. The cancellation reason will be recorded. No automatic fee or refund is applied.</p><label className="mt-4 block text-xs font-bold text-slate-600">REASON<select value={cancelReason} onChange={event => setCancelReason(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm"><option value="CHANGE_OF_PLANS">Change of plans</option><option value="WRONG_PICKUP">Wrong pickup location</option><option value="WRONG_DESTINATION">Wrong destination</option><option value="DRIVER_UNAVAILABLE">Driver unavailable</option><option value="OTHER">Other</option></select></label><label className="mt-3 block text-xs font-bold text-slate-600">ADDITIONAL DETAILS (OPTIONAL)<input value={cancelDetails} onChange={event => setCancelDetails(event.target.value)} maxLength={500} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm" placeholder="Add a short explanation"/></label><button disabled={cancelling} onClick={cancelBooking} className="mt-4 rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{cancelling ? 'Cancelling…' : 'Cancel booking'}</button></section>}
       <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle2 size={23}/></span><div><p className="text-lg font-extrabold text-wayz-ink">Ride request submitted</p><p className="mt-1 text-sm text-slate-500">Reference: <span className="font-bold text-wayz-ink">{serverBooking?.reference || booking.reference || 'Not generated'}</span></p></div></div>
         <div className={'mt-5 rounded-xl p-4 ' + (driver ? 'bg-emerald-50' : 'bg-amber-50')}><p className={'text-sm font-bold ' + (driver ? 'text-emerald-900' : 'text-amber-900')}>{statusLabels[status] || status.replaceAll('_', ' ')}</p><p className={'mt-1 text-xs leading-5 ' + (driver ? 'text-emerald-800' : 'text-amber-800')}>{driver ? 'Your driver has accepted the request. Their location is updated automatically while they are online and sharing GPS.' : (booking.dispatchMessage || 'Your request is saved. The system is waiting for an eligible online driver to accept it.')}</p></div>
       </section>

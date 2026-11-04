@@ -14,6 +14,7 @@ import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
 import AdminCmsPageEditor from './pages/AdminCmsPageEditor'
 import AdminRegisteredUsersPage from './pages/AdminRegisteredUsersPage'
 import AdminWalletPage from './pages/AdminWalletPage'
+import AdminLiveDriverMapPage from './pages/AdminLiveDriverMapPage'
 import CmsContentPage from './pages/CmsContentPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
@@ -42,6 +43,7 @@ function AdminRoutes() {
       <Route path="dashboard" element={<AdminDashboardPage/>}/>
       <Route path="registered-users" element={<AdminRegisteredUsersPage/>}/>
       <Route path="drivers" element={<AdminDriversPage/>}/>
+      <Route path="live-map" element={<AdminLiveDriverMapPage/>}/>
       <Route path="wallet" element={<AdminWalletPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>

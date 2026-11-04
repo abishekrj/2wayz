@@ -193,7 +193,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
         ) : (
           <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">{selectedName}</span>
         )}
-        {(loading || searching) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
+        {(loading || searching || locating) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
       </div>
 
       {editing && suggestions.length > 0 && (

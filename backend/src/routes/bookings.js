@@ -157,7 +157,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
     const reference = '2W-' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 90 + 10)
     const booking = await prisma.$transaction(async tx => {
       // Serialize booking creation per passenger so two simultaneous requests cannot create duplicate active rides.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${req.passengerAuth.sub}, 0))`
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${req.passengerAuth.sub}, 0))::text`
       const activeRide = await tx.booking.findFirst({
         where: { passengerId: req.passengerAuth.sub, status: { in: ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'] } },
         orderBy: { createdAt: 'desc' },

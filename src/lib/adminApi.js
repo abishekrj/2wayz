@@ -46,6 +46,8 @@ export const adminApi = {
   liveDrivers: () => request('/drivers/admin/live'),
   driverOperations: () => request('/drivers/admin/operations'),
   driverActivity: (id) => request(`/drivers/admin/${encodeURIComponent(id)}/activity`),
+  driverDailyEarnings: () => request('/wallet/daily-earnings'),
+  adminDailyEarnings: () => request('/reports/daily-earnings'),
   driverReports: (from, to, driverId = '') => request(`/reports?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${driverId ? `&driverId=${encodeURIComponent(driverId)}` : ''}`),
   updateDriverStatus: (id, status) => request(`/drivers/admin/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   walletMe: () => request('/wallet/me'),

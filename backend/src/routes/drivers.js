@@ -21,6 +21,18 @@ function requireDriver(req, res, next) {
   } catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
 }
 
+
+async function walletEligibility(driverId) {
+  const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
+  if (!settings?.isActive) return { eligible: false, message: 'The Super Admin has not activated wallet settings yet.' }
+  const wallet = await prisma.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })
+  const due = await prisma.walletTransaction.aggregate({ where: { walletId: wallet.id, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
+  const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
+  if (outstanding > 0) return { eligible: false, message: 'Please recharge your wallet to clear outstanding commission before receiving new rides.' }
+  if (wallet.balance < settings.minimumBalance) return { eligible: false, message: `Your wallet must have at least ₹${settings.minimumBalance} to receive rides.` }
+  return { eligible: true, wallet, settings }
+}
+
 function distanceKm(aLat, aLng, bLat, bLng) {
   const radians = value => value * Math.PI / 180
   const dLat = radians(bLat - aLat), dLng = radians(bLng - aLng)
@@ -85,6 +97,10 @@ router.post('/availability', requireDriver, async (req, res, next) => {
     const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver) return res.status(404).json({ message: 'Driver account not found.' })
     if (driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account must be approved before going online.' })
+    if (online) {
+      const walletStatus = await walletEligibility(driver.id)
+      if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
+    }
     if (online && (driver.currentLat == null || driver.currentLng == null || !driver.locationUpdatedAt || Date.now() - driver.locationUpdatedAt.getTime() > 180000)) {
       return res.status(400).json({ message: 'Share your current location first, then try going online.' })
     }
@@ -122,6 +138,8 @@ router.get('/offers', requireDriver, async (req, res, next) => {
   try {
     const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account is not approved yet.' })
+    const walletStatus = await walletEligibility(driver.id)
+    if (!walletStatus.eligible) return res.json({ offers: [], walletBlocked: true, message: walletStatus.message })
     const offers = await prisma.driverOffer.findMany({
       where: { driverId: driver.id, status: 'OFFERED', booking: { status: 'REQUESTED' } },
       include: { booking: true },
@@ -135,6 +153,8 @@ router.get('/offers', requireDriver, async (req, res, next) => {
 router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => {
   try {
     const driverId = req.driverAuth.sub
+    const walletStatus = await walletEligibility(driverId)
+    if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
     const offer = await prisma.driverOffer.findFirst({ where: { id: req.params.offerId, driverId, status: 'OFFERED' }, include: { booking: true } })
     if (!offer || offer.booking.status !== 'REQUESTED') return res.status(409).json({ message: 'This ride is no longer available.' })
     const now = new Date()
@@ -189,10 +209,41 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     }
     const data = { status: nextStatus, ...transition.timestamp }
     if (nextStatus === 'COMPLETED') data.finalFare = finalFare
+    if (nextStatus === 'COMPLETED') {
+      const outcome = await prisma.$transaction(async tx => {
+        const settings = await tx.walletSettings.findUnique({ where: { id: 'default' } })
+        const changed = await tx.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
+        if (changed.count !== 1) throw Object.assign(new Error('This ride was updated elsewhere. Refresh your active rides.'), { statusCode: 409 })
+        let commission = 0
+        let balanceAfter = 0
+        if (settings?.isActive) {
+          commission = settings.commissionMode === 'PERCENTAGE'
+            ? Math.round(finalFare * settings.commissionValue / 100)
+            : Math.round(settings.commissionValue)
+          if (commission > 0) {
+            const wallet = await tx.driverWallet.upsert({ where: { driverId: req.driverAuth.sub }, create: { driverId: req.driverAuth.sub }, update: {} })
+            const paid = Math.min(wallet.balance, commission)
+            balanceAfter = wallet.balance - paid
+            await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: balanceAfter } })
+            await tx.walletTransaction.create({ data: {
+              walletId: wallet.id, type: 'COMMISSION', amount: commission, settledAmount: paid,
+              status: paid >= commission ? 'POSTED' : 'DUE',
+              description: settings.commissionMode === 'PERCENTAGE' ? `Ride commission (${settings.commissionValue}% of ₹${finalFare})` : `Fixed ride commission (₹${settings.commissionValue})`,
+              bookingId: booking.id, balanceAfter
+            } })
+          } else {
+            const wallet = await tx.driverWallet.upsert({ where: { driverId: req.driverAuth.sub }, create: { driverId: req.driverAuth.sub }, update: {} })
+            balanceAfter = wallet.balance
+          }
+        }
+        return { commission, balanceAfter }
+      })
+      return res.json({ message: 'Trip completed. Wallet commission processed.', status: nextStatus, finalFare, commissionDeducted: outcome.commission, walletBalance: outcome.balanceAfter })
+    }
     const updated = await prisma.booking.updateMany({ where: { id: booking.id, driverId: req.driverAuth.sub, status: transition.from }, data })
     if (updated.count !== 1) return res.status(409).json({ message: 'This ride was updated elsewhere. Refresh your active rides.' })
-    res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : nextStatus === 'IN_PROGRESS' ? 'Trip started.' : 'Trip completed successfully.', status: nextStatus, finalFare: finalFare ?? null })
-  } catch (error) { next(error) }
+    res.json({ message: nextStatus === 'DRIVER_ARRIVED' ? 'Passenger notified: you have arrived.' : 'Trip started.', status: nextStatus, finalFare: null })
+  } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
 
 router.get('/admin', requireAdmin, async (req, res, next) => {

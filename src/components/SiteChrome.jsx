@@ -5,9 +5,20 @@ import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut } from '
 import Brand from './Brand'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
+const NAV_CACHE_KEY = 'twoWayz.publicNavigation.v1'
+function readNavigationCache() {
+  try { return JSON.parse(sessionStorage.getItem(NAV_CACHE_KEY) || '[]') } catch { return [] }
+}
 function useCmsNavigation() {
-  const [pages,setPages] = useState([])
-  useEffect(() => { let active=true; fetch(API_BASE + '/cms-pages/public').then(r=>r.json()).then(data=>{if(active)setPages(data.pages||[])}).catch(()=>{}); return()=>{active=false} }, [])
+  const [pages,setPages] = useState(readNavigationCache)
+  useEffect(() => {
+    let active=true
+    fetch(API_BASE + '/cms-pages/public')
+      .then(r=>{if(!r.ok)throw new Error('Navigation unavailable');return r.json()})
+      .then(data=>{if(active){const next=data.pages||[];setPages(next);try{sessionStorage.setItem(NAV_CACHE_KEY,JSON.stringify(next))}catch{}}})
+      .catch(()=>{})
+    return()=>{active=false}
+  }, [])
   return pages
 }
 const fallbackNavigation = [{ label: 'About', to: '/about' },{ label: 'How it works', to: '/how-it-works' },{ label: 'For drivers', to: '/drivers' },{ label: 'Contact', to: '/contact' }]
@@ -35,7 +46,7 @@ export function SiteHeader() {
       .catch(() => { if (active) setPassenger(null) })
       .finally(() => { if (active) setCheckingPassenger(false) })
     return () => { active = false }
-  }, [pathname])
+  }, [])
 
   async function logout() {
     setLoggingOut(true)
@@ -64,7 +75,7 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="relative hidden md:block">
-          {!checkingPassenger && (passenger ? (
+          {checkingPassenger ? <div aria-hidden="true" className="h-12 w-36 rounded-xl bg-slate-100"/> : (passenger ? (
             <div className="relative">
               <button type="button" onClick={() => setProfileOpen(open => !open)} aria-expanded={profileOpen} aria-haspopup="menu" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-wayz-blue hover:bg-blue-50">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-wayz-blue"><UserRound size={16}/></span>
@@ -91,7 +102,7 @@ export function SiteHeader() {
           const active = pathname === item.to
           return <Link key={item.to} onClick={() => setMenuOpen(false)} to={item.to} aria-current={active ? 'page' : undefined} className={`rounded-lg px-3 py-3 transition ${active ? 'bg-blue-50 font-bold text-wayz-blue' : 'font-semibold text-slate-700 hover:bg-wayz-mist'}`}>{item.label}</Link>
         })}
-        {!checkingPassenger && (passenger ? (
+        {checkingPassenger ? <div aria-hidden="true" className="mx-3 mt-2 h-10 rounded-lg bg-slate-100"/> : (passenger ? (
           <div className="border-t border-slate-100 pt-3">
             <p className="px-3 py-2 text-sm font-semibold text-slate-700">Signed in as {passenger.name}</p>
             <Link onClick={() => setMenuOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><UserRound size={17}/> My Profile</Link>

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { LoaderCircle, MapPinned } from 'lucide-react'
 
-export default function RouteMap({ route }) {
+export default function RouteMap({ route, driverLocation = null }) {
   const mapElementRef = useRef(null)
   const [mapError, setMapError] = useState('')
   const [loading, setLoading] = useState(true)
+  const mapRef = useRef(null)
+  const driverMarkerRef = useRef(null)
 
   useEffect(() => {
     let active = true
@@ -35,6 +37,7 @@ export default function RouteMap({ route }) {
           clickableIcons: false,
         })
 
+        mapRef.current = map
         polylines = route.createPolylines({
           polylineOptions: {
             strokeColor: '#2563eb',
@@ -68,14 +71,41 @@ export default function RouteMap({ route }) {
 
     return () => {
       active = false
+      mapRef.current = null
+      if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
       polylines.forEach(polyline => polyline.setMap(null))
       markers.forEach(marker => { marker.map = null })
     }
   }, [route])
 
+  useEffect(() => {
+    let active = true
+    async function updateDriverMarker() {
+      const map = mapRef.current
+      if (!map || !driverLocation || !Number.isFinite(Number(driverLocation.lat)) || !Number.isFinite(Number(driverLocation.lng))) {
+        if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
+        return
+      }
+      try {
+        const { AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary('marker')
+        if (!active || !mapRef.current) return
+        const pin = new PinElement({ background: '#facc15', borderColor: '#0f172a', glyphColor: '#0f172a', glyphText: 'A', scale: 1.25 })
+        if (!driverMarkerRef.current) {
+          driverMarkerRef.current = new AdvancedMarkerElement({ map: mapRef.current, position: { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }, title: 'Your assigned auto driver', content: pin.element })
+        } else {
+          driverMarkerRef.current.position = { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }
+        }
+      } catch (error) {
+        console.error('Unable to update driver map marker:', error)
+      }
+    }
+    updateDriverMarker()
+    return () => { active = false }
+  }, [driverLocation?.lat, driverLocation?.lng])
+
   return (
     <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-blue-100 bg-slate-100 sm:min-h-[340px] lg:h-full lg:min-h-[390px]">
-      <div ref={mapElementRef} className="absolute inset-0" aria-label="Map showing the selected pickup, destination and driving route" />
+      <div ref={mapElementRef} className="absolute inset-0" aria-label="Map showing the route and assigned driver location" />
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-slate-100/90 text-sm font-medium text-slate-600">
           <LoaderCircle size={18} className="animate-spin" /> Loading route map…

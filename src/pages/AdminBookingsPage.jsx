@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshCw, Search, ClipboardList, Clock3, CarFront, CheckCircle2, XCircle } from 'lucide-react'
+import { RefreshCw, Search, ClipboardList, Clock3, CarFront, CheckCircle2, XCircle, UserCheck, X, LoaderCircle, MapPin, Wallet, Wifi } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const statuses = ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']
@@ -15,6 +15,14 @@ export default function AdminBookingsPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [assignBooking, setAssignBooking] = useState(null)
+  const [eligibleDrivers, setEligibleDrivers] = useState([])
+  const [unavailableDrivers, setUnavailableDrivers] = useState([])
+  const [selectedDriverId, setSelectedDriverId] = useState('')
+  const [assignLoading, setAssignLoading] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState('')
+  const [assignMessage, setAssignMessage] = useState('')
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true)
     try {
@@ -28,6 +36,21 @@ export default function AdminBookingsPage() {
   useEffect(() => { load(); const timer = window.setInterval(() => load(true), 15000); return () => window.clearInterval(timer) }, [load])
   useEffect(() => { setPage(1) }, [search, status])
   const count = (key) => bookings.filter(item => item.status === key).length
+
+  async function openAssignment(item) {
+    setAssignBooking(item); setEligibleDrivers([]); setUnavailableDrivers([]); setSelectedDriverId(''); setAssignError(''); setAssignMessage(''); setAssignLoading(true)
+    try { const result = await adminApi.eligibleAssignmentDrivers(item.id); setEligibleDrivers(result.eligibleDrivers || []); setUnavailableDrivers(result.unavailableDrivers || []); if (!(result.eligibleDrivers || []).length) setAssignError('No driver currently meets all assignment requirements. Check the unavailable-driver reasons below.') }
+    catch (err) { setAssignError(err.message || 'Unable to load eligible drivers.') }
+    finally { setAssignLoading(false) }
+  }
+
+  async function confirmAssignment() {
+    if (!assignBooking || !selectedDriverId || assigning) return
+    setAssigning(true); setAssignError('')
+    try { const result = await adminApi.manuallyAssignDriver(assignBooking.id, selectedDriverId); setAssignMessage(result.message || 'Driver assigned successfully.'); setAssignBooking(null); setSelectedDriverId(''); await load(true) }
+    catch (err) { setAssignError(err.message || 'Unable to assign this driver. Refresh and try again.') }
+    finally { setAssigning(false) }
+  }
   return <div className="mx-auto max-w-7xl space-y-6">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-wayz-blue">Ride operations</p><h1 className="mt-1 text-3xl font-black text-slate-900">Booking Management</h1><p className="mt-2 text-sm text-slate-500">Monitor passenger requests, driver assignments and completed rides. Refreshes every 15 seconds.</p></div><button onClick={() => load()} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700"><RefreshCw size={16}/> Refresh</button></div>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -41,6 +64,7 @@ export default function AdminBookingsPage() {
       <select value={status} onChange={event => setStatus(event.target.value)} className="h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-wayz-blue"><option value="">All statuses</option>{statuses.map(item => <option key={item} value={item}>{item.replaceAll('_', ' ')}</option>)}</select>
     </div>
     {error && <p role="alert" className="rounded-xl bg-rose-50 p-4 text-sm text-rose-700">{error}</p>}
+    {assignMessage && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">{assignMessage}</p>}
     {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">Loading bookings…</div> : bookings.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center"><ClipboardList className="mx-auto text-slate-400" size={34}/><p className="mt-3 font-bold text-slate-700">No bookings found</p><p className="mt-1 text-sm text-slate-500">New passenger ride requests will appear here.</p></div> :
       <div className="space-y-3">{bookings.map(item => <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-wayz-blue">{item.reference}</p><p className="mt-1 text-xs text-slate-400">Requested {dateTime(item.requestedAt)}</p></div><span className={'rounded-full px-3 py-1 text-xs font-bold '+statusTone(item.status)}>{item.status.replaceAll('_', ' ')}</span></div>

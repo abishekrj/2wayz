@@ -12,7 +12,7 @@ export function hashRideStartOtp(otp) {
 }
 
 export function verifyRideStartOtp(otp, expectedHash) {
-  if (!/^\\d{4}$/.test(String(otp || '')) || typeof expectedHash !== 'string') return false
+  if (!/^\d{4}$/.test(String(otp || '')) || typeof expectedHash !== 'string') return false
   const actual = Buffer.from(hashRideStartOtp(otp), 'hex')
   const expected = Buffer.from(expectedHash, 'hex')
   return actual.length === expected.length && timingSafeEqual(actual, expected)

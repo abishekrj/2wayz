@@ -39,7 +39,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
     const bookingPeriodWhere = {
       OR: [
         { status: 'COMPLETED', completedAt: dateRange },
-        { status: { in: cancelledStatuses }, updatedAt: dateRange }
+        { status: { in: cancelledStatuses }, cancelledAt: dateRange }
       ]
     }
 
@@ -50,7 +50,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
         id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true,
         bookings: {
           where: bookingPeriodWhere,
-          select: { id: true, reference: true, status: true, finalFare: true, estimatedFare: true, completedAt: true, updatedAt: true }
+          select: { id: true, reference: true, status: true, finalFare: true, estimatedFare: true, completedAt: true, cancelledAt: true, updatedAt: true }
         },
         offers: {
           where: { updatedAt: dateRange, status: { in: ['ACCEPTED', 'DECLINED'] } },
@@ -97,7 +97,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
         }),
         cancelledRecords: cancelled.map(booking => ({
           reference: booking.reference,
-          date: booking.updatedAt
+          date: booking.cancelledAt || booking.updatedAt
         }))
       }
     }))
@@ -105,8 +105,8 @@ router.get('/', requireAdmin, async (req, res, next) => {
     const requestWhere = { requestedAt: dateRange, ...(driverId ? { driverId } : {}) }
     const totalRequests = await prisma.booking.count({ where: requestWhere })
     const cancelledBookings = await prisma.booking.findMany({
-      where: { status: { in: cancelledStatuses }, updatedAt: dateRange, ...(driverId ? { driverId } : {}) },
-      select: { updatedAt: true }
+      where: { status: { in: cancelledStatuses }, cancelledAt: dateRange, ...(driverId ? { driverId } : {}) },
+      select: { cancelledAt: true, updatedAt: true }
     })
     const totalCompleted = sum(rows, row => row.completedRides)
     const totalCancelled = cancelledBookings.length
@@ -131,7 +131,7 @@ router.get('/', requireAdmin, async (req, res, next) => {
     }
 
     for (const booking of cancelledBookings) {
-      const day = indiaDateText(new Date(booking.updatedAt))
+      const day = indiaDateText(new Date(booking.cancelledAt || booking.updatedAt))
       const entry = daily.get(day) || { date: day, completedRides: 0, cancelledRides: 0, fares: 0, netEarnings: 0 }
       entry.cancelledRides += 1
       daily.set(day, entry)

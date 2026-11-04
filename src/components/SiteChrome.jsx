@@ -26,6 +26,7 @@ export function SiteHeader() {
   const [checkingPassenger, setCheckingPassenger] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
   const { pathname } = useLocation()
+  const bookingReturnQuery = pathname === '/travel-details' ? `?returnTo=${encodeURIComponent('/travel-details')}` : ''
 
   useEffect(() => {
     let active = true
@@ -79,7 +80,7 @@ export function SiteHeader() {
           ) : (
             <>
               <button onClick={() => setAuthOpen(!authOpen)} aria-expanded={authOpen} className="rounded-xl bg-wayz-blue px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-wayz-navy">Login / Sign up <ChevronDown className="ml-1 inline" size={15}/></button>
-              {authOpen && <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl"><Link onClick={() => setAuthOpen(false)} to="/login" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Login</Link><Link onClick={() => setAuthOpen(false)} to="/register" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Create account</Link><Link onClick={() => setAuthOpen(false)} to="/driver/register" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Register as driver</Link></div>}
+              {authOpen && <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl"><Link onClick={() => setAuthOpen(false)} to={`/login${bookingReturnQuery}`} className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Login</Link><Link onClick={() => setAuthOpen(false)} to={`/register${bookingReturnQuery}`} className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Create account</Link><Link onClick={() => setAuthOpen(false)} to="/driver/register" className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-wayz-blue">Register as driver</Link></div>}
             </>
           ))}
         </div>
@@ -99,7 +100,7 @@ export function SiteHeader() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-2 pt-2"><Link onClick={() => setMenuOpen(false)} to="/login" className="rounded-xl bg-wayz-blue px-4 py-3 text-center text-white">Login</Link><Link onClick={() => setMenuOpen(false)} to="/register" className="rounded-xl border border-wayz-blue px-4 py-3 text-center text-wayz-blue">Register</Link></div>
+            <div className="grid grid-cols-2 gap-2 pt-2"><Link onClick={() => setMenuOpen(false)} to={`/login${bookingReturnQuery}`} className="rounded-xl bg-wayz-blue px-4 py-3 text-center text-white">Login</Link><Link onClick={() => setMenuOpen(false)} to={`/register${bookingReturnQuery}`} className="rounded-xl border border-wayz-blue px-4 py-3 text-center text-wayz-blue">Register</Link></div>
             <Link onClick={() => setMenuOpen(false)} to="/driver/register" className="rounded-lg px-3 py-3 text-wayz-blue">Register as an auto driver</Link>
           </>
         ))}

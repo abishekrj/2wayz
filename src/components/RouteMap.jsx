@@ -5,6 +5,7 @@ export default function RouteMap({ route, driverLocation = null }) {
   const mapElementRef = useRef(null)
   const [mapError, setMapError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [mapReady, setMapReady] = useState(false)
   const mapRef = useRef(null)
   const driverMarkerRef = useRef(null)
 
@@ -38,6 +39,7 @@ export default function RouteMap({ route, driverLocation = null }) {
         })
 
         mapRef.current = map
+        setMapReady(true)
         polylines = route.createPolylines({
           polylineOptions: {
             strokeColor: '#2563eb',
@@ -72,6 +74,7 @@ export default function RouteMap({ route, driverLocation = null }) {
     return () => {
       active = false
       mapRef.current = null
+      setMapReady(false)
       if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
       polylines.forEach(polyline => polyline.setMap(null))
       markers.forEach(marker => { marker.map = null })
@@ -101,7 +104,7 @@ export default function RouteMap({ route, driverLocation = null }) {
     }
     updateDriverMarker()
     return () => { active = false }
-  }, [driverLocation?.lat, driverLocation?.lng])
+  }, [driverLocation?.lat, driverLocation?.lng, mapReady])
 
   return (
     <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-blue-100 bg-slate-100 sm:min-h-[340px] lg:h-full lg:min-h-[390px]">
@@ -121,6 +124,7 @@ export default function RouteMap({ route, driverLocation = null }) {
         A <span className="mx-1">Pickup</span>
         <span className="mx-2 text-slate-300">|</span>
         B <span className="ml-1">Destination</span>
+        {driverLocation && <><span className="mx-2 text-slate-300">|</span><span>Driver</span></>}
       </div>
     </div>
   )

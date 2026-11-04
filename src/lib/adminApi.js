@@ -60,8 +60,8 @@ export const adminApi = {
   markPassengerNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read?role=PASSENGER`, { method: 'PATCH' }),
   markAllPassengerNotificationsRead: () => request('/notifications/me/read-all?role=PASSENGER', { method: 'POST' }),
   driverNotifications: () => request('/notifications/me?role=DRIVER'),
-  markDriverNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
-  markAllDriverNotificationsRead: () => request('/notifications/me/read-all', { method: 'POST' }),
+  markDriverNotificationRead: (id) => request(`/notifications/me/${encodeURIComponent(id)}/read?role=DRIVER`, { method: 'PATCH' }),
+  markAllDriverNotificationsRead: () => request('/notifications/me/read-all?role=DRIVER', { method: 'POST' }),
   adminNotifications: () => request('/notifications/admin'),
   markAdminNotificationRead: (id) => request(`/notifications/admin/${encodeURIComponent(id)}/read`, { method: 'PATCH' }),
   markAllAdminNotificationsRead: () => request('/notifications/admin/read-all', { method: 'POST' })

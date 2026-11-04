@@ -101,6 +101,10 @@ model Booking {
   arrivedAt          DateTime?
   tripStartedAt      DateTime?
   completedAt        DateTime?
+  rideStartOtpHash   String?
+  rideStartOtpEncrypted String?
+  rideStartOtpAttempts Int @default(0)
+  rideStartOtpVerifiedAt DateTime?
   finalFare          Int?
   cancelledAt        DateTime?
   cancelledBy        String?

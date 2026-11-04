@@ -41,7 +41,7 @@ export default function SosButton({ bookingId, role = 'PASSENGER' }) {
           {busy ? 'Sending emergency alert…' : sent ? 'SOS alert sent' : 'Send SOS alert'}
         </button>
         {message && <p role="status" className="mt-3 text-xs font-semibold text-rose-900">{message}</p>}
-        {sent && <a href="tel:112" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2.5 text-sm font-extrabold text-rose-700"><PhoneCall size={16}/> Call emergency number 112</a>}
+        <a href="tel:112" className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2.5 text-sm font-extrabold text-rose-700"><PhoneCall size={16}/> Call emergency number 112</a>
       </div>
     </div>
     <p className="mt-3 text-[11px] leading-4 text-rose-700">2WAYZ alerts its Super Admin only. It does not automatically contact police, ambulance or emergency services. Call 112 for immediate assistance.</p>

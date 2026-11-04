@@ -31,19 +31,72 @@ function fareFor(distanceKmValue) {
   return Math.ceil(raw / 5) * 5
 }
 
+async function calculateVerifiedRoute(origin, destination) {
+  const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY
+  if (!apiKey) {
+    throw Object.assign(new Error('Ride booking is temporarily unavailable. The server route service is not configured.'), { statusCode: 503 })
+  }
+
+  let response
+  try {
+    response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration'
+      },
+      body: JSON.stringify({
+        origin: { location: { latLng: { latitude: Number(origin.lat), longitude: Number(origin.lng) } } },
+        destination: { location: { latLng: { latitude: Number(destination.lat), longitude: Number(destination.lng) } } },
+        travelMode: 'DRIVE',
+        routingPreference: 'TRAFFIC_UNAWARE',
+        computeAlternativeRoutes: true
+      }),
+      signal: AbortSignal.timeout(10000)
+    })
+  } catch (error) {
+    console.error('Google Routes verification request failed:', error.message)
+    throw Object.assign(new Error('Could not verify the driving route. Please try again.'), { statusCode: 502 })
+  }
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => '')
+    console.error('Google Routes verification returned an error:', response.status, details.slice(0, 500))
+    throw Object.assign(new Error('Could not verify the driving route. Please try again.'), { statusCode: 502 })
+  }
+
+  const data = await response.json()
+  const routes = (data.routes || [])
+    .filter(route => Number.isFinite(route.distanceMeters) && route.distanceMeters > 0)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+  const shortest = routes[0]
+  if (!shortest) {
+    throw Object.assign(new Error('Google Maps could not find a driving route for these locations.'), { statusCode: 422 })
+  }
+
+  const durationSeconds = Number.parseFloat(String(shortest.duration || '').replace(/s$/, ''))
+  return {
+    distanceKm: shortest.distanceMeters / 1000,
+    durationMinutes: Number.isFinite(durationSeconds) && durationSeconds > 0
+      ? Math.max(1, Math.round(durationSeconds / 60))
+      : null
+  }
+}
+
 router.post('/', requirePassenger, async (req, res, next) => {
   try {
     const { pickup, destination } = req.body || {}
     if (!validPoint(pickup) || !validPoint(destination)) return res.status(400).json({ message: 'Choose pickup and destination locations with map coordinates.' })
     const straightLineKm = distanceKm(pickup.location.lat, pickup.location.lng, destination.location.lat, destination.location.lng)
-    // The passenger app calculates the actual Google Maps driving-route distance.
-    // Use that same distance for the server-side fare so the confirmed and tracked fares match.
-    const submittedRouteKm = Number(req.body?.estimate?.distanceKm)
-    const distanceKmValue = Number.isFinite(submittedRouteKm) && submittedRouteKm > 0
-      ? submittedRouteKm
-      : straightLineKm
-    if (straightLineKm < 0.05 || distanceKmValue < straightLineKm * 0.8 || distanceKmValue > 100) {
-      return res.status(400).json({ message: 'The route distance is invalid. Please calculate the route again.' })
+    if (straightLineKm < 0.05) return res.status(400).json({ message: 'Pickup and destination must be different locations.' })
+
+    // Never trust distance or duration sent by the browser. Recalculate the shortest
+    // available driving route with the server-only Google Routes API key.
+    const verifiedRoute = await calculateVerifiedRoute(pickup.location, destination.location)
+    const distanceKmValue = verifiedRoute.distanceKm
+    if (distanceKmValue < straightLineKm * 0.8 || distanceKmValue > 100) {
+      return res.status(422).json({ message: 'The verified route distance is outside the supported range. Please check the pickup and destination.' })
     }
     const mode = req.body?.mode === 'schedule' ? 'schedule' : 'instant'
     let scheduledAt = null
@@ -51,8 +104,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
       scheduledAt = new Date(req.body?.scheduledAt)
       if (!Number.isFinite(scheduledAt.getTime()) || scheduledAt.getTime() < Date.now() + 10 * 60 * 1000 || scheduledAt.getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000) return res.status(400).json({ message: 'Choose a scheduled time at least 10 minutes and no more than 30 days from now.' })
     }
-    const estimate = req.body?.estimate || {}
-    const estimatedMinutes = Math.min(600, Math.max(1, Math.round(Number(estimate.durationMinutes) || distanceKmValue * 4)))
+    const estimatedMinutes = Math.min(600, Math.max(1, verifiedRoute.durationMinutes || Math.round(distanceKmValue * 4)))
     const fare = fareFor(distanceKmValue)
     const reference = '2W-' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 90 + 10)
     const booking = await prisma.booking.create({ data: {

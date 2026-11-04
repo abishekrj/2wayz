@@ -73,6 +73,7 @@ model Driver {
   wallet            DriverWallet?
   walletRecharges   WalletRecharge[]
   activities        DriverActivity[]
+  financialAdjustments BookingAdjustment[]
   @@index([status, isOnline, locationUpdatedAt])
 }
 
@@ -109,6 +110,7 @@ model Booking {
   passenger          PassengerUser @relation(fields: [passengerId], references: [id])
   driver             Driver?       @relation(fields: [driverId], references: [id])
   offers             DriverOffer[]
+  financialAdjustments BookingAdjustment[]
   @@index([passengerId, createdAt])
   @@index([driverId, status])
   @@index([status, requestedAt])
@@ -179,6 +181,8 @@ model WalletTransaction {
   createdAt     DateTime        @default(now())
   wallet        DriverWallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
   recharge      WalletRecharge? @relation(fields: [rechargeId], references: [id], onDelete: SetNull)
+  adjustmentId  String?         @unique
+  adjustment    BookingAdjustment? @relation(fields: [adjustmentId], references: [id], onDelete: SetNull)
   @@index([walletId, createdAt])
   @@index([type, status])
 }
@@ -194,4 +198,20 @@ model DriverActivity {
   driver      Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
   @@index([driverId, createdAt])
   @@index([eventType, createdAt])
+}
+
+model BookingAdjustment {
+  id                 String          @id @default(cuid())
+  bookingId          String
+  driverId           String
+  type               String
+  amount             Int
+  reason             String
+  createdBy          String
+  createdAt          DateTime        @default(now())
+  booking            Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  driver             Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  walletTransaction  WalletTransaction?
+  @@index([bookingId, createdAt])
+  @@index([driverId, createdAt])
 }

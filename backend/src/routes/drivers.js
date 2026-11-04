@@ -261,7 +261,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     if (nextStatus === 'COMPLETED') data.finalFare = finalFare
     if (nextStatus === 'IN_PROGRESS') {
       const submittedOtp = String(req.body?.otp || '').trim()
-      if (!/^\\d{4}$/.test(submittedOtp)) return res.status(400).json({ message: 'Enter the 4-digit OTP shared by the passenger before starting this ride.' })
+      if (!/^\d{4}$/.test(submittedOtp)) return res.status(400).json({ message: 'Enter the 4-digit OTP shared by the passenger before starting this ride.' })
       const current = await prisma.booking.findUnique({ where: { id: booking.id }, select: { rideStartOtpHash: true, rideStartOtpAttempts: true, rideStartOtpVerifiedAt: true } })
       if (current?.rideStartOtpVerifiedAt) return res.status(409).json({ message: 'This ride has already been verified. Refresh your active rides.' })
       if (!current?.rideStartOtpHash) return res.status(409).json({ message: 'Ride OTP is not available yet. Ask the passenger to refresh their booking screen.' })

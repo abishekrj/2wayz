@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from '../lib/adminApi'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut } from 'lucide-react'
+import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut, CarFront } from 'lucide-react'
 import Brand from './Brand'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
@@ -34,30 +34,56 @@ export function SiteHeader() {
   const [authOpen, setAuthOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [passenger, setPassenger] = useState(null)
-  const [checkingPassenger, setCheckingPassenger] = useState(true)
+  const [driver, setDriver] = useState(null)
+  const [checkingSession, setCheckingSession] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
   const { pathname } = useLocation()
   const bookingReturnQuery = pathname === '/travel-details' ? `?returnTo=${encodeURIComponent('/travel-details')}` : ''
 
   useEffect(() => {
     let active = true
-    adminApi.passengerMe()
-      .then(result => { if (active) setPassenger(result.user || null) })
-      .catch(() => { if (active) setPassenger(null) })
-      .finally(() => { if (active) setCheckingPassenger(false) })
+    setCheckingSession(true)
+    const driverRoute = pathname.startsWith('/driver')
+    const checkSession = async () => {
+      if (driverRoute) {
+        try {
+          const result = await adminApi.driverMe()
+          if (active) { setDriver(result.driver || null); setPassenger(null) }
+        } catch {
+          if (active) { setDriver(null); setPassenger(null) }
+        }
+      } else {
+        try {
+          const result = await adminApi.passengerMe()
+          if (active) { setPassenger(result.user || null); setDriver(null) }
+        } catch {
+          try {
+            const result = await adminApi.driverMe()
+            if (active) { setDriver(result.driver || null); setPassenger(null) }
+          } catch {
+            if (active) { setPassenger(null); setDriver(null) }
+          }
+        }
+      }
+      if (active) setCheckingSession(false)
+    }
+    checkSession()
     return () => { active = false }
-  }, [])
+  }, [pathname])
 
   async function logout() {
     setLoggingOut(true)
     try {
-      await adminApi.passengerLogout()
+      if (driver) await adminApi.driverLogout()
+      else await adminApi.passengerLogout()
     } catch (error) {
-      console.error('Unable to log out passenger:', error)
+      console.error('Unable to log out:', error)
     } finally {
       setPassenger(null)
+      setDriver(null)
       setLoggingOut(false)
       setAuthOpen(false)
+      setProfileOpen(false)
       setMenuOpen(false)
     }
   }
@@ -76,16 +102,15 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="relative hidden h-12 w-44 shrink-0 items-center justify-end md:flex">
-          {checkingPassenger ? <div aria-hidden="true" className="h-12 w-36 rounded-xl bg-slate-100"/> : (passenger ? (
+          {checkingSession ? <div aria-hidden="true" className="h-12 w-36 rounded-xl bg-slate-100"/> : ((driver || passenger) ? (
             <div className="relative">
               <button type="button" onClick={() => setProfileOpen(open => !open)} aria-expanded={profileOpen} aria-haspopup="menu" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-wayz-blue hover:bg-blue-50">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-wayz-blue"><UserRound size={16}/></span>
-                <span className="max-w-36 truncate">{passenger.name}</span>
+                <span className="max-w-36 truncate">{driver?.name || passenger?.name}</span>
                 <ChevronDown size={15} className={profileOpen ? 'rotate-180 transition-transform' : 'transition-transform'}/>
               </button>
               {profileOpen && <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl">
-                <Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><UserRound size={17}/> My Profile</Link>
-                <Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><CalendarCheck size={17}/> My Bookings</Link>
+                {driver ? <Link role="menuitem" onClick={() => setProfileOpen(false)} to="/driver" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><CarFront size={17}/> Driver dashboard</Link> : <><Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><UserRound size={17}/> My Profile</Link><Link role="menuitem" onClick={() => setProfileOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-wayz-blue"><CalendarCheck size={17}/> My Bookings</Link></>}
                 <button role="menuitem" type="button" onClick={logout} disabled={loggingOut} className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60"><LogOut size={17}/>{loggingOut ? 'Logging out…' : 'Logout'}</button>
               </div>}
             </div>
@@ -103,11 +128,10 @@ export function SiteHeader() {
           const active = pathname === item.to
           return <Link key={item.to} onClick={() => setMenuOpen(false)} to={item.to} aria-current={active ? 'page' : undefined} className={`rounded-lg px-3 py-3 transition ${active ? 'bg-blue-50 font-bold text-wayz-blue' : 'font-semibold text-slate-700 hover:bg-wayz-mist'}`}>{item.label}</Link>
         })}
-        {checkingPassenger ? <div aria-hidden="true" className="mx-3 mt-2 h-10 rounded-lg bg-slate-100"/> : (passenger ? (
+        {checkingSession ? <div aria-hidden="true" className="mx-3 mt-2 h-10 rounded-lg bg-slate-100"/> : ((driver || passenger) ? (
           <div className="border-t border-slate-100 pt-3">
-            <p className="px-3 py-2 text-sm font-semibold text-slate-700">Signed in as {passenger.name}</p>
-            <Link onClick={() => setMenuOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><UserRound size={17}/> My Profile</Link>
-            <Link onClick={() => setMenuOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><CalendarCheck size={17}/> My Bookings</Link>
+            <p className="px-3 py-2 text-sm font-semibold text-slate-700">Signed in as {driver?.name || passenger?.name}</p>
+            {driver ? <Link onClick={() => setMenuOpen(false)} to="/driver" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><CarFront size={17}/> Driver dashboard</Link> : <><Link onClick={() => setMenuOpen(false)} to="/my-profile" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><UserRound size={17}/> My Profile</Link><Link onClick={() => setMenuOpen(false)} to="/my-bookings" className="flex items-center gap-3 rounded-lg px-3 py-3 text-slate-700 hover:bg-blue-50"><CalendarCheck size={17}/> My Bookings</Link></>}
             <button type="button" onClick={logout} disabled={loggingOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-rose-600 hover:bg-rose-50 disabled:opacity-60"><LogOut size={17}/>{loggingOut ? 'Logging out…' : 'Logout'}</button>
           </div>
         ) : (

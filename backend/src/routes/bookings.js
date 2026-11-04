@@ -62,10 +62,10 @@ router.post('/', requirePassenger, async (req, res, next) => {
       estimatedMinutes,
       estimatedFare: fare,
       mode,
-      scheduledAt
+      scheduledAt,
+      ...(mode === 'schedule' ? { dispatchStatus: 'SCHEDULED' } : {})
     } })
-    // Offer instant rides to approved online drivers with fresh GPS reports within 8 km.
-    // Scheduled rides are kept pending for a future scheduled-dispatch worker.
+    // Instant rides are offered immediately. Scheduled rides are picked up by the background dispatch worker.
     let offersCreated = 0
     if (mode === 'instant') {
       const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
@@ -90,7 +90,10 @@ router.post('/', requirePassenger, async (req, res, next) => {
       }
     }
     await notifyBooking({ booking, type: 'BOOKING_CREATED', title: 'Ride request created', message: `Ride ${booking.reference} has been requested.`, includeDriver: false })
-    res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt }, offersCreated, message: offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.' })
+    const responseMessage = mode === 'schedule'
+      ? 'Scheduled ride saved. 2WAYZ will start finding drivers 15 minutes before pickup.'
+      : offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.'
+    res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt, dispatchStatus: booking.dispatchStatus }, offersCreated, message: responseMessage })
   } catch (error) { next(error) }
 })
 
@@ -133,6 +136,36 @@ router.post('/:id/cancel', requirePassenger, async (req, res, next) => {
     await notifyBooking({ booking: result, type: 'BOOKING_CANCELLED', title: 'Ride cancelled', message: `Passenger cancelled ride ${result.reference}. Reason: ${result.cancellationReason}`, includePassenger: false })
     res.json({ booking: result, message: 'Booking cancelled. No automatic refund or cancellation fee has been applied.' })
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
+})
+
+
+router.get('/admin/scheduled', requireAdmin, async (req, res, next) => {
+  try {
+    const search = String(req.query.search || '').trim()
+    const bookings = await prisma.booking.findMany({
+      where: {
+        mode: 'schedule',
+        ...(search ? { OR: [
+          { reference: { contains: search, mode: 'insensitive' } },
+          { passenger: { name: { contains: search, mode: 'insensitive' } } },
+          { passenger: { phone: { contains: search } } },
+          { driver: { is: { name: { contains: search, mode: 'insensitive' } } } },
+          { driver: { is: { phone: { contains: search } } } }
+        ] } : {})
+      },
+      orderBy: { scheduledAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, reference: true, status: true, scheduledAt: true, dispatchStatus: true,
+        dispatchAttemptCount: true, dispatchLastAttemptAt: true, pickupName: true, pickupAddress: true,
+        destinationName: true, destinationAddress: true, estimatedFare: true, createdAt: true,
+        passenger: { select: { name: true, phone: true } },
+        driver: { select: { name: true, phone: true, vehicleNumber: true } },
+        _count: { select: { offers: true } }
+      }
+    })
+    res.json({ bookings })
+  } catch (error) { next(error) }
 })
 
 router.get('/admin/cancellations', requireAdmin, async (req, res, next) => {

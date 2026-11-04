@@ -120,6 +120,7 @@ model Booking {
   offers             DriverOffer[]
   financialAdjustments BookingAdjustment[]
   tripShareLink       TripShareLink?
+  sosAlerts           SOSAlert[]
   @@index([passengerId, createdAt])
   @@index([driverId, status])
   @@index([status, requestedAt])
@@ -250,4 +251,26 @@ model TripShareLink {
   createdAt DateTime @default(now())
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   @@index([expiresAt])
+}
+
+
+model SOSAlert {
+  id                String   @id @default(cuid())
+  bookingId         String?
+  triggeredByRole   String
+  triggeredById     String
+  status            String   @default("OPEN")
+  latitude          Float?
+  longitude         Float?
+  locationAccuracy  Float?
+  description       String?
+  actionTaken       String?
+  acknowledgedAt    DateTime?
+  resolvedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  @@index([status, createdAt])
+  @@index([bookingId, createdAt])
+  @@index([triggeredByRole, triggeredById, createdAt])
 }

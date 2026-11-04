@@ -6,6 +6,7 @@ import RouteMap from '../components/RouteMap'
 import { useBooking } from '../context/BookingContext'
 import { adminApi } from '../lib/adminApi'
 import NotificationCenter from '../components/NotificationCenter'
+import SosButton from '../components/SosButton'
 
 const statusLabels = {
   REQUESTED: 'Finding a nearby driver',
@@ -151,6 +152,7 @@ export default function TravelTrackingPage() {
     </div>
     {trackingError && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{trackingError}</p>}
     <div className="mb-5"><NotificationCenter role="PASSENGER"/></div>
+    {["REQUESTED","DRIVER_ASSIGNED","DRIVER_ARRIVED","IN_PROGRESS"].includes(status) && <div className="mb-5"><SosButton bookingId={booking.bookingId} role="PASSENGER"/></div>}
     {['DRIVER_ASSIGNED','DRIVER_ARRIVED','IN_PROGRESS'].includes(status) && <section className="mb-5 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-wayz-blue"><Share2 size={22}/></span><div><h2 className="font-extrabold text-wayz-ink">Share live trip with family</h2><p className="mt-1 text-xs text-slate-500">Let someone you trust follow your ride in real time.</p></div></div>
       <p className="mt-3 text-sm leading-6 text-slate-600">Create a private link to share your journey, ride status and the driver's latest available location. The link expires after 24 hours and stops working when the ride ends. Anyone with the link can view it, so share it only with people you trust.</p>

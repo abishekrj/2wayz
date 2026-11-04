@@ -2,7 +2,7 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
-import { notifyBooking } from '../lib/notifications.js'
+import { notify, notifyBooking } from '../lib/notifications.js'
 
 const router = Router()
 function requirePassenger(req, res, next) {
@@ -85,6 +85,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
         if (eligible.length) {
           await prisma.driverOffer.createMany({ data: eligible.map(driver => ({ bookingId: booking.id, driverId: driver.id })), skipDuplicates: true })
           offersCreated = eligible.length
+          await Promise.all(eligible.map(driver => notify({ role: 'DRIVER', recipientId: driver.id, type: 'RIDE_OFFER', title: 'New ride offer', message: `A nearby ride request ${booking.reference} is available. Open your driver portal to review it.`, bookingId: booking.id })))
         }
       }
     }

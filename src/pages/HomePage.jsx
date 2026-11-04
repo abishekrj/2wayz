@@ -89,7 +89,7 @@ export default function HomePage(){
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-wayz-ink sm:text-4xl">{cms['nearby-places'].heading}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">Discover well-loved temples, peaceful retreats and special places around our town.</p>
       </div>
-      <Link to="/places" className="inline-flex w-fit items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#174f91]">View all places <ArrowRight size={16}/></Link>
+      <Link to="/places" className="inline-flex w-fit items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#174f91]">View all <ArrowRight size={16}/></Link>
     </div>
     <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {featuredPlaces.map((entry,i)=>{

@@ -140,6 +140,29 @@ export default function DriverPortalPage() {
     finally { setBusy(false) }
   }
 
+  async function cancelActiveBooking(item) {
+    const options = [
+      ['PASSENGER_UNAVAILABLE', 'Passenger unavailable'],
+      ['PASSENGER_REQUESTED', 'Passenger requested cancellation'],
+      ['VEHICLE_ISSUE', 'Vehicle issue'],
+      ['SAFETY_CONCERN', 'Safety concern'],
+      ['WRONG_LOCATION', 'Wrong location'],
+      ['OTHER', 'Other']
+    ]
+    const answer = window.prompt('Choose cancellation reason number:\n' + options.map((option, index) => (index + 1) + '. ' + option[1]).join('\n'), '1')
+    if (answer == null) return
+    const selected = options[Number(answer) - 1]
+    if (!selected) { setError('Enter a valid reason number from 1 to 6.'); return }
+    if (!window.confirm('Cancel ride ' + item.reference + '? The cancellation will be recorded for Super Admin review.')) return
+    setBusy(true); setError(''); setNotice('')
+    try {
+      const result = await adminApi.cancelDriverBooking(item.id, selected[0])
+      setNotice(result.message || 'Ride cancelled.')
+      await refreshActiveBookings()
+    } catch (err) { setError(err.message || 'Unable to cancel this ride.') }
+    finally { setBusy(false) }
+  }
+
   async function updateTripStatus(booking, status) {
     setBusy(true); setError(''); setNotice('')
     try {
@@ -204,6 +227,7 @@ export default function DriverPortalPage() {
               <div className="flex flex-wrap items-center justify-between gap-3"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-wayz-blue">{item.reference}</span><span className="text-xs font-bold text-slate-600">{item.status.replaceAll('_', ' ')}</span></div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.pickupName}</p><p className="text-xs text-slate-500">{item.pickupAddress}</p></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{item.destinationName}</p><p className="text-xs text-slate-500">{item.destinationAddress}</p></div></div>
               <p className="mt-3 text-sm font-semibold text-wayz-blue">Estimated fare: {money(item.estimatedFare)}</p>
+              {['DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(item.status) && <button disabled={busy} onClick={() => cancelActiveBooking(item)} className="mt-4 w-full rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-700 disabled:opacity-60">Cancel ride</button>}
               {item.status === 'DRIVER_ASSIGNED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'DRIVER_ARRIVED')} className="mt-4 w-full rounded-xl bg-wayz-yellow px-4 py-3 text-sm font-extrabold text-wayz-ink disabled:opacity-60">Mark arrived at pickup</button>}
               {item.status === 'DRIVER_ARRIVED' && <button disabled={busy} onClick={() => updateTripStatus(item, 'IN_PROGRESS')} className="mt-4 w-full rounded-xl bg-wayz-blue px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Start trip</button>}
               {item.status === 'IN_PROGRESS' && <div className="mt-4 space-y-3"><label className="block text-xs font-bold text-slate-600">FINAL FARE (₹)<input type="number" min="0" max="100000" step="1" value={finalFareInputs[item.id] ?? String(item.estimatedFare)} onChange={event => setFinalFareInputs(current => ({ ...current, [item.id]: event.target.value }))} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-wayz-blue"/></label><button disabled={busy} onClick={() => updateTripStatus(item, 'COMPLETED')} className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white disabled:opacity-60">Complete trip</button></div>}

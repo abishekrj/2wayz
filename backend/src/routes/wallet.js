@@ -38,7 +38,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
     const [wallet, settings, transactions, recharges, due] = await Promise.all([
       getWallet(req.driverAuth.sub),
       prisma.walletSettings.findUnique({ where: { id: 'default' } }),
-      prisma.walletTransaction.findMany({ where: { wallet: { driverId: req.driverAuth.sub } }, orderBy: { createdAt: 'desc' }, take: 30 }),
+      prisma.walletTransaction.findMany({ where: { wallet: { is: { driverId: req.driverAuth.sub } } }, orderBy: { createdAt: 'desc' }, take: 30 }),
       prisma.walletRecharge.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 15 }),
       prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } })
     ])

@@ -119,6 +119,7 @@ model Booking {
   driver             Driver?       @relation(fields: [driverId], references: [id])
   offers             DriverOffer[]
   financialAdjustments BookingAdjustment[]
+  tripShareLink       TripShareLink?
   @@index([passengerId, createdAt])
   @@index([driverId, status])
   @@index([status, requestedAt])
@@ -237,4 +238,16 @@ model BookingAdjustment {
   walletTransaction  WalletTransaction?
   @@index([bookingId, createdAt])
   @@index([driverId, createdAt])
+}
+
+
+model TripShareLink {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
 }

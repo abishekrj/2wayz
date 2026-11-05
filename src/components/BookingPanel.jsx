@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  Search, Info, Clock3,
-  Route as RouteIcon, LoaderCircle, ArrowLeftRight,
+  Search, Clock3, Route as RouteIcon, BadgeIndianRupee, LoaderCircle, ArrowLeftRight,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
-import RouteMap from './RouteMap'
 import { adminApi } from '../lib/adminApi'
 
 const DEFAULT_FARE = { baseFare: 30, includedDistanceKm: 1, perKmRate: 18, minimumFare: 50, roundingIncrement: 5, isActive: true }
@@ -56,7 +54,7 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, destination: externalDestination, onDestinationChange, activeField, onActiveFieldChange }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, destination: externalDestination, onDestinationChange, activeField, onActiveFieldChange, onEstimateChange }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
@@ -102,18 +100,21 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
 
   useEffect(() => {
     setEstimate(null)
+    onEstimateChange?.(null)
     setError('')
   }, [pickup, destination])
 
   function selectPickup(value) {
     setPickup(value)
     setEstimate(null)
+    onEstimateChange?.(null)
     setError('')
   }
 
   function selectDestination(value) {
     setDestination(value)
     setEstimate(null)
+    onEstimateChange?.(null)
     setError('')
   }
 
@@ -121,6 +122,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
     setPickup(destination)
     setDestination(pickup)
     setEstimate(null)
+    onEstimateChange?.(null)
     setError('')
   }
 
@@ -128,6 +130,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
     event.preventDefault()
     setError('')
     setEstimate(null)
+    onEstimateChange?.(null)
 
     if (!pickup || !destination) {
       setError('Choose both locations from the Google suggestions.')
@@ -141,6 +144,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       if (latestFare?.settings) setFareSettings(latestFare.settings)
       const routeEstimate = await calculateRoute(pickup, destination, activeFareSettings)
       setEstimate(routeEstimate)
+      onEstimateChange?.(routeEstimate.route)
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')
     } finally {
@@ -186,68 +190,29 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       {estimate && (
-        <section className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-bold text-wayz-ink">
-              <Info size={16} className="text-wayz-blue" /> Indicative auto fare
-            </p>
-            <p className="text-3xl font-black text-wayz-blue">₹{estimate.fare}</p>
+        <section className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3">
+          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
+            <RouteIcon size={17} className="mx-auto text-wayz-blue" />
+            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">{estimate.km.toFixed(1)} km</p>
+            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Distance</p>
           </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,.92fr)_minmax(0,1.08fr)]">
-            <div className="min-w-0">
-              <div className="rounded-xl bg-white p-3">
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p>
-                    <p className="truncate text-sm font-semibold text-wayz-ink">{pickup.name}</p>
-                  </div>
-                </div>
-                <div className="ml-1.5 my-2 h-4 border-l border-dashed border-slate-300" />
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-rose-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Destination</p>
-                    <p className="truncate text-sm font-semibold text-wayz-ink">{destination.name}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-white p-3">
-                  <RouteIcon size={17} className="text-wayz-blue" />
-                  <p className="mt-2 text-lg font-bold text-wayz-ink">{estimate.km.toFixed(1)} km</p>
-                  <p className="text-[11px] text-slate-500">Route distance</p>
-                </div>
-                <div className="rounded-xl bg-white p-3">
-                  <Clock3 size={17} className="text-wayz-blue" />
-                  <p className="mt-2 text-lg font-bold text-wayz-ink">{estimate.durationMinutes} min</p>
-                  <p className="text-[11px] text-slate-500">Travel time</p>
-                </div>
-              </div>
-
-              <div className="mt-3 space-y-2 rounded-xl bg-white p-3 text-xs text-slate-600">
-                <div className="flex justify-between"><span>Base fare (first {fareSettings.includedDistanceKm} km)</span><span>₹{fareSettings.baseFare}</span></div>
-                <div className="flex justify-between"><span>Distance component + rounding</span><span>₹{estimate.distanceCharge}</span></div>
-                <div className="flex justify-between font-bold text-wayz-ink"><span>Indicative total</span><span>₹{estimate.fare}</span></div>
-              </div>
-              <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                Current 2WAYZ tariff: ₹{fareSettings.baseFare} base, ₹{fareSettings.perKmRate}/km after the first {fareSettings.includedDistanceKm} km, minimum ₹{fareSettings.minimumFare}, rounded up to ₹{fareSettings.roundingIncrement}. The final trip fare may be adjusted by the driver when the ride is completed.
-              </p>
-            </div>
-
-            <div className="min-w-0">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Selected route</p>
-              <RouteMap route={estimate.route} />
-            </div>
+          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
+            <Clock3 size={17} className="mx-auto text-wayz-blue" />
+            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">{estimate.durationMinutes} min</p>
+            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Time</p>
           </div>
-          <div className="mt-5 flex flex-col gap-3 border-t border-blue-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-500">Review your route and fare. You can still change either location above.</p>
-            <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-wayz-yellow px-6 py-3 text-sm font-bold text-wayz-ink shadow-sm transition hover:bg-amber-300">Continue to booking</button>
+          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
+            <BadgeIndianRupee size={17} className="mx-auto text-wayz-blue" />
+            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">₹{estimate.fare}</p>
+            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Price</p>
           </div>
         </section>
       )}
+      {estimate && (
+        <div className="mt-3 flex justify-end">
+          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-wayz-yellow px-6 py-2.5 text-sm font-bold text-wayz-ink shadow-sm transition hover:bg-amber-300">Continue to booking</button>
+        </div>
+      )}}
 
     </div>
   )

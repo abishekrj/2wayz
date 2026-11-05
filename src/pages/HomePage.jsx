@@ -111,7 +111,7 @@ export default function HomePage(){
  const [destination,setDestination]=useState(()=>location.state?.destination || null)
  const placesCarouselRef=useRef(null)
  const scrollPlaces=direction=>{const el=placesCarouselRef.current;if(!el)return;const card=el.querySelector(':scope > button');el.scrollBy({left:direction*(card?.getBoundingClientRect().width||el.clientWidth),behavior:'smooth'})}
- useEffect(()=>{const el=placesCarouselRef.current;if(!el||featuredPlaces.length<2)return;const timer=window.setInterval(()=>{const card=el.querySelector(':scope > button');if(!card)return;const step=card.getBoundingClientRect().width+16;const max=el.scrollWidth-el.clientWidth;if(el.scrollLeft+el.clientWidth>=max-12)el.scrollTo({left:0,behavior:'smooth'});else el.scrollBy({left:step,behavior:'smooth'})},4500);return()=>window.clearInterval(timer)},[featuredPlaces.length])
+ useEffect(()=>{const el=placesCarouselRef.current;if(!el||featuredPlaces.length<2)return;const timer=window.setInterval(()=>{const card=el.querySelector(':scope > button');if(!card)return;const step=card.getBoundingClientRect().width+16;const max=el.scrollWidth-el.clientWidth;if(el.scrollLeft+el.clientWidth>=max-12)el.scrollTo({left:0,behavior:'smooth'});else el.scrollBy({left:step,behavior:'smooth'})},4500);return()=>window.clearInterval(timer)},[cms['nearby-places'].places?.length])
  useEffect(()=>{if(destination){const timer=window.setTimeout(()=>document.getElementById('book')?.scrollIntoView({behavior:'smooth',block:'center'}),300);return()=>window.clearTimeout(timer)}},[destination])
  const benefits=cms.benefits.items||[]
  const steps=cms['how-it-works'].steps||[]

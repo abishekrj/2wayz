@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle, X } from 'lucide-react'
+import { MapPin, LoaderCircle, X, Home, BriefcaseBusiness, Star } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 let mapsPromise
@@ -34,6 +34,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   const [editing, setEditing] = useState(!value)
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
   const [locating, setLocating] = useState(false)
@@ -69,13 +70,16 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   }, [])
 
   useEffect(() => {
-    if (!editing || suggestions.length === 0) return
+    if (!editing || (!dropdownOpen && suggestions.length === 0)) return
     function closeOnOutsidePointer(event) {
-      if (!fieldRef.current?.contains(event.target)) setSuggestions([])
+      if (!fieldRef.current?.contains(event.target)) {
+        setSuggestions([])
+        setDropdownOpen(false)
+      }
     }
     document.addEventListener('pointerdown', closeOnOutsidePointer)
     return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
-  }, [editing, suggestions.length])
+  }, [editing, dropdownOpen, suggestions.length])
 
   useEffect(() => {
     if (!editing || !query.trim() || !placesRef.current) {
@@ -137,6 +141,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
   function startEditing() {
     setError('')
+    setDropdownOpen(true)
     setQuery(selectedName)
     setSuggestions([])
     setEditing(true)
@@ -147,6 +152,20 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     })
   }
 
+  function chooseSavedPlace(place) {
+    setSuggestions([])
+    setDropdownOpen(false)
+    setQuery('')
+    setEditing(false)
+    setError('')
+    onSelect({
+      placeId: place.placeId || undefined,
+      name: place.name,
+      address: place.address,
+      location: { lat: place.latitude, lng: place.longitude },
+    })
+  }
+
   async function chooseSuggestion(suggestion) {
     try {
       setSearching(true)
@@ -154,6 +173,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       await place.fetchFields({ fields: ['id', 'displayName', 'formattedAddress', 'location'] })
       const name = place.displayName || place.formattedAddress || 'Selected place'
       setSuggestions([])
+      setDropdownOpen(false)
       setQuery('')
       setEditing(false)
       setError('')
@@ -183,7 +203,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
             ref={inputRef}
             value={query}
             onChange={event => { setQuery(event.target.value); setError('') }}
-            onFocus={() => setError('')}
+            onFocus={() => { setError(''); setDropdownOpen(true) }}
             onKeyDown={event => { if (event.key === 'Escape') { setSuggestions([]); if (selectedName) setEditing(false) } }}
             placeholder={placeholder}
             autoComplete="off"
@@ -214,8 +234,25 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
         )}
       </div>
 
-      {editing && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-[70] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+      {editing && (dropdownOpen || suggestions.length > 0) && (
+        <div className="absolute left-0 right-0 top-full z-[70] mt-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+          {savedPlaces.length > 0 && !query.trim() && (
+            <div className="border-b border-slate-100 px-3 py-2">
+              <p className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Saved places</p>
+              {savedPlaces.map(place => {
+                const SavedIcon = place.category === 'HOME' ? Home : place.category === 'WORK' ? BriefcaseBusiness : Star
+                return (
+                  <button key={place.id} type="button" onMouseDown={event => event.preventDefault()} onClick={() => chooseSavedPlace(place)} className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-blue-50">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-wayz-blue"><SavedIcon size={17}/></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-800">{place.label}</span>
+                      <span className="block truncate text-xs text-slate-500">{place.address || place.name}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
           {suggestions.map((item, index) => {
             const prediction = item.placePrediction
             return (
@@ -236,7 +273,6 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           })}
         </div>
       )}
-      {savedPlaces.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-1.5"><span className="mr-1 text-[10px] font-bold uppercase tracking-wide text-blue-100">Saved</span>{savedPlaces.map(place => <button key={place.id} type="button" onClick={() => onSelect({ placeId: place.placeId || undefined, name: place.name, address: place.address, location: { lat: place.latitude, lng: place.longitude } })} className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-wayz-blue transition hover:border-blue-300 hover:bg-blue-100">{place.category === 'HOME' ? '⌂ ' : place.category === 'WORK' ? '▣ ' : '★ '}{place.label}</button>)}</div>}
       {error && <span className="mt-1 block text-xs text-rose-600">{error}</span>}
     </div>
   )

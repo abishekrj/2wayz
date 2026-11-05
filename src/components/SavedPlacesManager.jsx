@@ -95,9 +95,10 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="saved-places-title">
-      <div className="max-h-[calc(100dvh-24px)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-40px)] sm:p-7">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <div className="flex h-[min(680px,calc(100dvh-24px))] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-2xl sm:h-[min(680px,calc(100dvh-40px))] sm:p-7">
+        <div className="flex shrink-0 items-center gap-3">
+          {view === 'list' && <button type="button" onClick={showAdd} aria-label="Back to add place" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-wayz-blue"><ArrowLeft size={19}/></button>}
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold uppercase tracking-wider text-wayz-blue">Your shortcuts</p>
             <h2 id="saved-places-title" className="mt-1 text-2xl font-bold text-wayz-ink">{view === 'list' ? 'Saved places' : view === 'edit' ? 'Edit saved place' : 'Add a saved place'}</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">{view === 'list' ? 'View, edit or remove your saved locations.' : 'Save up to 20 locations for faster pickup and destination selection.'}</p>
@@ -106,11 +107,10 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
         </div>
 
         {view === 'list' ? (
-          <>
-            <button type="button" onClick={showAdd} className="mt-5 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-wayz-blue hover:bg-blue-100"><ArrowLeft size={16}/> Back to add place</button>
+          <div className="flex min-h-0 flex-1 flex-col">
             {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
             {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</p>}
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
               {places.map(item => (
                 <div key={item.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3">
                   <span className="rounded-lg bg-blue-50 p-2.5 text-wayz-blue">
@@ -126,9 +126,9 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
               ))}
               {places.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No saved places yet. Add your first location.</p>}
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {view === 'edit' && <button type="button" onClick={showList} className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"><ArrowLeft size={16}/> Back to saved places</button>}
             {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
             {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</p>}
@@ -158,7 +158,7 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
               <button type="button" onClick={showList} className="inline-flex items-center gap-2 text-sm font-semibold text-wayz-blue hover:underline"><List size={16}/> View saved places ({places.length}) <ChevronRight size={15}/></button>
               <p className="mt-2 text-xs leading-5 text-slate-500">Home and Work each allow one saved address. Favourite places can have custom labels.</p>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>,

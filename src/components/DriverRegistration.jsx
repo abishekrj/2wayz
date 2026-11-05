@@ -55,14 +55,14 @@ export default function DriverRegistration() {
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-semibold text-slate-700">Auto / vehicle number<input required name="vehicleNumber" value={form.vehicleNumber} onChange={update} minLength={5} maxLength={20} placeholder="TN XX XX 0000" className={inputClass}/></label>
           <label className="text-sm font-semibold text-slate-700">Vehicle insurance expiry date<input required type="date" name="vehicleInsuranceExpiryDate" value={form.vehicleInsuranceExpiryDate} onChange={update} min={minExpiryDate} className={inputClass}/></label>
-          <label className="text-sm font-semibold text-slate-700">FC expiry date (Fitness Certificate)<input required type="date" name="fcExpiryDate" value={form.fcExpiryDate} onChange={update} min={today} className={inputClass}/></label>
+          <label className="text-sm font-semibold text-slate-700">FC expiry date (Fitness Certificate)<input required type="date" name="fcExpiryDate" value={form.fcExpiryDate} onChange={update} min={minExpiryDate} className={inputClass}/></label>
         </div>
       </section>
       <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-3"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-700"><FileCheck2 size={19}/></span><div><h3 className="text-base font-bold text-wayz-ink">Driving licence details</h3><p className="text-xs text-slate-500">Enter your licence number and validity</p></div></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-semibold text-slate-700">Driving licence number<input required name="licenceNumber" value={form.licenceNumber} onChange={update} minLength={5} maxLength={40} placeholder="Enter driving licence number" className={inputClass}/></label>
-          <label className="text-sm font-semibold text-slate-700">Driving licence expiry date<input required type="date" name="drivingLicenceExpiryDate" value={form.drivingLicenceExpiryDate} onChange={update} min={today} className={inputClass}/></label>
+          <label className="text-sm font-semibold text-slate-700">Driving licence expiry date<input required type="date" name="drivingLicenceExpiryDate" value={form.drivingLicenceExpiryDate} onChange={update} min={minExpiryDate} className={inputClass}/></label>
         </div>
       </section>
       <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-slate-700"><p className="flex items-center gap-2 font-bold text-wayz-ink"><ShieldCheck size={17} className="text-wayz-blue"/>Document validity and approval</p><p className="mt-1">All three expiry dates must be valid. If your driving licence, vehicle insurance or FC expires, your account will automatically be suspended and you will receive an in-app notification. A Super Admin must verify updated documents before you can go online again.</p></div>

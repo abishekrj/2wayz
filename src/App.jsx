@@ -23,6 +23,7 @@ import AdminDriverOperationsPage from './pages/AdminDriverOperationsPage'
 import AdminDriverReportsPage from './pages/AdminDriverReportsPage'
 import AdminCancellationsPage from './pages/AdminCancellationsPage'
 import AdminBookingsPage from './pages/AdminBookingsPage'
+import AdminFareSettingsPage from './pages/AdminFareSettingsPage'
 import AdminNotificationsPage from './pages/AdminNotificationsPage'
 import AdminSosPage from './pages/AdminSosPage'
 import AdminRatingsPage from './pages/AdminRatingsPage'
@@ -59,6 +60,7 @@ function AdminRoutes() {
       <Route path="driver-reports" element={<AdminDriverReportsPage/>}/>
       <Route path="wallet" element={<AdminWalletPage/>}/>
       <Route path="bookings" element={<AdminBookingsPage/>}/>
+      <Route path="fare-settings" element={<AdminFareSettingsPage/>}/>
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
       <Route path="sos" element={<AdminSosPage/>}/>

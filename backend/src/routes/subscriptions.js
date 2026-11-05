@@ -14,7 +14,10 @@ const router = Router()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const uploadDir = path.resolve(currentDir, '../../uploads/subscriptions')
 fs.mkdirSync(uploadDir, { recursive: true })
-const upload = multer({ storage: multer.diskStorage({ destination: (_req, _file, cb) => cb(null, uploadDir), filename: (_req, file, cb) => cb(null, randomUUID() + path.extname(file.originalname).toLowerCase()) }), limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) })
+const upload = multer({ storage: multer.diskStorage({ destination: (_req, _file, cb) => cb(null, uploadDir), filename: (_req, file, cb) => cb(null, randomUUID() + path.extname(file.originalname).toLowerCase()) }), limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(new Error('Upload a JPG, PNG or WEBP image.'))
+    cb(null, true)
+  } })
 function requireDriver(req, res, next) {
   const token = req.cookies?.twoWayzDriver
   if (!token) return res.status(401).json({ message: 'Please sign in as a driver.' })

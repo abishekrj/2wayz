@@ -212,7 +212,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         <div className="mt-3 flex justify-end">
           <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-wayz-yellow px-6 py-2.5 text-sm font-bold text-wayz-ink shadow-sm transition hover:bg-amber-300">Continue to booking</button>
         </div>
-      )}}
+      )}
 
     </div>
   )

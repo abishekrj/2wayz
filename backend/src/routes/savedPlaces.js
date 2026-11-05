@@ -8,12 +8,16 @@ const categories = new Set(['HOME', 'WORK', 'FAVOURITE'])
 function requirePassenger(req, res, next) {
   const token = req.cookies?.twoWayzPassenger
   if (!token) return res.status(401).json({ message: 'Please log in to manage saved places.' })
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    if (payload.role !== 'PASSENGER') return res.status(401).json({ message: 'Invalid passenger session.' })
-    req.passengerAuth = payload
-    next()
-  } catch { return res.status(401).json({ message: 'Your session has expired. Please log in again.' }) }
+  let payload
+  try { payload = jwt.verify(token, process.env.JWT_SECRET) }
+  catch { return res.status(401).json({ message: 'Your session has expired. Please log in again.' }) }
+  if (payload.role !== 'PASSENGER') return res.status(401).json({ message: 'Invalid passenger session.' })
+  prisma.passengerUser.findUnique({ where: { id: payload.sub }, select: { id: true, isActive: true } })
+    .then(user => {
+      if (!user || !user.isActive) return res.status(401).json({ message: 'Your passenger account is inactive. Please contact 2WAYZ support.' })
+      req.passengerAuth = payload
+      next()
+    }).catch(next)
 }
 
 function validatePlace(body) {

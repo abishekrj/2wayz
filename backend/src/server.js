@@ -22,6 +22,7 @@ import savedPlaceRoutes from './routes/savedPlaces.js'
 import fareSettingsRoutes from './routes/fareSettings.js'
 import subscriptionRoutes from './routes/subscriptions.js'
 import { suspendDriversWithExpiredDocuments } from './lib/driverCompliance.js'
+import { processDriverSubscriptions } from './lib/driverSubscriptions.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('DATABASE_URL and a JWT_SECRET of at least 32 characters are required.')
@@ -73,4 +74,7 @@ app.listen(port, () => {
   const checkDriverDocuments = () => suspendDriversWithExpiredDocuments().catch(error => console.error('Driver document expiry check failed:', error))
   checkDriverDocuments()
   setInterval(checkDriverDocuments, 60 * 1000)
+  const checkSubscriptions = () => processDriverSubscriptions().catch(error => console.error('Driver subscription check failed:', error))
+  checkSubscriptions()
+  setInterval(checkSubscriptions, 60 * 60 * 1000)
 })

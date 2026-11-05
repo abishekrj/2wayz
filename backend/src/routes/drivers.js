@@ -68,8 +68,34 @@ async function requireDriver(req, res, next) {
 
 
 
+async function ensureApprovedDriverSubscriptions(driverId) {
+  const payments = await prisma.driverSubscriptionPayment.findMany({
+    where: { driverId, status: 'APPROVED' },
+    orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }]
+  })
+  for (const payment of payments) {
+    const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
+    if (existing) continue
+    const approvalTime = payment.reviewedAt || payment.createdAt
+    const previous = await prisma.driverSubscription.findFirst({
+      where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
+      orderBy: { expiresAt: 'desc' }
+    })
+    const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime ? previous.expiresAt : approvalTime
+    const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+    await prisma.driverSubscription.upsert({
+      where: { paymentId: payment.id },
+      create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status: 'ACTIVE' },
+      update: {}
+    })
+  }
+}
+
 async function walletEligibility(driverId) {
-  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
+  // Enforce eligibility from verified payment records, including legacy approvals.
+  await ensureApprovedDriverSubscriptions(driverId)
+  const now = new Date()
+  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, select: { id: true } })
   if (!activeSubscription) {
     const current = await prisma.driver.findUnique({ where: { id: driverId }, select: { isOnline: true } })
     if (current?.isOnline) {

@@ -200,44 +200,7 @@ export default function HomePage(){
   </div>
 </section>
  <Events data={cms['upcoming-events']}/>
- <section id="about" className="relative overflow-hidden bg-white py-16 sm:py-20">
-  <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-blue-50 blur-3xl"/>
-  <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
-   <div className="grid items-stretch gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-    <div className="relative h-full min-h-[320px] overflow-hidden rounded-[30px] bg-[#eaf3fc] sm:min-h-[440px] lg:min-h-full">
-     <img
-      src="https://images.unsplash.com/photo-1578326013806-51ad7f2e3458?auto=format&fit=crop&w=1800&q=85"
-      alt="Tiruvannamalai temple gopuram with Arunachala hill in the background"
-      className="absolute inset-0 h-full w-full object-cover object-center brightness-110 saturate-125"
-      loading="lazy"
-      decoding="async"
-     />
-     <div className="absolute inset-0 bg-gradient-to-t from-[#102b4d]/65 via-transparent to-transparent"/>
-     <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3 sm:bottom-7 sm:left-7 sm:right-7">
-      <div className="rounded-xl border border-white/70 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm">
-       <p className="text-[10px] font-bold uppercase tracking-[.15em] text-wayz-blue">Local rides</p>
-       <p className="mt-0.5 text-sm font-bold text-wayz-ink">Made for our town</p>
-      </div>
-      <a href="https://unsplash.com/photos/mountain-photograph-tS_g6tYPCYc" target="_blank" rel="noreferrer" className="rounded-lg bg-black/45 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-sm">Photo: Thiru N · Unsplash</a>
-     </div>
-    </div>
-    <div>
-     <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.2em] text-wayz-blue"><Sparkles size={15}/> THE 2WAYZ BENEFITS</p>
-     <h2 className="mt-3 max-w-xl text-3xl font-bold leading-tight tracking-tight text-wayz-ink sm:text-4xl lg:text-[42px]">Everyday travel, made simpler.</h2>
-     <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">From temple visits and market trips to everyday errands, 2WAYZ is designed to make local auto travel in Tiruvannamalai easier for passengers and more connected for drivers.</p>
-     <div className="mt-7 grid gap-3 sm:grid-cols-2">
-      {[
-       {icon:MapPin,title:'Made for local journeys',text:'A service focused on getting around Tiruvannamalai.'},
-       {icon:Zap,title:'A simple booking experience',text:'Choose your pickup and destination in a few easy steps.'},
-       {icon:BadgeIndianRupee,title:'Fare estimate before you book',text:'Review an indicative fare before sending your request.'},
-       {icon:HeartHandshake,title:'Supporting local drivers',text:'Helping passengers connect with auto drivers in our town.'}
-      ].map(({icon:Icon,title,text:description})=><div key={title} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_5px_18px_rgba(15,45,80,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-md sm:p-5"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-wayz-blue transition-colors group-hover:bg-wayz-blue group-hover:text-white"><Icon size={25} strokeWidth={2}/></div><h3 className="mt-4 text-sm font-bold text-wayz-ink">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{description}</p></div>)}
-     </div>
-     <a href="#book" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-wayz-blue px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#174f91]">Book your auto <ArrowRight size={17}/></a>
-    </div>
-   </div>
-  </div>
- </section>
+
  <section id="drivers" className="bg-white py-16 sm:py-20"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="grid gap-10 rounded-[30px] bg-wayz-navy p-7 text-white sm:p-10 lg:grid-cols-[1fr_.85fr] lg:p-14"><div><span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-blue-100"><HeartHandshake size={15} className="text-wayz-yellow"/>{cms.drivers.eyebrow}</span><h2 className="mt-5 text-3xl font-bold sm:text-4xl">{cms.drivers.heading}</h2><p className="mt-4 text-sm leading-7 text-blue-100">{cms.drivers.body}</p><Link to="/driver/register" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-bold text-wayz-ink">{cms.drivers.buttonText||'Join as a driver'} <ArrowRight size={17}/></Link></div><div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8"><h3 className="text-lg font-bold">Why drive with 2WAYZ?</h3><div className="mt-5 space-y-4">{drivers.map((item,i)=><div key={i} className="flex gap-3 text-sm leading-6 text-blue-50"><CheckCircle2 className="mt-0.5 shrink-0 text-wayz-yellow" size={19}/>{item}</div>)}</div><div className="mt-7 flex items-center gap-3 rounded-xl bg-white/10 p-4"><Wallet className="text-wayz-yellow" size={25}/><p className="text-xs leading-5 text-blue-50">Clear trip details and earning information, designed around local auto drivers.</p></div></div></div></div></section>
   <FaqSection/>
  </main><div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_28px_rgba(15,45,80,0.12)] backdrop-blur-sm lg:hidden"><a href="#book" className="mx-auto flex min-h-12 max-w-7xl items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 text-sm font-bold text-wayz-ink shadow-sm"><Zap size={17}/> Book an auto</a></div><SiteFooter/></div>

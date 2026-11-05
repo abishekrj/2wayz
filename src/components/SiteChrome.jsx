@@ -94,7 +94,10 @@ export function SiteHeader() {
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">
       <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 lg:min-h-[80px] lg:px-8">
-        <Brand />
+        <div className="flex min-w-0 items-center gap-3">
+          <button aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="shrink-0 rounded-lg border border-slate-200 p-2 text-wayz-navy md:hidden">{menuOpen ? <X size={21}/> : <Menu size={21}/>}</button>
+          <Brand />
+        </div>
         <nav aria-label="Main navigation" className="mx-4 hidden flex-1 items-center justify-center gap-6 text-sm md:flex lg:gap-8">
           {navigation.map((item) => {
             const active = pathname === item.to
@@ -121,9 +124,13 @@ export function SiteHeader() {
             </>
           ))}
         </div>
-        <button aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy md:hidden">{menuOpen ? <X/> : <Menu/>}</button>
       </div>
-      {menuOpen && <nav aria-label="Mobile navigation" className="grid gap-1 border-t border-slate-100 bg-white px-4 py-3 text-sm md:hidden">
+      <button type="button" aria-label="Close navigation overlay" onClick={() => setMenuOpen(false)} className={`fixed inset-0 z-40 bg-slate-950/40 transition-opacity duration-300 md:hidden ${menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`} />
+      <nav aria-label="Mobile navigation" aria-hidden={!menuOpen} className={`fixed inset-y-0 left-0 z-50 w-[min(84vw,340px)] overflow-y-auto border-r border-slate-200 bg-white px-4 pb-6 pt-4 text-sm shadow-2xl transition-transform duration-300 ease-out md:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
+          <Brand />
+          <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy"><X size={20}/></button>
+        </div>
         {navigation.map((item) => {
           const active = pathname === item.to
           return <Link key={item.to} onClick={() => setMenuOpen(false)} to={item.to} aria-current={active ? 'page' : undefined} className={`rounded-lg px-3 py-3 transition ${active ? 'bg-blue-50 font-bold text-wayz-blue' : 'font-semibold text-slate-700 hover:bg-wayz-mist'}`}>{item.label}</Link>
@@ -140,7 +147,8 @@ export function SiteHeader() {
             <Link onClick={() => setMenuOpen(false)} to="/driver/register" className="rounded-lg px-3 py-3 text-wayz-blue">Register as an auto driver</Link>
           </>
         ))}
-      </nav>}
+
+      </nav>
     </header>
   )
 }

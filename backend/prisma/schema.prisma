@@ -52,6 +52,7 @@ model PassengerUser {
   updatedAt    DateTime  @updatedAt
   bookings     Booking[]
   ratings      Rating[]
+  savedPlaces  PassengerSavedPlace[]
 }
 
 model Driver {
@@ -299,4 +300,21 @@ model Rating {
   driver         Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
   @@index([driverId, isVisible, createdAt])
   @@index([isVisible, createdAt])
+}
+
+
+model PassengerSavedPlace {
+  id          String        @id @default(cuid())
+  passengerId String
+  category    String
+  label       String
+  placeId     String?
+  name        String
+  address     String
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  passenger   PassengerUser @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  @@index([passengerId, category, createdAt])
 }

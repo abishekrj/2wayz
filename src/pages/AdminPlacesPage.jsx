@@ -109,7 +109,7 @@ export default function AdminPlacesPage() {
 
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Website configuration</p><h1 className="mt-2 text-2xl font-extrabold text-wayz-ink sm:text-3xl">Places to Explore</h1><p className="mt-2 text-sm text-slate-500">Manage the destinations shown on the homepage and the public places directory.</p></div>
+      <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Website configuration</p><h1 className="mt-2 text-2xl font-bold text-wayz-ink sm:text-3xl">Places to Explore</h1><p className="mt-2 text-sm text-slate-500">Manage the destinations shown on the homepage and the public places directory.</p></div>
       <button type="button" onClick={openAdd} className="inline-flex items-center justify-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-sm font-bold text-white"><Plus size={17}/> Add a place</button>
     </div>
 
@@ -123,7 +123,7 @@ export default function AdminPlacesPage() {
     {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
     {editorOpen && <form onSubmit={savePlace} className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:p-6">
-      <div className="mb-5 flex items-center justify-between"><h2 className="font-extrabold text-wayz-ink">{editing === null ? 'Add destination' : 'Edit destination'}</h2><button type="button" onClick={closeEditor} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close editor"><X size={18}/></button></div>
+      <div className="mb-5 flex items-center justify-between"><h2 className="font-bold text-wayz-ink">{editing === null ? 'Add destination' : 'Edit destination'}</h2><button type="button" onClick={closeEditor} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Close editor"><X size={18}/></button></div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-xs font-semibold text-slate-600">Place name<input required maxLength={120} value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none focus:border-wayz-blue"/></label>
         <label className="text-xs font-semibold text-slate-600">Short subtitle<input maxLength={120} value={form.subtitle} onChange={event => setForm(current => ({ ...current, subtitle: event.target.value }))} placeholder="e.g. Sacred hilltop retreat" className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none focus:border-wayz-blue"/></label>
@@ -145,6 +145,6 @@ export default function AdminPlacesPage() {
       </article>)}
     </div>
 
-    <div className="sticky bottom-3 flex justify-end"><button type="button" onClick={saveConfiguration} disabled={saving || loading} className="inline-flex items-center gap-2 rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-extrabold text-wayz-ink shadow-lg disabled:opacity-50"><Save size={17}/>{saving ? 'Saving…' : 'Save configuration'}</button></div>
+    <div className="sticky bottom-3 flex justify-end"><button type="button" onClick={saveConfiguration} disabled={saving || loading} className="inline-flex items-center gap-2 rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-bold text-wayz-ink shadow-lg disabled:opacity-50"><Save size={17}/>{saving ? 'Saving…' : 'Save configuration'}</button></div>
   </div>
 }

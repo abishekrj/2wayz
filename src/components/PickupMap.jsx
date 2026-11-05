@@ -83,7 +83,7 @@ export default function PickupMap({ value, onSelect }) {
     map.panTo({ lat: Number(location.lat), lng: Number(location.lng) })
     map.setZoom(17)
     setStatus('')
-  }, [value?.location?.lat, value?.location?.lng])
+  }, [value?.location?.lat, value?.location?.lng, mapReady])
 
   return (
     <div className="relative h-[285px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[350px] lg:h-[410px]">

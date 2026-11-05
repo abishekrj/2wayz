@@ -54,7 +54,7 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, destination: externalDestination, onDestinationChange, activeField, onActiveFieldChange, onEstimateChange }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, destination: externalDestination, onDestinationChange, activeField, onActiveFieldChange }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
@@ -192,8 +192,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   function swapLocations() {
     setPickup(destination)
     setDestination(pickup)
-    setEstimate(null)
-    onEstimateChange?.(null)
     setError('')
   }
 

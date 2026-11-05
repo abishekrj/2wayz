@@ -63,7 +63,7 @@ function requireDriver(req, res, next) {
 
 
 async function walletEligibility(driverId) {
-  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', expiresAt: { gt: new Date() } }, select: { id: true } })
+  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
   if (!activeSubscription) {
     const current = await prisma.driver.findUnique({ where: { id: driverId }, select: { isOnline: true } })
     if (current?.isOnline) {

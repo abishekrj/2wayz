@@ -130,7 +130,12 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
   return (
     <div className="relative h-[250px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[330px] lg:h-[390px]">
       <div ref={containerRef} className="absolute inset-0" aria-label={route ? "Map showing selected driving route" : "Map to choose your pickup or destination location"} />
-      {mapReady && (
+      {mapReady && (route ? (
+        <div className="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-lg border border-white/80 bg-[#073B83] px-3.5 py-2 text-xs font-bold text-white shadow-lg">
+          <MapPin size={14} />
+          Selected route
+        </div>
+      ) : (
         <>
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center">
             <span className={`relative mb-2 whitespace-nowrap rounded-lg border border-white/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[7px] after:border-t-[7px] after:border-x-transparent after:content-[''] ${activeField === 'destination' ? 'bg-rose-600 after:border-t-rose-600' : 'bg-[#073B83] after:border-t-[#073B83]'}`}>{activeField === 'destination' ? 'Drop point' : 'Pickup point'}</span>
@@ -144,13 +149,13 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
             {`Drag the map to adjust ${activeField === 'destination' ? 'drop-off' : 'pickup'}`}
           </div>
         </>
-      )}
+      ))}
       {status && (
         <div role="status" className="absolute left-1/2 top-4 z-20 max-w-[90%] -translate-x-1/2 rounded-full border border-white/80 bg-white/95 px-4 py-2 text-center text-[11px] font-semibold text-slate-700 shadow-md">
           {status}
         </div>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#f5f8fc]/65 to-transparent" />
+      {!route && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#f5f8fc]/65 to-transparent" />}
     </div>
   )
 }

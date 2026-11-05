@@ -128,7 +128,6 @@ router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const phone = String(req.body?.phone || '').replace(/\D/g, '')
     const password = String(req.body?.password || '')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error('Enter a valid ' + label + '.'), { statusCode: 400 })
     const driver = await prisma.driver.findUnique({ where: { phone } })
     if (!driver || !(await bcrypt.compare(password, driver.passwordHash))) return res.status(401).json({ message: 'Invalid mobile number or password.' })
     const token = jwt.sign({ sub: driver.id, role: 'DRIVER' }, process.env.JWT_SECRET, { expiresIn: '8h' })

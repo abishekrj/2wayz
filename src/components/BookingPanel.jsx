@@ -10,9 +10,9 @@ import RouteMap from './RouteMap'
 import SavedPlacesManager from './SavedPlacesManager'
 import { adminApi } from '../lib/adminApi'
 
-const FARE = { base: 30, includedKm: 1, perKm: 18, minimum: 50, rounding: 5 }
+const DEFAULT_FARE = { baseFare: 30, includedDistanceKm: 1, perKmRate: 18, minimumFare: 50, roundingIncrement: 5, isActive: true }
 
-async function calculateRoute(pickup, destination) {
+async function calculateRoute(pickup, destination, fareSettings) {
   if (!pickup || !destination) {
     throw new Error('Please select both locations.')
   }
@@ -44,14 +44,15 @@ async function calculateRoute(pickup, destination) {
 
   const km = route.distanceMeters / 1000
   const durationMinutes = Math.max(1, Math.round((route.durationMillis || 0) / 60000))
-  const raw = Math.max(FARE.minimum, FARE.base + Math.max(0, km - FARE.includedKm) * FARE.perKm)
-  const fare = Math.ceil(raw / FARE.rounding) * FARE.rounding
+  const raw = Math.max(fareSettings.minimumFare, fareSettings.baseFare + Math.max(0, km - fareSettings.includedDistanceKm) * fareSettings.perKmRate)
+  const fare = Math.ceil(raw / fareSettings.roundingIncrement) * fareSettings.roundingIncrement
 
   return {
     km,
     durationMinutes,
     fare,
-    distanceCharge: Math.max(0, fare - FARE.base),
+    distanceCharge: Math.max(0, fare - fareSettings.baseFare),
+    fareSettings,
     route,
   }
 }
@@ -67,6 +68,7 @@ export default function BookingPanel({ initialDestination = null }) {
   const [activeRide, setActiveRide] = useState(null)
   const [checkingActiveRide, setCheckingActiveRide] = useState(true)
   const [savedPlaces, setSavedPlaces] = useState([])
+  const [fareSettings, setFareSettings] = useState(DEFAULT_FARE)
   const [isPassenger, setIsPassenger] = useState(false)
   const [showSavedPlaceManager, setShowSavedPlaceManager] = useState(false)
 
@@ -76,6 +78,16 @@ export default function BookingPanel({ initialDestination = null }) {
       .then(result => { if (mounted) setActiveRide(result.booking || null) })
       .catch(() => {})
       .finally(() => { if (mounted) setCheckingActiveRide(false) })
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+    adminApi.publicFareSettings()
+      .then(result => {
+        if (mounted && result.settings) setFareSettings(result.settings)
+      })
+      .catch(error => console.error('Unable to load fare settings; using the default tariff:', error))
     return () => { mounted = false }
   }, [])
 
@@ -136,7 +148,7 @@ export default function BookingPanel({ initialDestination = null }) {
 
     setBusy(true)
     try {
-      const routeEstimate = await calculateRoute(pickup, destination)
+      const routeEstimate = await calculateRoute(pickup, destination, fareSettings)
       setEstimate(routeEstimate)
       setBooking({ mode: 'instant', pickup, destination, estimate: routeEstimate, vehicle: 'auto' })
       navigate('/travel-details')
@@ -233,12 +245,12 @@ export default function BookingPanel({ initialDestination = null }) {
               </div>
 
               <div className="mt-3 space-y-2 rounded-xl bg-white p-3 text-xs text-slate-600">
-                <div className="flex justify-between"><span>Base fare (first {FARE.includedKm} km)</span><span>₹{FARE.base}</span></div>
+                <div className="flex justify-between"><span>Base fare (first {fareSettings.includedDistanceKm} km)</span><span>₹{fareSettings.baseFare}</span></div>
                 <div className="flex justify-between"><span>Distance component + rounding</span><span>₹{estimate.distanceCharge}</span></div>
                 <div className="flex justify-between font-bold text-wayz-ink"><span>Indicative total</span><span>₹{estimate.fare}</span></div>
               </div>
               <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                Illustrative starter tariff: ₹{FARE.base} base, ₹{FARE.perKm}/km after the first {FARE.includedKm} km, minimum ₹{FARE.minimum}, rounded up to ₹{FARE.rounding}. Confirm and configure local driver-approved rates before accepting bookings. Actual fare may vary.
+                Illustrative starter tariff: ₹{FARE.base} base, ₹{fareSettings.perKmRate}/km after the first {FARE.includedKm} km, minimum ₹{fareSettings.minimumFare}, rounded up to ₹{fareSettings.roundingIncrement}. Confirm and configure local driver-approved rates before accepting bookings. Actual fare may vary.
               </p>
             </div>
 

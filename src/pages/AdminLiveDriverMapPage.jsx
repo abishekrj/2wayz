@@ -145,7 +145,7 @@ export default function AdminLiveDriverMapPage() {
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Driver operations</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Live Driver Map</h1>
+        <h1 className="mt-2 text-3xl font-bold text-wayz-ink">Live Driver Map</h1>
         <p className="mt-2 text-sm text-slate-500">Monitor approved drivers who are currently online. Locations refresh every 5 seconds.</p>
       </div>
       <button onClick={() => load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 disabled:opacity-60">
@@ -155,10 +155,10 @@ export default function AdminLiveDriverMapPage() {
 
     {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
     <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Online drivers</p><p className="mt-2 text-2xl font-extrabold text-wayz-ink">{drivers.length}</p></div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Fresh GPS · under 60 sec</p><p className="mt-2 text-2xl font-extrabold text-emerald-600">{freshCount}</p></div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Stale / missing GPS</p><p className="mt-2 text-2xl font-extrabold text-amber-600">{staleCount}</p></div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">On an active trip</p><p className="mt-2 text-2xl font-extrabold text-blue-600">{tripCount}</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Online drivers</p><p className="mt-2 text-2xl font-bold text-wayz-ink">{drivers.length}</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Fresh GPS · under 60 sec</p><p className="mt-2 text-2xl font-bold text-emerald-600">{freshCount}</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Stale / missing GPS</p><p className="mt-2 text-2xl font-bold text-amber-600">{staleCount}</p></div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">On an active trip</p><p className="mt-2 text-2xl font-bold text-blue-600">{tripCount}</p></div>
     </div>
 
     <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(300px,.8fr)]">

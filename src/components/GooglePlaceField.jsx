@@ -29,6 +29,8 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   const placesRef = useRef(null)
   const requestRef = useRef(0)
   const autoLocationRequested = useRef(false)
+  const valueRef = useRef(value)
+  valueRef.current = value
   const [editing, setEditing] = useState(!value)
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -110,7 +112,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       try {
         const result = await adminApi.reverseGeocode(position.coords.latitude, position.coords.longitude)
         if (!result.place) throw new Error('Could not identify your current location. Please search for your pickup point.')
-        onSelect(result.place)
+        if (!valueRef.current) onSelect(result.place)
       } catch (err) {
         setError(err.message || 'Unable to identify your current location. Please search manually.')
       } finally {

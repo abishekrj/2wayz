@@ -67,12 +67,6 @@ async function requireDriver(req, res, next) {
 }
 
 
-// Local-only switch for testing the driver dashboard and GPS flow when
-// subscription/payment history is unavailable. Production always enforces wallet eligibility.
-function allowUnsubscribedDriversInDevelopment() {
-  return process.env.NODE_ENV !== 'production' &&
-    process.env.ALLOW_UNSUBSCRIBED_DRIVERS_IN_DEV === 'true'
-}
 
 async function walletEligibility(driverId) {
   const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
@@ -166,7 +160,7 @@ router.post('/availability', requireDriver, async (req, res, next) => {
     const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
     if (expiredDocuments.length) return res.status(403).json({ message: `Your account is suspended because these documents have expired: ${expiredDocuments.join(', ')}. Contact 2WAYZ after renewal.` })
     if (driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account must be approved before going online.' })
-    if (online && !allowUnsubscribedDriversInDevelopment()) {
+    if (online) {
       const walletStatus = await walletEligibility(driver.id)
       if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
     }
@@ -211,7 +205,7 @@ router.get('/offers', requireDriver, async (req, res, next) => {
   try {
     const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account is not approved yet.' })
-    if (!allowUnsubscribedDriversInDevelopment()) {
+    {
       const walletStatus = await walletEligibility(driver.id)
       if (!walletStatus.eligible) return res.json({ offers: [], walletBlocked: true, message: walletStatus.message })
     }
@@ -232,7 +226,7 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
     if (!driver) return res.status(404).json({ message: 'Driver account not found.' })
     const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
     if (expiredDocuments.length || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your account is not eligible to accept rides. Check your driver approval and document expiry status.' })
-    if (!allowUnsubscribedDriversInDevelopment()) {
+    {
       const walletStatus = await walletEligibility(driverId)
       if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
     }

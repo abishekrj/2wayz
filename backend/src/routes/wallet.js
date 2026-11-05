@@ -31,15 +31,19 @@ function handleProofUpload(req, res, next) {
   })
 }
 
-function requireDriver(req, res, next) {
+async function requireDriver(req, res, next) {
   const token = req.cookies?.twoWayzDriver
   if (!token) return res.status(401).json({ message: 'Please sign in as a driver.' })
+  let payload
+  try { payload = jwt.verify(token, process.env.JWT_SECRET) }
+  catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
+  if (payload.role !== 'DRIVER') return res.status(401).json({ message: 'Invalid driver session.' })
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    if (payload.role !== 'DRIVER') return res.status(401).json({ message: 'Invalid driver session.' })
+    const driver = await prisma.driver.findUnique({ where: { id: payload.sub }, select: { id: true } })
+    if (!driver) return res.status(401).json({ message: 'Your driver account is no longer available.' })
     req.driverAuth = payload
     next()
-  } catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
+  } catch (error) { next(error) }
 }
 
 function privateProofUrl(recharge) {

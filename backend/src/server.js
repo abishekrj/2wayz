@@ -32,7 +32,7 @@ const app = express()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 app.use('/uploads', (req, res, next) => {
   let requestedPath
-  try { requestedPath = decodeURIComponent(req.path).toLowerCase() }
+  try { requestedPath = path.posix.normalize(decodeURIComponent(req.path)).toLowerCase() }
   catch { return res.sendStatus(400) }
   const privateDirectories = ['/wallet', '/subscriptions']
   if (privateDirectories.some(directory => requestedPath === directory || requestedPath.startsWith(directory + '/'))) {

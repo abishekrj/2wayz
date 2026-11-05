@@ -11,9 +11,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
   const dragTimerRef = useRef(null)
   const requestRef = useRef(0)
   const onSelectRef = useRef(onSelect)
-  const activeFieldRef = useRef(activeField)
   onSelectRef.current = onSelect
-  activeFieldRef.current = activeField
   const [status, setStatus] = useState('Loading map…')
   const [mapReady, setMapReady] = useState(false)
 

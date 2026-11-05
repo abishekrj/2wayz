@@ -100,6 +100,11 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
     setError('')
   }, [initialDestination])
 
+  useEffect(() => {
+    setEstimate(null)
+    setError('')
+  }, [pickup, destination])
+
   function selectPickup(value) {
     setPickup(value)
     setEstimate(null)
@@ -135,7 +140,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       const activeFareSettings = latestFare?.settings || fareSettings
       if (latestFare?.settings) setFareSettings(latestFare.settings)
       const routeEstimate = await calculateRoute(pickup, destination, activeFareSettings)
-      setEstimate(routeEstimate)
       setEstimate(routeEstimate)
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')

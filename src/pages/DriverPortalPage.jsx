@@ -30,6 +30,8 @@ export default function DriverPortalPage() {
   const [notice, setNotice] = useState('')
   const [gpsError, setGpsError] = useState('')
   const watchId = useRef(null)
+  const gpsHeartbeatId = useRef(null)
+  const gpsSendInFlight = useRef(false)
   const lastSentAt = useRef(0)
 
   const refreshActiveBookings = useCallback(async () => {
@@ -118,17 +120,58 @@ export default function DriverPortalPage() {
   useEffect(() => {
     if (!driver?.id || !shouldShareGps) return
     if (!navigator.geolocation) { setGpsError('This browser does not support GPS location.'); return }
-    watchId.current = navigator.geolocation.watchPosition(async position => {
-      const now = Date.now()
-      const minimumInterval = hasActiveRide ? 5000 : 12000
-      if (now - lastSentAt.current < minimumInterval) return
-      lastSentAt.current = now
+
+    let active = true
+    const minimumInterval = hasActiveRide ? 5000 : 12000
+
+    // Send a location heartbeat even when the auto is stationary.
+    // watchPosition alone may not fire again if GPS coordinates do not change.
+    const sendPosition = async position => {
+      if (!active || gpsSendInFlight.current || Date.now() - lastSentAt.current < minimumInterval) return
+      gpsSendInFlight.current = true
       try {
         await adminApi.driverLocation(position.coords.latitude, position.coords.longitude)
-        setGpsError('')
-      } catch (err) { setGpsError(err.message || 'Unable to update GPS location.') }
-    }, err => setGpsError(err.code === 1 ? 'Location permission was denied. Enable location access to share your position during an active ride.' : 'GPS signal unavailable. Move to an area with better reception.'), { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 })
-    return () => { if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current); watchId.current = null }
+        lastSentAt.current = Date.now()
+        if (active) setGpsError('')
+      } catch (err) {
+        if (active) setGpsError(err.message || 'Unable to update GPS location.')
+      } finally {
+        gpsSendInFlight.current = false
+      }
+    }
+
+    const requestCurrentPosition = () => {
+      navigator.geolocation.getCurrentPosition(
+        position => { sendPosition(position) },
+        err => {
+          if (active) setGpsError(err.code === 1
+            ? 'Location permission was denied. Enable location access to share your position during an active ride.'
+            : 'GPS signal unavailable. Move to an area with better reception.')
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+      )
+    }
+
+    watchId.current = navigator.geolocation.watchPosition(
+      position => { sendPosition(position) },
+      err => {
+        if (active) setGpsError(err.code === 1
+          ? 'Location permission was denied. Enable location access to share your position during an active ride.'
+          : 'GPS signal unavailable. Move to an area with better reception.')
+      },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
+    )
+
+    requestCurrentPosition()
+    gpsHeartbeatId.current = window.setInterval(requestCurrentPosition, minimumInterval)
+
+    return () => {
+      active = false
+      if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current)
+      if (gpsHeartbeatId.current != null) window.clearInterval(gpsHeartbeatId.current)
+      watchId.current = null
+      gpsHeartbeatId.current = null
+    }
   }, [driver?.id, shouldShareGps, hasActiveRide])
 
   async function login(event) {

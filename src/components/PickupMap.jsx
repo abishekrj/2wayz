@@ -48,7 +48,7 @@ export default function PickupMap({ value, onSelect }) {
             try {
               const result = await adminApi.reverseGeocode(lat, lng)
               if (!mounted || requestId !== requestRef.current || !result.place) return
-              onSelect(result.place)
+              onSelect({ ...result.place, name: result.place.address || result.place.name })
               setStatus('')
             } catch {
               if (mounted && requestId === requestRef.current) {

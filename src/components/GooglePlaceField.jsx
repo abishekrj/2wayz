@@ -204,7 +204,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
             value={query}
             onChange={event => { setQuery(event.target.value); setError('') }}
             onFocus={() => { setError(''); setDropdownOpen(true) }}
-            onKeyDown={event => { if (event.key === 'Escape') { setSuggestions([]); if (selectedName) setEditing(false) } }}
+            onKeyDown={event => { if (event.key === 'Escape') { setSuggestions([]); setDropdownOpen(false); if (selectedName) setEditing(false) } }}
             placeholder={placeholder}
             autoComplete="off"
             className="h-[52px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"

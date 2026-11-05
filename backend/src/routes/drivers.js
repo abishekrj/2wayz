@@ -77,7 +77,7 @@ async function walletEligibility(driverId) {
   // Enforce eligibility from verified payment records, including legacy approvals.
   await ensureApprovedDriverSubscriptions(driverId)
   const now = new Date()
-  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, startsAt: { lte: now }, expiresAt: { gt: now } }, select: { id: true } })
+  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: now }, OR: [{ isDailyPlan: true }, { expiresAt: { gt: now } }] }, orderBy: { startsAt: 'desc' }, select: { id: true } })
   if (!activeSubscription) {
     const current = await prisma.driver.findUnique({ where: { id: driverId }, select: { isOnline: true } })
     if (current?.isOnline) {
@@ -254,6 +254,43 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
       })
       if (activeRide) throw Object.assign(new Error(`Finish your current ride (${activeRide.reference}) before accepting another request.`), { statusCode: 409 })
       const now = new Date()
+      const subscription = await tx.driverSubscription.findFirst({
+        where: { driverId, status: 'ACTIVE', startsAt: { lte: now }, OR: [{ isDailyPlan: true }, { expiresAt: { gt: now } }] },
+        orderBy: { startsAt: 'desc' }
+      })
+      if (!subscription) throw Object.assign(new Error('Your 2WAYZ subscription is expired or inactive. Submit your payment and wait for Super Admin approval.'), { statusCode: 403 })
+
+      const dateParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
+      const part = type => dateParts.find(item => item.type === type)?.value || ''
+      const subscriptionDate = part('year') + '-' + part('month') + '-' + part('day')
+      const existingDailyCharge = await tx.walletTransaction.findFirst({ where: { subscriptionId: subscription.id, subscriptionDate }, select: { id: true } })
+      if (!existingDailyCharge) {
+        let dailyCharge
+        if (subscription.isDailyPlan || subscription.durationDays === 1) {
+          dailyCharge = subscription.amount
+        } else {
+          const startParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(subscription.startsAt)
+          const startPart = type => startParts.find(item => item.type === type)?.value || ''
+          const startDate = startPart('year') + '-' + startPart('month') + '-' + startPart('day')
+          const [year, month, day] = subscriptionDate.split('-').map(Number)
+          const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+          const dayIndex = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(startYear, startMonth - 1, startDay)) / 86400000)
+          if (dayIndex < 0 || dayIndex >= subscription.durationDays) throw Object.assign(new Error('Your subscription is not valid for today. Please contact 2WAYZ support.'), { statusCode: 403 })
+          // Allocate rounding remainder across calendar days so the full plan price is charged over its validity.
+          dailyCharge = Math.round(subscription.amount * (dayIndex + 1) / subscription.durationDays) - Math.round(subscription.amount * dayIndex / subscription.durationDays)
+        }
+        if (dailyCharge > 0) {
+          const wallet = await tx.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })
+          if (wallet.balance < dailyCharge) throw Object.assign(new Error('Insufficient wallet balance for today’s subscription charge of ₹' + dailyCharge + '. Recharge your wallet to accept this ride.'), { statusCode: 409 })
+          const balanceAfter = wallet.balance - dailyCharge
+          await tx.driverWallet.update({ where: { id: wallet.id }, data: { balance: balanceAfter } })
+          await tx.walletTransaction.create({ data: {
+            walletId: wallet.id, type: 'SUBSCRIPTION_DAILY', amount: dailyCharge, settledAmount: dailyCharge,
+            status: 'POSTED', description: 'Daily subscription charge — ' + subscription.planName + ' (' + subscriptionDate + ')',
+            subscriptionId: subscription.id, subscriptionDate, balanceAfter
+          } })
+        }
+      }
       const result = await tx.booking.updateMany({
         where: { id: offer.bookingId, status: 'REQUESTED', driverId: null },
         data: { driverId, status: 'DRIVER_ASSIGNED', acceptedAt: now, ...(offer.booking.mode === 'schedule' ? { dispatchStatus: 'ASSIGNED' } : {}) }

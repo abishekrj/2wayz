@@ -20,6 +20,7 @@ import sosRoutes from './routes/sos.js'
 import reviewRoutes from './routes/reviews.js'
 import savedPlaceRoutes from './routes/savedPlaces.js'
 import fareSettingsRoutes from './routes/fareSettings.js'
+import subscriptionRoutes from './routes/subscriptions.js'
 import { suspendDriversWithExpiredDocuments } from './lib/driverCompliance.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -55,6 +56,7 @@ app.use('/api/sos', sosRoutes)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/saved-places', savedPlaceRoutes)
 app.use('/api/fare-settings', fareSettingsRoutes)
+app.use('/api/subscriptions', subscriptionRoutes)
 app.use((error, req, res, next) => {
   console.error(error)
   const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400 && error.statusCode <= 599

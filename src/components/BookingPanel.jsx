@@ -57,10 +57,13 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
-  const [pickup, setPickup] = useState(null)
+  const [internalPickup, setInternalPickup] = useState(null)
+  const isPickupControlled = typeof onPickupChange === 'function'
+  const pickup = isPickupControlled ? externalPickup : internalPickup
+  const setPickup = isPickupControlled ? onPickupChange : setInternalPickup
   const [destination, setDestination] = useState(null)
   const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)

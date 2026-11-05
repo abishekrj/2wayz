@@ -122,13 +122,17 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
     const records = await prisma.driverSubscription.findMany({
       where,
       include: {
-        driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } },
-        payment: { select: { id: true, paymentMethod: true, paymentReference: true, reviewedAt: true, createdAt: true } }
+        driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } }
       },
       orderBy: [{ expiresAt: 'desc' }, { createdAt: 'desc' }],
       take: 500
     })
-    res.json({ subscriptions: records })
+    const payments = records.length ? await prisma.driverSubscriptionPayment.findMany({
+      where: { id: { in: records.map(record => record.paymentId) } },
+      select: { id: true, paymentMethod: true, paymentReference: true, reviewedAt: true, createdAt: true }
+    }) : []
+    const paymentById = new Map(payments.map(payment => [payment.id, payment]))
+    res.json({ subscriptions: records.map(record => ({ ...record, payment: paymentById.get(record.paymentId) || null })) })
   } catch (error) { next(error) }
 })
 

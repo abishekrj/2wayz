@@ -47,3 +47,5 @@ CREATE INDEX "DriverSubscription_driverId_status_expiresAt_idx" ON "DriverSubscr
 ALTER TABLE "DriverSubscriptionPayment" ADD CONSTRAINT "DriverSubscriptionPayment_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "DriverSubscriptionPayment" ADD CONSTRAINT "DriverSubscriptionPayment_planId_fkey" FOREIGN KEY ("planId") REFERENCES "DriverSubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "DriverSubscription" ADD CONSTRAINT "DriverSubscription_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "DriverSubscription" ADD COLUMN "expiryNoticeSentAt" TIMESTAMP(3);

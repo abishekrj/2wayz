@@ -57,7 +57,7 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, savedPlaces = [], onSavedPlacesChange, isPassenger = false }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
@@ -70,9 +70,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   const [error, setError] = useState('')
   const [activeRide, setActiveRide] = useState(null)
   const [checkingActiveRide, setCheckingActiveRide] = useState(true)
-  const [savedPlaces, setSavedPlaces] = useState([])
   const [fareSettings, setFareSettings] = useState(DEFAULT_FARE)
-  const [isPassenger, setIsPassenger] = useState(false)
   const [showSavedPlaceManager, setShowSavedPlaceManager] = useState(false)
 
   useEffect(() => {
@@ -91,25 +89,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         if (mounted && result.settings) setFareSettings(result.settings)
       })
       .catch(error => console.error('Unable to load fare settings; using the default tariff:', error))
-    return () => { mounted = false }
-  }, [])
-
-  useEffect(() => {
-    let mounted = true
-    adminApi.passengerMe()
-      .then(() => {
-        if (!mounted) return
-        setIsPassenger(true)
-        return adminApi.savedPlaces().then(result => {
-          if (mounted) setSavedPlaces(result.places || [])
-        })
-      })
-      .catch(() => {
-        if (mounted) {
-          setIsPassenger(false)
-          setSavedPlaces([])
-        }
-      })
     return () => { mounted = false }
   }, [])
 
@@ -177,26 +156,22 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
 
   return (
     <div id="book" className="relative z-30 w-full rounded-2xl border border-white/25 bg-[#073B83] p-4 text-left shadow-[0_16px_42px_rgba(3,25,58,.2)] sm:rounded-[24px] sm:p-7">
-      <div className="flex flex-col gap-3 border-b border-white/20 pb-3 sm:gap-4 sm:pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-bold leading-tight text-white sm:text-2xl">Where would you like to go?</h2>
-        </div>
+      <div className="hidden border-b border-white/20 pb-5 sm:block">
+        <h2 className="text-2xl font-bold leading-tight text-white">Where would you like to go?</h2>
       </div>
 
-      <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} enableCurrentLocation savedPlaces={savedPlaces} />
+      <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} savedPlaces={savedPlaces} />
         <button
           type="button"
           onClick={swapLocations}
           disabled={!pickup && !destination}
           aria-label="Swap pickup and destination"
           title="Swap pickup and destination"
-          className="flex h-8 w-8 rotate-90 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 md:mb-[9px] md:h-10 md:w-10 md:rotate-0"
+          className="hidden h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 md:flex"
         >
           <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} savedPlaces={savedPlaces} />
-
         <button disabled={busy} type="submit" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 sm:h-[58px]">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
@@ -204,7 +179,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       </form>
 
       {isPassenger && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-3"><p className="text-xs text-blue-100">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-white/70 bg-white px-4 py-2.5 text-sm font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
-      {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={setSavedPlaces}/>}
+      {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={onSavedPlacesChange || (() => {})}/>}
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       {estimate && (

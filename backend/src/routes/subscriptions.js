@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify } from '../lib/notifications.js'
 import { validateImageUpload } from '../lib/validateImageUpload.js'
+import { reconcileApprovedDriverSubscriptions } from '../lib/driverSubscriptions.js'
 
 const router = Router()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -63,28 +64,8 @@ router.get('/me', requireDriver, async (req, res, next) => {
     const driverId = req.driverAuth.sub
     const now = new Date()
 
-    // Self-heal subscriptions approved by older app versions. The driver must
-    // not need to visit the Super Admin registry for an approved plan to activate.
-    const approvedPayments = await prisma.driverSubscriptionPayment.findMany({
-      where: { driverId, status: 'APPROVED' },
-      orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }]
-    })
-    for (const payment of approvedPayments) {
-      const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
-      if (existing) continue
-      const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
-      const previous = await prisma.driverSubscription.findFirst({
-        where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
-        orderBy: { expiresAt: 'desc' }
-      })
-      const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime ? previous.expiresAt : approvalTime
-      const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
-      await prisma.driverSubscription.upsert({
-        where: { paymentId: payment.id },
-        create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status: 'ACTIVE' },
-        update: {}
-      })
-    }
+    // Rebuild subscription rows and dates from every verified approval.
+    await prisma.$transaction(tx => reconcileApprovedDriverSubscriptions(tx, driverId))
 
     const [subscription, payments, plans] = await Promise.all([
       prisma.driverSubscription.findFirst({ where: { driverId, startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
@@ -143,61 +124,33 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: 'Choose ACTIVE, EXPIRED or ALL subscriptions.' })
     }
 
-    // Approved payment records are the source of truth. A subscription row may
-    // be absent for approvals made by an older version of the application.
+    // Approved payments are authoritative. Repair existing legacy rows as well.
     const approvedPayments = await prisma.driverSubscriptionPayment.findMany({
       where: { status: 'APPROVED' },
       include: {
         driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } }
       },
-      orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ reviewedAt: 'asc' }, { updatedAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
       take: 500
     })
-    const existing = approvedPayments.length
+    const driverIds = [...new Set(approvedPayments.map(payment => payment.driverId))]
+    for (const driverId of driverIds) {
+      await prisma.$transaction(tx => reconcileApprovedDriverSubscriptions(tx, driverId))
+    }
+
+    const subscriptionRows = approvedPayments.length
       ? await prisma.driverSubscription.findMany({
           where: { paymentId: { in: approvedPayments.map(payment => payment.id) } }
         })
       : []
-    const byPaymentId = new Map(existing.map(subscription => [subscription.paymentId, subscription]))
+    const byPaymentId = new Map(subscriptionRows.map(subscription => [subscription.paymentId, subscription]))
     const now = new Date()
     const subscriptions = []
 
     for (const payment of approvedPayments) {
-      let subscription = byPaymentId.get(payment.id)
-      if (!subscription) {
-        const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
-        // Preserve the existing renewal chain when rebuilding a missing record.
-        const previous = await prisma.driverSubscription.findFirst({
-          where: {
-            driverId: payment.driverId,
-            startsAt: { lte: approvalTime },
-            expiresAt: { gt: approvalTime }
-          },
-          orderBy: { expiresAt: 'desc' }
-        })
-        const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime
-          ? previous.expiresAt
-          : approvalTime
-        const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
-        subscription = await prisma.driverSubscription.upsert({
-          where: { paymentId: payment.id },
-          create: {
-            driverId: payment.driverId,
-            paymentId: payment.id,
-            planName: payment.planName,
-            amount: payment.amount,
-            startsAt,
-            expiresAt,
-            status: 'ACTIVE'
-          },
-          update: {}
-        })
-      }
-
-      // Determine current validity from the dates, not a possibly stale status flag.
-      const startsAt = subscription.startsAt
-      const expiresAt = subscription.expiresAt
-      const isActiveNow = startsAt <= now && expiresAt > now
+      const subscription = byPaymentId.get(payment.id)
+      if (!subscription) continue
+      const isActiveNow = subscription.startsAt <= now && subscription.expiresAt > now
       if (status === 'ACTIVE' && !isActiveNow) continue
       if (status === 'EXPIRED' && isActiveNow) continue
 

@@ -190,28 +190,30 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       {estimate && (
-        <section className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3">
-          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
-            <RouteIcon size={17} className="mx-auto text-wayz-blue" />
-            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">{estimate.km.toFixed(1)} km</p>
-            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Distance</p>
+        <section className="mt-3 grid grid-cols-4 items-stretch gap-1.5 sm:mt-4 sm:gap-3">
+          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-white/20 bg-transparent px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
+            <RouteIcon size={15} className="shrink-0 text-white/80 sm:size-[17px]" />
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs font-bold text-white sm:text-base">{estimate.km.toFixed(1)} km</p>
+              <p className="text-[9px] font-medium text-white/75 sm:text-xs">Distance</p>
+            </div>
           </div>
-          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
-            <Clock3 size={17} className="mx-auto text-wayz-blue" />
-            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">{estimate.durationMinutes} min</p>
-            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Time</p>
+          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-white/20 bg-transparent px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
+            <Clock3 size={15} className="shrink-0 text-white/80 sm:size-[17px]" />
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs font-bold text-white sm:text-base">{estimate.durationMinutes} min</p>
+              <p className="text-[9px] font-medium text-white/75 sm:text-xs">Time</p>
+            </div>
           </div>
-          <div className="rounded-xl border border-blue-100 bg-white px-2.5 py-3 text-center shadow-sm sm:px-4">
-            <BadgeIndianRupee size={17} className="mx-auto text-wayz-blue" />
-            <p className="mt-1 text-base font-bold text-wayz-ink sm:text-xl">₹{estimate.fare}</p>
-            <p className="text-[10px] font-semibold text-slate-500 sm:text-xs">Price</p>
+          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-white/20 bg-transparent px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
+            <BadgeIndianRupee size={15} className="shrink-0 text-white/80 sm:size-[17px]" />
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs font-bold text-white sm:text-base">₹{estimate.fare}</p>
+              <p className="text-[9px] font-medium text-white/75 sm:text-xs">Price</p>
+            </div>
           </div>
+          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="flex min-w-0 items-center justify-center rounded-xl bg-wayz-yellow px-1.5 py-2 text-center text-[10px] font-bold leading-tight text-wayz-ink shadow-sm transition hover:bg-amber-300 sm:px-3 sm:py-2.5 sm:text-sm">Continue to booking</button>
         </section>
-      )}
-      {estimate && (
-        <div className="mt-3 flex justify-end">
-          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-wayz-yellow px-6 py-2.5 text-sm font-bold text-wayz-ink shadow-sm transition hover:bg-amber-300">Continue to booking</button>
-        </div>
       )}
 
     </div>

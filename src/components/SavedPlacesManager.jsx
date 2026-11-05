@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Home, BriefcaseBusiness, Star, Pencil, Trash2, X, Plus, MapPin } from 'lucide-react'
+import { Home, BriefcaseBusiness, Star, Pencil, Trash2, X, Plus, MapPin, ArrowLeft, List, ChevronRight } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 import GooglePlaceField from './GooglePlaceField'
 
@@ -8,9 +8,23 @@ const blank = { id: '', category: 'FAVOURITE', label: '', place: null }
 
 export default function SavedPlacesManager({ places, onChange, onClose }) {
   const [form, setForm] = useState(blank)
+  const [view, setView] = useState('add')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  function showAdd() {
+    setForm(blank)
+    setView('add')
+    setError('')
+    setNotice('')
+  }
+
+  function showList() {
+    setView('list')
+    setError('')
+    setNotice('')
+  }
 
   function startEdit(item) {
     setError('')
@@ -26,6 +40,7 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
         location: { lat: item.latitude, lng: item.longitude }
       }
     })
+    setView('edit')
   }
 
   async function save(event) {
@@ -53,8 +68,9 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
       onChange(current => form.id
         ? current.map(item => item.id === result.place.id ? result.place : item)
         : [...current, result.place])
-      setNotice(result.message || 'Saved place updated.')
-      setForm(blank)
+      setNotice(result.message || (form.id ? 'Saved place updated.' : 'Saved place added.'))
+      if (form.id) setView('list')
+      else setForm(blank)
     } catch (err) {
       setError(err.message || 'Could not save this place.')
     } finally {
@@ -69,72 +85,81 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
     try {
       await adminApi.deleteSavedPlace(item.id)
       onChange(current => current.filter(place => place.id !== item.id))
-      if (form.id === item.id) setForm(blank)
       setNotice('Saved place deleted.')
     } catch (err) {
       setError(err.message || 'Could not delete this place.')
     }
   }
 
+  const isForm = view === 'add' || view === 'edit'
+
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="saved-places-title">
-      <div className="max-h-[calc(100dvh-24px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-40px)] sm:p-7">
+      <div className="max-h-[calc(100dvh-24px)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-40px)] sm:p-7">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm font-bold uppercase tracking-wider text-wayz-blue">Your shortcuts</p>
-            <h2 id="saved-places-title" className="mt-1 text-2xl font-bold text-wayz-ink">Manage saved places</h2>
-            <p className="mt-1 text-base text-slate-600">Save up to 20 locations for faster pickup and destination selection.</p>
+            <h2 id="saved-places-title" className="mt-1 text-2xl font-bold text-wayz-ink">{view === 'list' ? 'Saved places' : view === 'edit' ? 'Edit saved place' : 'Add a saved place'}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">{view === 'list' ? 'View, edit or remove your saved locations.' : 'Save up to 20 locations for faster pickup and destination selection.'}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg border border-slate-200 p-2 text-slate-500"><X size={18}/></button>
+          <button type="button" onClick={onClose} aria-label="Close saved places" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"><X size={18}/></button>
         </div>
 
-        {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-base text-rose-700">{error}</p>}
-        {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-base text-emerald-700">{notice}</p>}
-
-        <div className="mt-5 space-y-2">
-          {places.map(item => (
-            <div key={item.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-4">
-              <span className="rounded-lg bg-blue-50 p-2 text-wayz-blue">
-                {item.category === 'HOME' ? <Home size={18}/> : item.category === 'WORK' ? <BriefcaseBusiness size={18}/> : <Star size={18}/>}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-bold text-slate-800">{item.label}</p>
-                <p className="truncate text-sm text-slate-600">{item.address}</p>
-              </div>
-              <button type="button" onClick={() => startEdit(item)} aria-label={'Edit ' + item.label} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-wayz-blue"><Pencil size={16}/></button>
-              <button type="button" onClick={() => remove(item)} aria-label={'Delete ' + item.label} className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={16}/></button>
+        {view === 'list' ? (
+          <>
+            <button type="button" onClick={showAdd} className="mt-5 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-wayz-blue hover:bg-blue-100"><ArrowLeft size={16}/> Back to add place</button>
+            {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+            {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</p>}
+            <div className="mt-4 space-y-2">
+              {places.map(item => (
+                <div key={item.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3">
+                  <span className="rounded-lg bg-blue-50 p-2.5 text-wayz-blue">
+                    {item.category === 'HOME' ? <Home size={18}/> : item.category === 'WORK' ? <BriefcaseBusiness size={18}/> : <Star size={18}/>}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800">{item.label}</p>
+                    <p className="truncate text-xs text-slate-500">{item.address}</p>
+                  </div>
+                  <button type="button" onClick={() => startEdit(item)} aria-label={'Edit ' + item.label} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-wayz-blue"><Pencil size={16}/></button>
+                  <button type="button" onClick={() => remove(item)} aria-label={'Delete ' + item.label} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 size={16}/></button>
+                </div>
+              ))}
+              {places.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No saved places yet. Add your first location.</p>}
             </div>
-          ))}
-          {places.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-base text-slate-600">No saved places yet. Add your first one below.</p>}
-        </div>
-
-        <form onSubmit={save} className="mt-5 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-bold text-slate-800">{form.id ? 'Edit saved place' : 'Add a saved place'}</h3>
-            {form.id && <button type="button" onClick={() => setForm(blank)} className="text-sm font-semibold text-wayz-blue">Cancel edit</button>}
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">TYPE
-              <select value={form.category} onChange={event => setForm(current => ({
-                ...current,
-                category: event.target.value,
-                label: event.target.value === 'HOME' ? 'Home' : event.target.value === 'WORK' ? 'Work' : (current.category === 'FAVOURITE' ? current.label : '')
-              }))} className="mt-1.5 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-base">
-                <option value="HOME">Home</option><option value="WORK">Work</option><option value="FAVOURITE">Favourite</option>
-              </select>
-            </label>
-            <label className="block text-sm font-bold text-slate-700">LABEL
-              <input value={form.label} onChange={event => setForm(current => ({ ...current, label: event.target.value }))} maxLength={40} placeholder="e.g. Temple, Bus stand" className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm" required/>
-            </label>
-          </div>
-          <div className="mt-3">
-            <GooglePlaceField label="SAVED LOCATION" placeholder="Search and select a place" icon={MapPin} tone="green" value={form.place} onSelect={place => setForm(current => ({ ...current, place }))}/>
-          </div>
-          <button type="submit" disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-wayz-blue px-5 py-3 text-base font-bold text-white disabled:opacity-60">
-            {saving ? 'Saving…' : <><Plus size={16}/>{form.id ? 'Update place' : 'Save place'}</>}
-          </button>
-        </form>
-        <p className="mt-3 text-sm text-slate-500">Home and Work each allow one saved address. Favourite places can have custom labels.</p>
+          </>
+        ) : (
+          <>
+            {view === 'edit' && <button type="button" onClick={showList} className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"><ArrowLeft size={16}/> Back to saved places</button>}
+            {error && <p role="alert" className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+            {notice && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</p>}
+            <form onSubmit={save} className="mt-5 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-xs font-bold text-slate-700">TYPE
+                  <select value={form.category} onChange={event => setForm(current => ({
+                    ...current,
+                    category: event.target.value,
+                    label: event.target.value === 'HOME' ? 'Home' : event.target.value === 'WORK' ? 'Work' : (current.category === 'FAVOURITE' ? current.label : '')
+                  }))} className="mt-1.5 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm">
+                    <option value="HOME">Home</option><option value="WORK">Work</option><option value="FAVOURITE">Favourite</option>
+                  </select>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">LABEL
+                  <input value={form.label} onChange={event => setForm(current => ({ ...current, label: event.target.value }))} maxLength={40} placeholder="e.g. Temple, Bus stand" className="mt-1.5 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm" required/>
+                </label>
+              </div>
+              <div>
+                <GooglePlaceField label="SAVED LOCATION" placeholder="Search and select a place" icon={MapPin} tone="green" value={form.place} onSelect={place => setForm(current => ({ ...current, place }))}/>
+              </div>
+              <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-wayz-blue px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+                {saving ? 'Saving…' : <><Plus size={16}/>{form.id ? 'Update place' : 'Save place'}</>}
+              </button>
+            </form>
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <button type="button" onClick={showList} className="inline-flex items-center gap-2 text-sm font-semibold text-wayz-blue hover:underline"><List size={16}/> View saved places ({places.length}) <ChevronRight size={15}/></button>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Home and Work each allow one saved address. Favourite places can have custom labels.</p>
+            </div>
+          </>
+        )}
       </div>
     </div>,
     document.body

@@ -38,7 +38,12 @@ export const adminApi = {
   updateSavedPlace: (id, data) => request(`/saved-places/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteSavedPlace: (id) => request(`/saved-places/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   passengerLogout: () => request('/users/logout', { method: 'POST' }),
-  registerDriver: (data) => request('/drivers/register', { method: 'POST', body: JSON.stringify(data) }),
+  registerDriver: async (formData) => {
+    const response = await fetch(`${API_BASE}/drivers/register`, { method: 'POST', credentials: 'include', body: formData })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.message || 'Driver registration failed.')
+    return data
+  },
   driverLogin: (phone, password) => request('/drivers/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
   driverMe: () => request('/drivers/me'),
   driverLogout: () => request('/drivers/logout', { method: 'POST' }),

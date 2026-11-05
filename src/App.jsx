@@ -15,6 +15,7 @@ import RegisterPage from './pages/RegisterPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminSectionEditorPage from './pages/AdminSectionEditorPage'
+import AdminSocialLinksPage from './pages/AdminSocialLinksPage'
 import AdminCmsPageEditor from './pages/AdminCmsPageEditor'
 import AdminRegisteredUsersPage from './pages/AdminRegisteredUsersPage'
 import AdminWalletPage from './pages/AdminWalletPage'
@@ -70,6 +71,7 @@ function AdminRoutes() {
       <Route path="ratings" element={<AdminRatingsPage/>}/>
       <Route path="places" element={<AdminPlacesPage/>}/>
       <Route path="faqs" element={<AdminFaqsPage/>}/>
+      <Route path="social-links" element={<AdminSocialLinksPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>
       <Route path="cms-pages/:slug" element={<AdminCmsPageEditor/>}/>
     </Route>

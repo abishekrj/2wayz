@@ -49,7 +49,7 @@ export default function RouteMap({ route, driverLocation = null }) {
         })
         polylines.forEach(polyline => polyline.setMap(map))
 
-        markers = await route.createWaypointAdvancedMarkers()
+        markers = await route.createWaypointAdvancedMarkers({ map })
         if (!active) {
           polylines.forEach(polyline => polyline.setMap(null))
           markers.forEach(marker => { marker.map = null })

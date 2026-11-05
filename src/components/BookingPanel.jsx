@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
+import SavedPlacesManager from './SavedPlacesManager'
 import { adminApi } from '../lib/adminApi'
 
 const FARE = { base: 30, includedKm: 1, perKm: 18, minimum: 50, rounding: 5 }
@@ -65,6 +66,9 @@ export default function BookingPanel({ initialDestination = null }) {
   const [error, setError] = useState('')
   const [activeRide, setActiveRide] = useState(null)
   const [checkingActiveRide, setCheckingActiveRide] = useState(true)
+  const [savedPlaces, setSavedPlaces] = useState([])
+  const [isPassenger, setIsPassenger] = useState(false)
+  const [showSavedPlaceManager, setShowSavedPlaceManager] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -72,6 +76,25 @@ export default function BookingPanel({ initialDestination = null }) {
       .then(result => { if (mounted) setActiveRide(result.booking || null) })
       .catch(() => {})
       .finally(() => { if (mounted) setCheckingActiveRide(false) })
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+    adminApi.passengerMe()
+      .then(() => {
+        if (!mounted) return
+        setIsPassenger(true)
+        return adminApi.savedPlaces().then(result => {
+          if (mounted) setSavedPlaces(result.places || [])
+        })
+      })
+      .catch(() => {
+        if (mounted) {
+          setIsPassenger(false)
+          setSavedPlaces([])
+        }
+      })
     return () => { mounted = false }
   }, [])
 
@@ -145,7 +168,7 @@ export default function BookingPanel({ initialDestination = null }) {
       </div>
 
       <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} enableCurrentLocation />
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Search pickup point in or near Tiruvannamalai" icon={MapPin} value={pickup} onSelect={selectPickup} enableCurrentLocation savedPlaces={savedPlaces} />
         <button
           type="button"
           onClick={swapLocations}
@@ -156,7 +179,7 @@ export default function BookingPanel({ initialDestination = null }) {
         >
           <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
+        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} savedPlaces={savedPlaces} />
 
         <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
@@ -164,6 +187,8 @@ export default function BookingPanel({ initialDestination = null }) {
         </button>
       </form>
 
+      {isPassenger && <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"><p className="text-xs text-slate-500">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
+      {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={setSavedPlaces}/>}
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       {estimate && (

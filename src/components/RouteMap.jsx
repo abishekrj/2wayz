@@ -110,7 +110,7 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
         const { AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary('marker')
         if (!active || !mapRef.current) return
         const position = { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }
-        const pin = new PinElement({ background: '#facc15', borderColor: '#0f172a', glyphColor: '#0f172a', glyphText: 'A', scale: 1.25 })
+        const pin = new PinElement({ background: '#facc15', borderColor: '#0f172a', glyphColor: '#0f172a', glyph: 'A', scale: 1.25 })
         if (!driverMarkerRef.current) {
           driverMarkerRef.current = new AdvancedMarkerElement({ map: mapRef.current, position, title: 'Your assigned auto driver', content: pin.element })
         } else {

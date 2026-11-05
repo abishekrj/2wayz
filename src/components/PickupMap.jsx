@@ -11,7 +11,9 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
   const dragTimerRef = useRef(null)
   const requestRef = useRef(0)
   const onSelectRef = useRef(onSelect)
+  const routeRef = useRef(route)
   onSelectRef.current = onSelect
+  routeRef.current = route
   const [status, setStatus] = useState('Loading map…')
   const [mapReady, setMapReady] = useState(false)
 
@@ -39,7 +41,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
         })
         mapRef.current = map
         dragListener = map.addListener('dragend', () => {
-          if (route) return
+          if (routeRef.current) return
           const center = map.getCenter()
           if (!center) return
           const lat = center.lat()

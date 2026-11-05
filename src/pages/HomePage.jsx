@@ -52,11 +52,10 @@ function Hero({data,destination}) {
  const [pickup,setPickup]=useState(null)
  const [dropoff,setDropoff]=useState(destination || null)
  const [activeField,setActiveField]=useState('pickup')
- const [route,setRoute]=useState(null)
  return <section className="relative isolate z-20 overflow-visible bg-[#f5f8fc] text-white">
-  <PickupMap value={activeField === 'destination' ? dropoff : pickup} onSelect={activeField === 'destination' ? setDropoff : setPickup} activeField={activeField} route={route}/>
+  <PickupMap value={activeField === 'destination' ? dropoff : pickup} onSelect={activeField === 'destination' ? setDropoff : setPickup} activeField={activeField}/>
   <div className="relative z-20 mx-auto -mt-7 max-w-7xl px-4 pb-7 sm:-mt-12 sm:px-8 sm:pb-10 lg:-mt-14">
-   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup} destination={dropoff} onDestinationChange={setDropoff} activeField={activeField} onActiveFieldChange={setActiveField} onEstimateChange={setRoute}/>
+   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup} destination={dropoff} onDestinationChange={setDropoff} activeField={activeField} onActiveFieldChange={setActiveField}/>
   </div>
  </section>
 }

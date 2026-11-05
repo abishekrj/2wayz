@@ -126,10 +126,10 @@ export default function BookingPanel({ initialDestination = null }) {
 
   if (activeRide) return (
     <div id="book" className="relative z-30 w-full overflow-hidden rounded-[24px] border border-amber-200 bg-white text-left shadow-[0_18px_55px_rgba(3,25,58,.18)]">
-      <div className="bg-wayz-navy px-5 py-5 text-white sm:px-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Your current ride</p><h2 className="mt-1 text-xl font-extrabold sm:text-2xl">You already have an active booking</h2><p className="mt-2 text-sm text-white/75">To keep driver assignments clear, finish or cancel this ride before booking another auto.</p></div>
+      <div className="bg-wayz-navy px-5 py-5 text-white sm:px-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">Your current ride</p><h2 className="mt-1 text-xl font-bold sm:text-2xl">You already have an active booking</h2><p className="mt-2 text-sm text-white/75">To keep driver assignments clear, finish or cancel this ride before booking another auto.</p></div>
       <div className="p-5 sm:p-7"><div className="flex flex-wrap items-center justify-between gap-3"><span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">{({ REQUESTED: 'Finding a driver', DRIVER_ASSIGNED: 'Driver accepted', DRIVER_ARRIVED: 'Driver arrived', IN_PROGRESS: 'Trip in progress' })[activeRide.status] || activeRide.status}</span><span className="text-xs font-bold text-slate-400">{activeRide.reference}</span></div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-xl bg-emerald-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Pickup</p><p className="mt-1 text-sm font-bold text-wayz-ink">{activeRide.pickupName}</p></div><div className="rounded-xl bg-rose-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Destination</p><p className="mt-1 text-sm font-bold text-wayz-ink">{activeRide.destinationName}</p></div></div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5"><div><p className="text-xs text-slate-500">Estimated fare</p><p className="text-2xl font-black text-wayz-blue">₹{Number(activeRide.estimatedFare || 0).toLocaleString('en-IN')}</p></div><button type="button" onClick={() => navigate('/my-bookings')} className="rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-extrabold text-wayz-ink transition hover:bg-amber-300">Track / manage ride</button></div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5"><div><p className="text-xs text-slate-500">Estimated fare</p><p className="text-2xl font-black text-wayz-blue">₹{Number(activeRide.estimatedFare || 0).toLocaleString('en-IN')}</p></div><button type="button" onClick={() => navigate('/my-bookings')} className="rounded-xl bg-wayz-yellow px-6 py-3.5 text-sm font-bold text-wayz-ink transition hover:bg-amber-300">Track / manage ride</button></div>
       </div>
     </div>
   )
@@ -139,7 +139,7 @@ export default function BookingPanel({ initialDestination = null }) {
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Book your local auto</p>
-          <h2 className="mt-1 text-xl font-extrabold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
+          <h2 className="mt-1 text-xl font-bold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-wayz-blue"><Zap size={16} /> Instant booking</span>
       </div>
@@ -158,7 +158,7 @@ export default function BookingPanel({ initialDestination = null }) {
         </button>
         <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
 
-        <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-extrabold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
+        <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
         </button>
@@ -169,7 +169,7 @@ export default function BookingPanel({ initialDestination = null }) {
       {estimate && (
         <section className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm font-extrabold text-wayz-ink">
+            <p className="flex items-center gap-2 text-sm font-bold text-wayz-ink">
               <Info size={16} className="text-wayz-blue" /> Indicative auto fare
             </p>
             <p className="text-3xl font-black text-wayz-blue">₹{estimate.fare}</p>
@@ -198,12 +198,12 @@ export default function BookingPanel({ initialDestination = null }) {
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white p-3">
                   <RouteIcon size={17} className="text-wayz-blue" />
-                  <p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.km.toFixed(1)} km</p>
+                  <p className="mt-2 text-lg font-bold text-wayz-ink">{estimate.km.toFixed(1)} km</p>
                   <p className="text-[11px] text-slate-500">Route distance</p>
                 </div>
                 <div className="rounded-xl bg-white p-3">
                   <Clock3 size={17} className="text-wayz-blue" />
-                  <p className="mt-2 text-lg font-extrabold text-wayz-ink">{estimate.durationMinutes} min</p>
+                  <p className="mt-2 text-lg font-bold text-wayz-ink">{estimate.durationMinutes} min</p>
                   <p className="text-[11px] text-slate-500">Travel time</p>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default function BookingPanel({ initialDestination = null }) {
               <div className="mt-3 space-y-2 rounded-xl bg-white p-3 text-xs text-slate-600">
                 <div className="flex justify-between"><span>Base fare (first {FARE.includedKm} km)</span><span>₹{FARE.base}</span></div>
                 <div className="flex justify-between"><span>Distance component + rounding</span><span>₹{estimate.distanceCharge}</span></div>
-                <div className="flex justify-between font-extrabold text-wayz-ink"><span>Indicative total</span><span>₹{estimate.fare}</span></div>
+                <div className="flex justify-between font-bold text-wayz-ink"><span>Indicative total</span><span>₹{estimate.fare}</span></div>
               </div>
               <p className="mt-3 text-[10px] leading-4 text-slate-500">
                 Illustrative starter tariff: ₹{FARE.base} base, ₹{FARE.perKm}/km after the first {FARE.includedKm} km, minimum ₹{FARE.minimum}, rounded up to ₹{FARE.rounding}. Confirm and configure local driver-approved rates before accepting bookings. Actual fare may vary.

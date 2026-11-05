@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
+import { validateImageUpload } from '../lib/validateImageUpload.js'
 
 const router = Router()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -20,6 +21,13 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype))
 })
+function handleProofUpload(req, res, next) {
+  upload.single('proof')(req, res, error => {
+    if (error) return res.status(400).json({ message: error.message || 'Payment proof upload failed.' })
+    validateImageUpload(req, res, next)
+  })
+}
+
 function requireDriver(req, res, next) {
   const token = req.cookies?.twoWayzDriver
   if (!token) return res.status(401).json({ message: 'Please sign in as a driver.' })
@@ -129,7 +137,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
     res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, transactions, recharges: recharges.map(item => ({ ...item, proofUrl: privateProofUrl(item) })) })
   } catch (error) { next(error) }
 })
-router.post('/recharges', requireDriver, upload.single('proof'), async (req, res, next) => {
+router.post('/recharges', requireDriver, handleProofUpload, async (req, res, next) => {
   try {
     const amount = Number(req.body?.amount)
     const paymentReference = String(req.body?.paymentReference || '').trim()

@@ -49,23 +49,11 @@ function useHomepageSections(){
 }
 function SectionTitle({eyebrow,heading,description}){return <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">{eyebrow}</p><h2 className="mt-3 text-3xl font-bold text-wayz-ink sm:text-4xl">{heading}</h2>{description&&<p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>}</div>}
 function Hero({data,destination}) {
- const slides=Array.isArray(data.slides)&&data.slides.length?data.slides:defaults['hero-banner'].slides
- const [active,setActive]=useState(0)
  const [pickup,setPickup]=useState(null)
- useEffect(()=>{if(active>=slides.length)setActive(0)},[active,slides.length])
- useEffect(()=>{const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),6500);return()=>window.clearInterval(timer)},[slides.length])
- const slide=slides[active]||slides[0]
  return <section className="relative isolate z-20 overflow-visible bg-[#f5f8fc] text-white">
   <div className="relative">
    <PickupMap value={pickup} onSelect={setPickup}/>
    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#061b35]/35 via-transparent to-[#f5f8fc]/55"/>
-   <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 mx-auto hidden max-w-7xl px-5 pt-8 sm:px-8 md:block lg:pt-10">
-    <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-     <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-[#062b58]/55 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-white backdrop-blur-sm"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span>
-     <h1 className="mt-3 whitespace-pre-line text-3xl font-bold leading-[1.12] tracking-tight lg:text-[40px]">{slide.title}</h1>
-     <p className="mt-2 max-w-2xl text-sm leading-5 text-white">{slide.description}</p>
-    </div>
-   </div>
   </div>
   <div className="relative z-20 mx-auto -mt-5 max-w-7xl px-5 pb-8 sm:-mt-12 sm:px-8 sm:pb-10">
    <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup}/>

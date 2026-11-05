@@ -23,7 +23,7 @@ function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false, savedPlaces = [] }) {
   const inputRef = useRef(null)
   const placesRef = useRef(null)
   const requestRef = useRef(0)
@@ -205,6 +205,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           })}
         </div>
       )}
+      {savedPlaces.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-1.5"><span className="mr-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Saved</span>{savedPlaces.map(place => <button key={place.id} type="button" onClick={() => onSelect({ placeId: place.placeId || undefined, name: place.name, address: place.address, location: { lat: place.latitude, lng: place.longitude } })} className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-wayz-blue transition hover:border-blue-300 hover:bg-blue-100">{place.category === 'HOME' ? '⌂ ' : place.category === 'WORK' ? '▣ ' : '★ '}{place.label}</button>)}</div>}
       {error && <span className="mt-1 block text-xs text-rose-600">{error}</span>}
     </div>
   )

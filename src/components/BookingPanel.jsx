@@ -250,7 +250,7 @@ export default function BookingPanel({ initialDestination = null }) {
                 <div className="flex justify-between font-bold text-wayz-ink"><span>Indicative total</span><span>₹{estimate.fare}</span></div>
               </div>
               <p className="mt-3 text-[10px] leading-4 text-slate-500">
-                Illustrative starter tariff: ₹{FARE.base} base, ₹{fareSettings.perKmRate}/km after the first {FARE.includedKm} km, minimum ₹{fareSettings.minimumFare}, rounded up to ₹{fareSettings.roundingIncrement}. Confirm and configure local driver-approved rates before accepting bookings. Actual fare may vary.
+                Current 2WAYZ tariff: ₹{fareSettings.baseFare} base, ₹{fareSettings.perKmRate}/km after the first {fareSettings.includedDistanceKm} km, minimum ₹{fareSettings.minimumFare}, rounded up to ₹{fareSettings.roundingIncrement}. The final trip fare may be adjusted by the driver when the ride is completed.
               </p>
             </div>
 

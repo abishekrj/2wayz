@@ -172,7 +172,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
   return (
     <div ref={fieldRef} className="relative z-10 min-w-0 focus-within:z-[60]">
-      <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
+      <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-white">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
         className={`relative flex min-h-[56px] items-center rounded-xl border-2 border-slate-300 bg-white pl-14 pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
@@ -236,7 +236,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           })}
         </div>
       )}
-      {savedPlaces.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-1.5"><span className="mr-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Saved</span>{savedPlaces.map(place => <button key={place.id} type="button" onClick={() => onSelect({ placeId: place.placeId || undefined, name: place.name, address: place.address, location: { lat: place.latitude, lng: place.longitude } })} className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-wayz-blue transition hover:border-blue-300 hover:bg-blue-100">{place.category === 'HOME' ? '⌂ ' : place.category === 'WORK' ? '▣ ' : '★ '}{place.label}</button>)}</div>}
+      {savedPlaces.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-1.5"><span className="mr-1 text-[10px] font-bold uppercase tracking-wide text-blue-100">Saved</span>{savedPlaces.map(place => <button key={place.id} type="button" onClick={() => onSelect({ placeId: place.placeId || undefined, name: place.name, address: place.address, location: { lat: place.latitude, lng: place.longitude } })} className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-wayz-blue transition hover:border-blue-300 hover:bg-blue-100">{place.category === 'HOME' ? '⌂ ' : place.category === 'WORK' ? '▣ ' : '★ '}{place.label}</button>)}</div>}
       {error && <span className="mt-1 block text-xs text-rose-600">{error}</span>}
     </div>
   )

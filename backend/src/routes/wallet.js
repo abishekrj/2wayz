@@ -153,7 +153,7 @@ router.post('/recharges', requireDriver, handleProofUpload, async (req, res, nex
     const pending = await prisma.walletRecharge.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })
     if (pending >= 5) return res.status(429).json({ message: 'You already have several pending recharge requests. Please wait for review.' })
     const recharge = await prisma.walletRecharge.create({ data: { driverId: req.driverAuth.sub, amount, paymentReference, proofUrl: req.file ? '/uploads/wallet/' + req.file.filename : null } })
-    res.status(201).json({ recharge, message: 'Recharge request submitted for Super Admin review.' })
+    res.status(201).json({ recharge: { ...recharge, proofUrl: privateProofUrl(recharge) }, message: 'Recharge request submitted for Super Admin review.' })
   } catch (error) { next(error) }
 })
 router.get('/admin/settings', requireAdmin, async (_req, res, next) => {

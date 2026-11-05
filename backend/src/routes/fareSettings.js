@@ -63,7 +63,7 @@ router.put('/admin', requireAdmin, async (req, res, next) => {
     if (!Number.isInteger(baseFare) || baseFare < 0 || baseFare > 5000) return res.status(400).json({ message: 'Base fare must be a whole amount between ₹0 and ₹5,000.' })
     if (!Number.isFinite(includedDistanceKm) || includedDistanceKm < 0 || includedDistanceKm > 50) return res.status(400).json({ message: 'Included distance must be between 0 and 50 km.' })
     if (!Number.isFinite(perKmRate) || perKmRate < 0 || perKmRate > 500) return res.status(400).json({ message: 'Per-kilometre rate must be between ₹0 and ₹500.' })
-    if (!Number.isInteger(minimumFare) || minimumFare < 0 || minimumFare > 10000) return res.status(400).json({ message: 'Minimum fare must be a whole amount between ₹0 and ₹10,000.' })
+    if (!Number.isInteger(minimumFare) || minimumFare < 1 || minimumFare > 10000) return res.status(400).json({ message: 'Minimum fare must be a whole amount between ₹1 and ₹10,000.' })
     if (!Number.isInteger(roundingIncrement) || roundingIncrement < 1 || roundingIncrement > 1000) return res.status(400).json({ message: 'Rounding increment must be a whole number between 1 and 1,000.' })
     if (typeof isActive !== 'boolean') return res.status(400).json({ message: 'Choose whether the custom tariff is active.' })
 

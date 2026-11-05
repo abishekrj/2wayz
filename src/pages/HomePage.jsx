@@ -201,9 +201,9 @@ export default function HomePage(){
    <div className="grid items-stretch gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
     <div className="relative h-full min-h-[320px] overflow-hidden rounded-[30px] bg-[#eaf3fc] sm:min-h-[440px] lg:min-h-full">
      <img
-      src="https://images.squarespace-cdn.com/content/v1/5ab542d1365f02611dabe9e1/1562780737887-MP6OGAG1U58I877FJELH/Image-214%2B%281%29.png"
-      alt="A yellow auto rickshaw outside the Arunachaleswarar Temple in Tiruvannamalai"
-      className="absolute inset-0 h-full w-full object-cover object-center"
+      src="https://images.unsplash.com/photo-1578326013806-51ad7f2e3458?auto=format&fit=crop&w=1800&q=85"
+      alt="Tiruvannamalai temple gopuram with Arunachala hill in the background"
+      className="absolute inset-0 h-full w-full object-cover object-center brightness-110 saturate-125"
       loading="lazy"
       decoding="async"
      />
@@ -213,7 +213,7 @@ export default function HomePage(){
        <p className="text-[10px] font-bold uppercase tracking-[.15em] text-wayz-blue">Local rides</p>
        <p className="mt-0.5 text-sm font-bold text-wayz-ink">Made for our town</p>
       </div>
-      <span className="rounded-lg bg-black/35 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-sm">Photo: Matt Carey</span>
+      <a href="https://unsplash.com/photos/mountain-photograph-tS_g6tYPCYc" target="_blank" rel="noreferrer" className="rounded-lg bg-black/45 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-sm">Photo: Thiru N · Unsplash</a>
      </div>
     </div>
     <div>

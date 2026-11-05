@@ -35,6 +35,8 @@ async function roleAuth(req, res, next) {
 router.get('/me', roleAuth, async (req, res, next) => {
   try {
     const where = { recipientRole: req.notificationAuth.role, recipientId: req.notificationAuth.id }
+    // Remove previously read notifications so the driver's inbox only retains unread items.
+    await prisma.notification.deleteMany({ where: { ...where, readAt: { not: null } } })
     const [notifications, unreadCount] = await Promise.all([
       prisma.notification.findMany({ where, orderBy: { createdAt: 'desc' }, take: 50 }),
       prisma.notification.count({ where: { ...where, readAt: null } })

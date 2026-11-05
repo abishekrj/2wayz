@@ -10,6 +10,10 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
   const mapRef = useRef(null)
   const dragTimerRef = useRef(null)
   const requestRef = useRef(0)
+  const onSelectRef = useRef(onSelect)
+  const activeFieldRef = useRef(activeField)
+  onSelectRef.current = onSelect
+  activeFieldRef.current = activeField
   const [status, setStatus] = useState('Loading map…')
   const [mapReady, setMapReady] = useState(false)
 
@@ -43,12 +47,12 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
           const lng = center.lng()
           const requestId = ++requestRef.current
           window.clearTimeout(dragTimerRef.current)
-          setStatus(`Updating ${activeField === 'destination' ? 'drop' : 'pickup'} point…`)
+          setStatus('Updating map location…')
           dragTimerRef.current = window.setTimeout(async () => {
             try {
               const result = await adminApi.reverseGeocode(lat, lng)
               if (!mounted || requestId !== requestRef.current || !result.place) return
-              onSelect({ ...result.place, source: 'map', name: result.place.address || result.place.name })
+              onSelectRef.current({ ...result.place, source: 'map', name: result.place.address || result.place.name })
               setStatus('')
             } catch {
               if (mounted && requestId === requestRef.current) {

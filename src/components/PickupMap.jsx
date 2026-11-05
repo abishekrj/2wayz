@@ -5,7 +5,7 @@ import { adminApi } from '../lib/adminApi'
 
 const TIRUVANNAMALAI_CENTER = { lat: 12.2253, lng: 79.0747 }
 
-export default function PickupMap({ value, onSelect }) {
+export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const dragTimerRef = useRef(null)
@@ -43,7 +43,7 @@ export default function PickupMap({ value, onSelect }) {
           const lng = center.lng()
           const requestId = ++requestRef.current
           window.clearTimeout(dragTimerRef.current)
-          setStatus('Updating pickup point…')
+          setStatus(`Updating ${activeField === 'destination' ? 'drop' : 'pickup'} point…`)
           dragTimerRef.current = window.setTimeout(async () => {
             try {
               const result = await adminApi.reverseGeocode(lat, lng)
@@ -58,7 +58,7 @@ export default function PickupMap({ value, onSelect }) {
           }, 450)
         })
         setMapReady(true)
-        setStatus(value?.location ? '' : 'Move the map to choose your pickup point')
+        setStatus(value?.location ? '' : `Move the map to choose your ${activeField === 'destination' ? 'drop' : 'pickup'} point`)
       })
       .catch(() => {
         if (mounted) setStatus('Map unavailable. You can still search for your pickup location.')
@@ -85,7 +85,7 @@ export default function PickupMap({ value, onSelect }) {
     map.panTo({ lat: Number(location.lat), lng: Number(location.lng) })
     map.setZoom(17)
     setStatus('')
-  }, [value?.location?.lat, value?.location?.lng, mapReady])
+  }, [value?.location?.lat, value?.location?.lng, mapReady, activeField])
 
   return (
     <div className="relative h-[250px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[330px] lg:h-[390px]">
@@ -93,15 +93,15 @@ export default function PickupMap({ value, onSelect }) {
       {mapReady && (
         <>
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center">
-            <span className="relative mb-2 whitespace-nowrap rounded-lg border border-white/80 bg-[#073B83] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[7px] after:border-t-[7px] after:border-x-transparent after:border-t-[#073B83] after:content-['']">Pickup point</span>
+            <span className={`relative mb-2 whitespace-nowrap rounded-lg border border-white/80 px-3.5 py-1.5 text-xs font-bold text-white shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[7px] after:border-t-[7px] after:border-x-transparent after:content-[''] ${activeField === 'destination' ? 'bg-rose-600 after:border-t-rose-600' : 'bg-[#073B83] after:border-t-[#073B83]'}`}>{activeField === 'destination' ? 'Drop point' : 'Pickup point'}</span>
             <div className="relative">
-              <MapPin size={43} fill="#073B83" stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
-              <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-wayz-yellow" />
+              <MapPin size={43} fill={activeField === "destination" ? "#e11d48" : "#073B83"} stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
+              <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-white" />
             </div>
           </div>
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/95 px-3.5 py-2 text-[11px] font-semibold text-wayz-ink shadow-lg backdrop-blur-sm">
             <LocateFixed size={14} className="text-wayz-blue" />
-            Drag the map to adjust pickup
+            {`Drag the map to adjust ${activeField === 'destination' ? 'drop-off' : 'pickup'}`}
           </div>
         </>
       )}

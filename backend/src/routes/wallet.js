@@ -132,23 +132,24 @@ router.get('/daily-earnings', requireDriver, async (req, res, next) => {
 
 router.get('/me', requireDriver, async (req, res, next) => {
   try {
-    const [wallet, settings, transactions, recharges, due, commissionTotal] = await Promise.all([
+    const [wallet, settings, transactions, recharges, due, commissionTotal, subscriptionTotal] = await Promise.all([
       getWallet(req.driverAuth.sub),
       prisma.walletSettings.findUnique({ where: { id: 'default' } }),
       prisma.walletTransaction.findMany({ where: { wallet: { is: { driverId: req.driverAuth.sub } } }, orderBy: { createdAt: 'desc' }, take: 30 }),
       prisma.walletRecharge.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 15 }),
       prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION', status: 'DUE' }, _sum: { amount: true, settledAmount: true } }),
-      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION' }, _sum: { settledAmount: true } })
+      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION' }, _sum: { settledAmount: true } }),
+      prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'SUBSCRIPTION_DAILY', status: 'POSTED' }, _sum: { amount: true } })
     ])
     const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
-    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, transactions, recharges: recharges.map(item => ({ ...item, proofUrl: privateProofUrl(item) })) })
+    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, totalSubscriptionDeducted: subscriptionTotal._sum.amount || 0, transactions, recharges: recharges.map(item => ({ ...item, proofUrl: privateProofUrl(item) })) })
   } catch (error) { next(error) }
 })
 router.post('/recharges', requireDriver, handleProofUpload, async (req, res, next) => {
   try {
     const amount = Number(req.body?.amount)
     const paymentReference = String(req.body?.paymentReference || '').trim()
-    if (!Number.isInteger(amount) || amount < 50 || amount > 50000) return res.status(400).json({ message: 'Recharge amount must be between ₹50 and ₹50,000.' })
+    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return res.status(400).json({ message: 'Enter a recharge amount between ₹1 and ₹10,00,000.' })
     if (paymentReference.length < 4 || paymentReference.length > 100) return res.status(400).json({ message: 'Enter a valid UPI/payment reference number.' })
     const pending = await prisma.walletRecharge.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })
     if (pending >= 5) return res.status(429).json({ message: 'You already have several pending recharge requests. Please wait for review.' })

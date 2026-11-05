@@ -520,7 +520,7 @@ router.patch('/admin/:id/status', requireAdmin, async (req, res, next) => {
     const existing = await prisma.driver.findUnique({ where: { id: req.params.id } })
     if (!existing) return res.status(404).json({ message: 'Driver not found.' })
     if (status === 'APPROVED') {
-      if (!existing.age || !existing.profilePhotoUrl || !existing.drivingLicenceExpiryDate || !existing.vehicleInsuranceExpiryDate || !existing.fcExpiryDate) return res.status(400).json({ message: 'Complete the driver profile and all required document details before approval.' })
+      if (!existing.age || !existing.drivingLicenceExpiryDate || !existing.vehicleInsuranceExpiryDate || !existing.fcExpiryDate) return res.status(400).json({ message: 'Complete the driver profile and all required document details before approval.' })
       const expired = expiredDriverDocuments(existing)
       if (expired.length) return res.status(400).json({ message: `Cannot approve this driver. Expired documents: ${expired.join(', ')}.` })
     }

@@ -655,6 +655,28 @@ router.get('/:id', requirePassenger, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+
+router.post('/:id/rating', requirePassenger, async (req, res, next) => {
+  try {
+    const stars = Number(req.body?.stars)
+    const allowedTags = new Set(['Friendly driver', 'Clean auto', 'Safe driving', 'On-time arrival', 'Good communication'])
+    const tags = Array.isArray(req.body?.tags) ? [...new Set(req.body.tags.map(value => String(value).trim()).filter(value => allowedTags.has(value)))].slice(0, 5) : []
+    const comment = String(req.body?.comment || '').trim().slice(0, 1000)
+    if (!Number.isInteger(stars) || stars < 1 || stars > 5) return res.status(400).json({ message: 'Choose a rating from 1 to 5 stars.' })
+    const booking = await prisma.booking.findFirst({ where: { id: req.params.id, passengerId: req.passengerAuth.sub }, select: { id: true, status: true, driverId: true } })
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' })
+    if (booking.status !== 'COMPLETED' || !booking.driverId) return res.status(409).json({ message: 'You can rate a driver only after the ride is completed.' })
+    const rating = await prisma.rating.create({ data: {
+      bookingId: booking.id, passengerId: req.passengerAuth.sub, driverId: booking.driverId,
+      stars, tags, comment: comment || null
+    }, select: { id: true, stars: true, tags: true, comment: true, isVisible: true, createdAt: true } })
+    res.status(201).json({ rating, message: 'Thank you for rating your 2WAYZ ride.' })
+  } catch (error) {
+    if (error.code === 'P2002') return res.status(409).json({ message: 'You have already submitted feedback for this ride.' })
+    next(error)
+  }
+})
+
 router.get('/', requirePassenger, async (req, res, next) => {
   try {
     // Hide cancelled rides from passenger history after 14 days. Keep the
@@ -671,7 +693,7 @@ router.get('/', requirePassenger, async (req, res, next) => {
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, rideStartOtpVerifiedAt: true, createdAt: true }
+      select: { id: true, reference: true, status: true, pickupName: true, destinationName: true, estimatedFare: true, finalFare: true, completedAt: true, cancelledAt: true, cancelledBy: true, cancellationReason: true, rideStartOtpVerifiedAt: true, createdAt: true, driver: { select: { name: true, vehicleNumber: true } }, rating: { select: { id: true, stars: true, tags: true, comment: true, isVisible: true, createdAt: true } } }
     })
     const passengerBookings = await Promise.all(bookings.map(async item => ({ ...item, rideStartOtp: item.status === 'DRIVER_ARRIVED' && !item.rideStartOtpVerifiedAt ? await ensureRideStartOtp(item.id) : null })))
     res.json({ bookings: passengerBookings })

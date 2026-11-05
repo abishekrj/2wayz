@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from '../lib/adminApi'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut, CarFront, Facebook, Instagram, Youtube, MessageCircle, Linkedin, Twitter } from 'lucide-react'
 import Brand from './Brand'
 
@@ -38,6 +38,7 @@ export function SiteHeader() {
   const [checkingSession, setCheckingSession] = useState(true)
   const [loggingOut, setLoggingOut] = useState(false)
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const bookingReturnQuery = pathname === '/travel-details' ? `?returnTo=${encodeURIComponent('/travel-details')}` : ''
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export function SiteHeader() {
       setAuthOpen(false)
       setProfileOpen(false)
       setMenuOpen(false)
+      navigate('/', { replace: true })
     }
   }
   const pages = useCmsNavigation()

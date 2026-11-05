@@ -18,6 +18,7 @@ import notificationsRoutes from './routes/notifications.js'
 import placesRoutes from './routes/places.js'
 import sosRoutes from './routes/sos.js'
 import reviewRoutes from './routes/reviews.js'
+import savedPlaceRoutes from './routes/savedPlaces.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('DATABASE_URL and a JWT_SECRET of at least 32 characters are required.')
@@ -50,6 +51,7 @@ app.use('/api/notifications', notificationsRoutes)
 app.use('/api/places', placesRoutes)
 app.use('/api/sos', sosRoutes)
 app.use('/api/reviews', reviewRoutes)
+app.use('/api/saved-places', savedPlaceRoutes)
 app.use((error, req, res, next) => {
   console.error(error)
   const statusCode = Number.isInteger(error.statusCode) && error.statusCode >= 400 && error.statusCode <= 599

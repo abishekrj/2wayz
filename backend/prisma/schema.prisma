@@ -98,6 +98,11 @@ model Booking {
   distanceKm         Float
   estimatedMinutes   Int
   estimatedFare      Int
+  fareBaseAmount     Int?
+  fareIncludedDistanceKm Float?
+  farePerKmRate      Float?
+  fareMinimumAmount  Int?
+  fareRoundingIncrement Int?
   mode               String        @default("instant")
   scheduledAt        DateTime?
   status             String        @default("REQUESTED")
@@ -318,3 +323,17 @@ model PassengerSavedPlace {
   passenger   PassengerUser @relation(fields: [passengerId], references: [id], onDelete: Cascade)
   @@index([passengerId, category, createdAt])
 }
+
+
+model FareSettings {
+  id                    String   @id @default("default")
+  baseFare              Int      @default(30)
+  includedDistanceKm    Float    @default(1)
+  perKmRate             Float    @default(18)
+  minimumFare           Int      @default(50)
+  roundingIncrement     Int      @default(5)
+  isActive              Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
+}
+

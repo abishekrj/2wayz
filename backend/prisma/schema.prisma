@@ -207,12 +207,16 @@ model WalletTransaction {
   description   String
   bookingId     String?         @unique
   rechargeId    String?         @unique
+  subscriptionId String?
+  subscriptionDate String?
   balanceAfter  Int
   createdAt     DateTime        @default(now())
   wallet        DriverWallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
   recharge      WalletRecharge? @relation(fields: [rechargeId], references: [id], onDelete: SetNull)
+  subscription DriverSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   adjustmentId  String?         @unique
   adjustment    BookingAdjustment? @relation(fields: [adjustmentId], references: [id], onDelete: SetNull)
+  @@unique([subscriptionId, subscriptionDate])
   @@index([walletId, createdAt])
   @@index([type, status])
 }
@@ -388,11 +392,15 @@ model DriverSubscription {
   paymentId String   @unique
   planName  String
   amount    Int
+  durationDays Int @default(1)
+  isDailyPlan Boolean @default(false)
   startsAt  DateTime
   expiresAt DateTime
   expiryNoticeSentAt DateTime?
   status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
   driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  walletTransactions WalletTransaction[]
   @@index([driverId, status, expiresAt])
+  @@index([driverId, status, isDailyPlan, startsAt])
 }

@@ -15,7 +15,7 @@ export default function DarshanPromoBanner() {
                 <Sparkles size={14} className="text-wayz-yellow" />
                 YOUR SPIRITUAL VISIT STARTS HERE
               </span>
-              <h2 id="darshan-promo-heading" className="mt-4 text-2xl font-extrabold leading-tight sm:text-3xl lg:text-4xl">
+              <h2 id="darshan-promo-heading" className="mt-4 text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
                 Planning a visit to Arunachaleswarar Temple?
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base sm:leading-7">
@@ -34,7 +34,7 @@ export default function DarshanPromoBanner() {
                 href={DARSHAN_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-wayz-yellow px-6 py-4 text-sm font-extrabold text-wayz-ink shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-yellow-200/40 sm:w-auto"
+                className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-wayz-yellow px-6 py-4 text-sm font-bold text-wayz-ink shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-300 focus:outline-none focus:ring-4 focus:ring-yellow-200/40 sm:w-auto"
               >
                 <CalendarCheck size={19} />
                 Book Darshan Tickets

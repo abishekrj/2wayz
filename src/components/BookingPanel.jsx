@@ -153,7 +153,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   )
 
   return (
-    <div id="book" className="relative z-30 w-full rounded-2xl border border-white/25 bg-[#073B83] p-4 text-left shadow-[0_16px_42px_rgba(3,25,58,.2)] sm:rounded-[24px] sm:p-7">
+    <div id="book" className="relative z-30 w-full rounded-2xl border border-white/25 bg-[#073B83] px-4 pt-4 pb-3 text-left shadow-[0_16px_42px_rgba(3,25,58,.2)] sm:rounded-[24px] sm:px-7 sm:pt-7 sm:pb-5">
       <div className="hidden border-b border-white/20 pb-5 sm:block">
         <h2 className="text-2xl font-bold leading-tight text-white">Where would you like to go?</h2>
       </div>

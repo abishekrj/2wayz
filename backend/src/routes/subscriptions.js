@@ -105,6 +105,27 @@ router.patch('/admin/plans/:id', requireAdmin, async (req, res, next) => {
     res.json({ plan, message: 'Subscription plan updated.' })
   } catch (error) { next(error) }
 })
+router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
+  try {
+    const status = String(req.query.status || 'ACTIVE').toUpperCase()
+    const now = new Date()
+    let where = {}
+    if (status === 'ACTIVE') where = { status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }
+    else if (status === 'EXPIRED') where = { OR: [{ status: 'EXPIRED' }, { expiresAt: { lte: now } }] }
+    else if (status !== 'ALL') return res.status(400).json({ message: 'Choose ACTIVE, EXPIRED or ALL subscriptions.' })
+    const records = await prisma.driverSubscription.findMany({
+      where,
+      include: {
+        driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } },
+        payment: { select: { id: true, paymentMethod: true, paymentReference: true, reviewedAt: true, createdAt: true } }
+      },
+      orderBy: [{ expiresAt: 'desc' }, { createdAt: 'desc' }],
+      take: 500
+    })
+    res.json({ subscriptions: records })
+  } catch (error) { next(error) }
+})
+
 router.get('/admin/payments', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.query.status || '').toUpperCase()

@@ -33,6 +33,7 @@ import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
 import { adminApi } from './lib/adminApi'
 import { BookingProvider } from './context/BookingContext'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -78,6 +79,7 @@ function AdminRoutes() {
 export default function App() {
   return <BookingProvider><BrowserRouter>
     <ScrollToTop />
+    <PWAInstallPrompt />
     <Routes>
       <Route path="/admin/*" element={<AdminRoutes/>}/>
       <Route path="/" element={<HomePage />} />

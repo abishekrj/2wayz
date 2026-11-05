@@ -95,11 +95,19 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
       try {
         const { AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary('marker')
         if (!active || !mapRef.current) return
+        const position = { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }
         const pin = new PinElement({ background: '#facc15', borderColor: '#0f172a', glyphColor: '#0f172a', glyphText: 'A', scale: 1.25 })
         if (!driverMarkerRef.current) {
-          driverMarkerRef.current = new AdvancedMarkerElement({ map: mapRef.current, position: { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }, title: 'Your assigned auto driver', content: pin.element })
+          driverMarkerRef.current = new AdvancedMarkerElement({ map: mapRef.current, position, title: 'Your assigned auto driver', content: pin.element })
         } else {
-          driverMarkerRef.current.position = { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }
+          driverMarkerRef.current.position = position
+        }
+
+        // Keep the live auto visible if it moves beyond the current map viewport.
+        // Do not recenter on every GPS heartbeat when the marker is already visible.
+        const bounds = mapRef.current.getBounds()
+        if (!bounds || !bounds.contains(position)) {
+          mapRef.current.panTo(position)
         }
       } catch (error) {
         console.error('Unable to update driver map marker:', error)

@@ -8,6 +8,7 @@ import NotificationCenter from '../components/NotificationCenter'
 import SosButton from '../components/SosButton'
 import DailyEarningsSummary from '../components/DailyEarningsSummary'
 import DriverRatingsSummary from '../components/DriverRatingsSummary'
+import DriverSubscriptionPanel from '../components/DriverSubscriptionPanel'
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN')
 
@@ -234,6 +235,7 @@ export default function DriverPortalPage() {
     <>
       <section className="mt-7 flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:p-6"><div className="flex items-center gap-4"><span className={'flex h-14 w-14 items-center justify-center rounded-2xl ' + (driver.isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}><Power size={28}/></span><div><p className="text-lg font-bold text-wayz-ink">{driver.isOnline ? 'You are online' : 'You are offline'}</p><p className="mt-1 text-sm text-slate-500">{driver.isOnline ? 'Your GPS location is shared for dispatch.' : 'Go online when you are ready to accept rides.'}</p></div></div><button disabled={busy} onClick={toggleOnline} className={'rounded-xl px-6 py-3.5 text-sm font-bold disabled:opacity-60 ' + (driver.isOnline ? 'border border-slate-200 bg-white text-slate-700' : 'bg-wayz-yellow text-wayz-ink')}>{busy ? 'Please wait…' : driver.isOnline ? 'Go offline' : 'Share location & go online'}</button></section>
       {gpsError && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{gpsError}</p>}
+      <DriverSubscriptionPanel/>
       <DailyEarningsSummary role="DRIVER"/>
       <DriverRatingsSummary/>
        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

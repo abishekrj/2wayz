@@ -60,7 +60,7 @@ async function sendRechargeProof(req, res, next) {
     }
 
     const filename = path.basename(recharge.proofUrl)
-    if (!/^[0-9a-f-]{36}\\.(?:jpe?g|png|webp)$/i.test(filename)) return res.status(404).json({ message: 'Payment proof not found.' })
+    if (!/^[0-9a-f-]{36}\.(?:jpe?g|png|webp)$/i.test(filename)) return res.status(404).json({ message: 'Payment proof not found.' })
     const filePath = path.resolve(uploadDir, filename)
     if (!filePath.startsWith(uploadDir + path.sep)) return res.sendStatus(404)
     res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })

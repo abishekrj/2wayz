@@ -63,6 +63,15 @@ function requireDriver(req, res, next) {
 
 
 async function walletEligibility(driverId) {
+  const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', expiresAt: { gt: new Date() } }, select: { id: true } })
+  if (!activeSubscription) {
+    const current = await prisma.driver.findUnique({ where: { id: driverId }, select: { isOnline: true } })
+    if (current?.isOnline) {
+      await prisma.driver.update({ where: { id: driverId }, data: { isOnline: false } })
+      await prisma.driverActivity.create({ data: { driverId, eventType: 'OFFLINE', description: 'Automatically set offline because the 2WAYZ subscription is expired or inactive.' } })
+    }
+    return { eligible: false, message: 'Your 2WAYZ subscription is expired or inactive. Submit your payment and wait for Super Admin approval.' }
+  }
   const settings = await prisma.walletSettings.findUnique({ where: { id: 'default' } })
   if (!settings?.isActive) return { eligible: false, message: 'The Super Admin has not activated wallet settings yet.' }
   const wallet = await prisma.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })

@@ -31,17 +31,18 @@ export default function SosButton({ bookingId, role = 'PASSENGER' }) {
   }
 
   return <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 sm:p-5">
-    <div className="flex items-start gap-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white"><Siren size={23}/></span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs leading-5 text-rose-800">{role === 'DRIVER' ? 'If you or your passenger feel unsafe, alert the 2WAYZ Super Admin.' : 'If you feel unsafe during this ride, alert the 2WAYZ Super Admin.'} Your booking and latest available GPS location will be shared.</p>
-        <button type="button" disabled={busy || sent} onClick={trigger} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {busy ? <LoaderCircle size={17} className="animate-spin"/> : sent ? <CheckCircle2 size={17}/> : <Siren size={17}/>}
-          {busy ? 'Sending emergency alert…' : sent ? 'SOS alert sent' : 'Send SOS alert'}
-        </button>
-        {message && <p role="status" className="mt-3 text-xs font-semibold text-rose-900">{message}</p>}
-        <a href="tel:112" className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700"><PhoneCall size={16}/> Call emergency number 112</a>
+    <div className="flex flex-col items-start gap-3">
+      <div className="flex items-center gap-2">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white"><Siren size={22}/></span>
+        <h3 className="font-bold text-rose-950">Emergency SOS</h3>
       </div>
+      <p className="text-xs leading-5 text-rose-800">{role === 'DRIVER' ? 'If you or your passenger feel unsafe, alert the 2WAYZ Super Admin.' : 'If you feel unsafe during this ride, alert the 2WAYZ Super Admin.'} Your booking and latest available GPS location will be shared.</p>
+      <button type="button" disabled={busy || sent} onClick={trigger} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
+        {busy ? <LoaderCircle size={17} className="animate-spin"/> : sent ? <CheckCircle2 size={17}/> : <Siren size={17}/>}
+        {busy ? 'Sending emergency alert…' : sent ? 'SOS alert sent' : 'Send SOS alert'}
+      </button>
+      {message && <p role="status" className="text-xs font-semibold text-rose-900">{message}</p>}
+      <a href="tel:112" className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-700"><PhoneCall size={16}/> Call emergency number 112</a>
     </div>
     <p className="mt-3 text-[11px] leading-4 text-rose-700">2WAYZ alerts its Super Admin only. It does not automatically contact police, ambulance or emergency services. Call 112 for immediate assistance.</p>
   </section>

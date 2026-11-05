@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, CarFront, MapPin, RefreshCw, Star } from 'lucide-react'
+import { CalendarDays, CarFront, MapPin, RefreshCw, Star, ArrowRight, LoaderCircle } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import { adminApi } from '../lib/adminApi'
+import { useBooking } from '../context/BookingContext'
 
 const statusLabel = status => ({
   REQUESTED: 'Finding driver',
@@ -15,6 +16,7 @@ const statusLabel = status => ({
 
 export default function MyBookingsPage() {
   const navigate = useNavigate()
+  const { setBooking } = useBooking()
   const [bookings, setBookings] = useState([])
   const [activeTab, setActiveTab] = useState('active')
   const [loading, setLoading] = useState(true)
@@ -27,6 +29,7 @@ export default function MyBookingsPage() {
   const [reviewTags, setReviewTags] = useState({})
   const [reviewComments, setReviewComments] = useState({})
   const [reviewingId, setReviewingId] = useState('')
+  const [openingRideId, setOpeningRideId] = useState('')
 
   async function load() {
     setLoading(true)
@@ -46,6 +49,50 @@ export default function MyBookingsPage() {
   const activeBookings = bookings.filter(item => ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(item.status))
   const pastBookings = bookings.filter(item => !['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(item.status))
   const visibleBookings = activeTab === 'active' ? activeBookings : pastBookings
+
+  async function openRide(item) {
+    if (openingRideId) return
+    setOpeningRideId(item.id)
+    setError('')
+    try {
+      const result = await adminApi.booking(item.id)
+      const ride = result.booking
+      if (!ride) throw new Error('Ride details could not be found.')
+      const pickup = {
+        name: ride.pickupName || item.pickupName,
+        address: ride.pickupAddress || ride.pickupName || item.pickupName,
+        lat: ride.pickupLat == null ? null : Number(ride.pickupLat),
+        lng: ride.pickupLng == null ? null : Number(ride.pickupLng)
+      }
+      const destination = {
+        name: ride.destinationName || item.destinationName,
+        address: ride.destinationAddress || ride.destinationName || item.destinationName,
+        lat: ride.destinationLat == null ? null : Number(ride.destinationLat),
+        lng: ride.destinationLng == null ? null : Number(ride.destinationLng)
+      }
+      setBooking({
+        mode: ride.mode || 'instant',
+        vehicle: 'auto',
+        pickup,
+        destination,
+        estimate: {
+          km: Number(ride.distanceKm || 0),
+          durationMinutes: Number(ride.estimatedMinutes || 0),
+          fare: Number(ride.estimatedFare || item.estimatedFare || 0),
+          route: null
+        },
+        bookingId: ride.id,
+        bookingStatus: ride.status,
+        reference: ride.reference,
+        serverBooking: ride
+      })
+      navigate('/travel-tracking')
+    } catch (err) {
+      setError(err.message || 'Could not open this ride. Please try again.')
+    } finally {
+      setOpeningRideId('')
+    }
+  }
 
   async function submitReview(item) {
     setError(''); setActionMessage(''); setReviewingId(item.id)
@@ -99,6 +146,7 @@ export default function MyBookingsPage() {
               {item.status === 'CANCELLED' && <div className="mt-3 rounded-lg bg-rose-50 p-3 text-xs text-rose-800"><p><strong>Cancelled by:</strong> {item.cancelledBy || 'Unknown'}</p><p className="mt-1"><strong>Reason:</strong> {item.cancellationReason || 'Not provided'}</p></div>}
               {['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'].includes(item.status) && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4"><p className="text-sm font-bold text-wayz-ink">Cancel this ride</p><p className="mt-1 text-xs leading-5 text-slate-600">You can cancel this booking individually. This will release your active booking restriction.</p><label className="mt-3 block text-xs font-bold text-slate-600">CANCELLATION REASON<select value={cancelReasons[item.id] || 'CHANGE_OF_PLANS'} onChange={event => setCancelReasons(current => ({ ...current, [item.id]: event.target.value }))} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="CHANGE_OF_PLANS">Change of plans</option><option value="WRONG_PICKUP">Wrong pickup location</option><option value="WRONG_DESTINATION">Wrong destination</option><option value="DRIVER_UNAVAILABLE">Driver unavailable</option><option value="VEHICLE_ISSUE">Vehicle issue</option><option value="OTHER">Other</option></select></label><label className="mt-3 block text-xs font-bold text-slate-600">ADDITIONAL DETAILS (OPTIONAL)<input value={cancelDetails[item.id] || ''} onChange={event => setCancelDetails(current => ({ ...current, [item.id]: event.target.value }))} maxLength={500} placeholder="Add a short explanation" className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"/></label><button type="button" disabled={cancellingId === item.id} onClick={() => cancelRide(item)} className="mt-3 rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60">{cancellingId === item.id ? 'Cancelling…' : 'Cancel this ride'}</button></div>}
               {item.status === 'IN_PROGRESS' && <p className="mt-4 rounded-lg bg-slate-100 p-3 text-xs leading-5 text-slate-600">This trip has already started. Passenger cancellation is not available while the ride is in progress.</p>}
+              <button type="button" disabled={openingRideId === item.id} onClick={() => openRide(item)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-wayz-blue px-4 py-3 text-sm font-bold text-white transition hover:bg-wayz-navy disabled:cursor-wait disabled:opacity-60">{openingRideId === item.id ? <><LoaderCircle size={16} className="animate-spin"/> Loading ride…</> : <>{['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(item.status) ? 'Track ride' : 'View ride details'} <ArrowRight size={16}/></>}</button>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4"><p className="text-xs text-slate-500">{item.status === 'COMPLETED' ? 'Final fare' : 'Estimated fare'}</p><p className="text-lg font-bold text-wayz-blue">₹{item.status === 'COMPLETED' ? (item.finalFare ?? item.estimatedFare) : item.estimatedFare}</p></div>
             </article>)}</div>}</div>}
       </div>

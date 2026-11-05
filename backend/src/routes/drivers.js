@@ -10,7 +10,7 @@ import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
 import { createRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
-import { expiredDriverDocuments, istTodayString } from '../lib/driverCompliance.js'
+import { expiredDriverDocuments, istTodayString, suspendDriverIfDocumentsExpired } from '../lib/driverCompliance.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -142,6 +142,8 @@ router.post('/availability', requireDriver, async (req, res, next) => {
     if (typeof online !== 'boolean') return res.status(400).json({ message: 'Choose online or offline.' })
     const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver) return res.status(404).json({ message: 'Driver account not found.' })
+    const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
+    if (expiredDocuments.length) return res.status(403).json({ message: `Your account is suspended because these documents have expired: ${expiredDocuments.join(', ')}. Contact 2WAYZ after renewal.` })
     if (driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account must be approved before going online.' })
     if (online) {
       const walletStatus = await walletEligibility(driver.id)
@@ -203,6 +205,10 @@ router.get('/offers', requireDriver, async (req, res, next) => {
 router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => {
   try {
     const driverId = req.driverAuth.sub
+    const driver = await prisma.driver.findUnique({ where: { id: driverId } })
+    if (!driver) return res.status(404).json({ message: 'Driver account not found.' })
+    const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
+    if (expiredDocuments.length || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your account is not eligible to accept rides. Check your driver approval and document expiry status.' })
     const walletStatus = await walletEligibility(driverId)
     if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
     const accepted = await prisma.$transaction(async tx => {

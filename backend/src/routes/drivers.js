@@ -494,6 +494,46 @@ router.get('/admin', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+router.patch('/admin/:id/profile', requireAdmin, handleProfileUpload, async (req, res, next) => {
+  try {
+    const name = String(req.body?.name || '').trim()
+    const phone = String(req.body?.phone || '').replace(/\D/g, '')
+    const vehicleNumber = String(req.body?.vehicleNumber || '').trim().toUpperCase()
+    const licenceNumber = String(req.body?.licenceNumber || '').trim().toUpperCase()
+    const serviceArea = String(req.body?.serviceArea || '').trim().slice(0, 100)
+    const age = Number(req.body?.age)
+    const password = String(req.body?.password || '')
+    if (name.length < 2 || name.length > 100) return res.status(400).json({ message: 'Enter a name between 2 and 100 characters.' })
+    if (!/^\d{10}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' })
+    if (vehicleNumber.length < 5 || vehicleNumber.length > 20) return res.status(400).json({ message: 'Enter a valid vehicle registration number.' })
+    if (licenceNumber.length < 5 || licenceNumber.length > 40) return res.status(400).json({ message: 'Enter a valid driving licence number.' })
+    if (!Number.isInteger(age) || age < 18 || age > 100) return res.status(400).json({ message: 'Driver age must be between 18 and 100.' })
+    if (!serviceArea) return res.status(400).json({ message: 'Enter the driver service area.' })
+    if (password && (password.length < 8 || password.length > 128)) return res.status(400).json({ message: 'New password must contain at least 8 characters.' })
+    const drivingLicenceExpiryDate = parseFutureDate(req.body?.drivingLicenceExpiryDate, 'driving licence expiry date')
+    const vehicleInsuranceExpiryDate = parseFutureDate(req.body?.vehicleInsuranceExpiryDate, 'vehicle insurance expiry date')
+    const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
+    const existing = await prisma.driver.findUnique({ where: { id: req.params.id }, select: { id: true } })
+    if (!existing) return res.status(404).json({ message: 'Driver not found.' })
+    const data = {
+      name, phone, vehicleNumber, licenceNumber, serviceArea, age,
+      drivingLicenceExpiryDate, vehicleInsuranceExpiryDate, fcExpiryDate
+    }
+    if (req.file) data.profilePhotoUrl = `/uploads/${req.file.filename}`
+    if (password) data.passwordHash = await bcrypt.hash(password, 12)
+    const driver = await prisma.driver.update({
+      where: { id: req.params.id },
+      data,
+      select: { id: true, name: true, phone: true, vehicleNumber: true, licenceNumber: true, serviceArea: true, age: true, drivingLicenceExpiryDate: true, vehicleInsuranceExpiryDate: true, fcExpiryDate: true, profilePhotoUrl: true, status: true }
+    })
+    res.json({ driver, message: 'Driver profile updated successfully. Review document validity before approving or restoring ride access.' })
+  } catch (error) {
+    if (error.code === 'P2002') return res.status(409).json({ message: 'This mobile number or vehicle number is already registered to another driver.' })
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Driver not found.' })
+    next(error)
+  }
+})
+
 router.patch('/admin/:id/documents', requireAdmin, async (req, res, next) => {
   try {
     const age = Number(req.body?.age)

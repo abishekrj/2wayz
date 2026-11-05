@@ -486,6 +486,25 @@ router.get('/admin', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+router.patch('/admin/:id/documents', requireAdmin, async (req, res, next) => {
+  try {
+    const age = Number(req.body?.age)
+    if (!Number.isInteger(age) || age < 18 || age > 100) return res.status(400).json({ message: 'Driver age must be between 18 and 100.' })
+    const drivingLicenceExpiryDate = parseFutureDate(req.body?.drivingLicenceExpiryDate, 'driving licence expiry date')
+    const vehicleInsuranceExpiryDate = parseFutureDate(req.body?.vehicleInsuranceExpiryDate, 'vehicle insurance expiry date')
+    const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
+    const driver = await prisma.driver.update({
+      where: { id: req.params.id },
+      data: { age, drivingLicenceExpiryDate, vehicleInsuranceExpiryDate, fcExpiryDate, complianceNoticeSentAt: null },
+      select: { id: true, age: true, drivingLicenceExpiryDate: true, vehicleInsuranceExpiryDate: true, fcExpiryDate: true, status: true }
+    })
+    res.json({ driver, message: 'Driver document dates updated. Review the documents and approve the driver to restore ride access.' })
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Driver not found.' })
+    next(error)
+  }
+})
+
 router.patch('/admin/:id/status', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.body?.status || '').toUpperCase()

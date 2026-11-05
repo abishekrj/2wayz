@@ -149,7 +149,7 @@ router.post('/recharges', requireDriver, handleProofUpload, async (req, res, nex
   try {
     const amount = Number(req.body?.amount)
     const paymentReference = String(req.body?.paymentReference || '').trim()
-    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) return res.status(400).json({ message: 'Enter a recharge amount between ₹1 and ₹10,00,000.' })
+    if (!Number.isSafeInteger(amount) || amount < 1 || amount > 2147483647) return res.status(400).json({ message: 'Enter a valid whole-rupee recharge amount of at least ₹1.' })
     if (paymentReference.length < 4 || paymentReference.length > 100) return res.status(400).json({ message: 'Enter a valid UPI/payment reference number.' })
     const pending = await prisma.walletRecharge.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })
     if (pending >= 5) return res.status(429).json({ message: 'You already have several pending recharge requests. Please wait for review.' })

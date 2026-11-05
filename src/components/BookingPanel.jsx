@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  Zap, Search, Info, Clock3,
+  Search, Info, Clock3,
   Route as RouteIcon, LoaderCircle, MapPin, ArrowLeftRight,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
@@ -164,7 +164,6 @@ export default function BookingPanel({ initialDestination = null }) {
           <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Book your local auto</p>
           <h2 className="mt-1 text-xl font-bold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
         </div>
-        <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-wayz-blue"><Zap size={16} /> Instant booking</span>
       </div>
 
       <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">

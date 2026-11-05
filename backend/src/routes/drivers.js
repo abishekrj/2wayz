@@ -36,7 +36,7 @@ const profilePhotoUpload = multer({
 
 function parseFutureDate(value, label) {
   const date = String(value || '')
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) throw Object.assign(new Error(`Enter a valid ${label}.`), { statusCode: 400 })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error(\`Enter a valid \${label}.\`), { statusCode: 400 })
   const parsed = new Date(`${date}T00:00:00.000Z`)
   if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw Object.assign(new Error(`Enter a valid ${label}.`), { statusCode: 400 })
   if (date <= istTodayString()) throw Object.assign(new Error(`${label} must be a future date. Expired documents cannot be registered.`), { statusCode: 400 })
@@ -95,7 +95,7 @@ router.post('/register', registerLimiter, handleProfileUpload, async (req, res, 
     const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
     const serviceArea = String(req.body?.serviceArea || 'Tiruvannamalai').trim().slice(0, 100)
     if (name.length < 2 || name.length > 100) return res.status(400).json({ message: 'Enter a name between 2 and 100 characters.' })
-    if (!/^\d{10}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error(\`Enter a valid \${label}.\`), { statusCode: 400 })
     if (password.length < 8 || password.length > 128) return res.status(400).json({ message: 'Password must contain at least 8 characters.' })
     if (vehicleNumber.length < 5 || vehicleNumber.length > 20) return res.status(400).json({ message: 'Enter a valid vehicle registration number.' })
     if (licenceNumber.length < 5 || licenceNumber.length > 40) return res.status(400).json({ message: 'Enter a valid driving licence number.' })
@@ -114,7 +114,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const phone = String(req.body?.phone || '').replace(/\D/g, '')
     const password = String(req.body?.password || '')
-    if (!/^\d{10}$/.test(phone) || !password) return res.status(400).json({ message: 'Enter your 10-digit mobile number and password.' })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error(\`Enter a valid \${label}.\`), { statusCode: 400 })
     const driver = await prisma.driver.findUnique({ where: { phone } })
     if (!driver || !(await bcrypt.compare(password, driver.passwordHash))) return res.status(401).json({ message: 'Invalid mobile number or password.' })
     const token = jwt.sign({ sub: driver.id, role: 'DRIVER' }, process.env.JWT_SECRET, { expiresIn: '8h' })
@@ -331,7 +331,7 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     if (nextStatus === 'COMPLETED') data.finalFare = finalFare
     if (nextStatus === 'IN_PROGRESS') {
       const submittedOtp = String(req.body?.otp || '').trim()
-      if (!/^\d{4}$/.test(submittedOtp)) return res.status(400).json({ message: 'Enter the 4-digit OTP shared by the passenger before starting this ride.' })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error(\`Enter a valid \${label}.\`), { statusCode: 400 })
       const current = await prisma.booking.findUnique({ where: { id: booking.id }, select: { rideStartOtpHash: true, rideStartOtpAttempts: true, rideStartOtpVerifiedAt: true } })
       if (current?.rideStartOtpVerifiedAt) return res.status(409).json({ message: 'This ride has already been verified. Refresh your active rides.' })
       if (!current?.rideStartOtpHash) return res.status(409).json({ message: 'Ride OTP is not available yet. Ask the passenger to refresh their booking screen.' })

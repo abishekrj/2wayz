@@ -101,7 +101,7 @@ router.post('/admin/plans', requireAdmin, async (req, res, next) => {
   try {
     const name = String(req.body?.name || '').trim().slice(0, 80), description = String(req.body?.description || '').trim().slice(0, 300)
     const durationDays = Number(req.body?.durationDays), price = Number(req.body?.price)
-    if (name.length < 2 || !Number.isInteger(durationDays) || durationDays < 1 || durationDays > 730 || !Number.isInteger(price) || price < 0 || price > 100000) return res.status(400).json({ message: 'Enter a valid plan name, duration (1–730 days) and price.' })
+    if (name.length < 2 || !Number.isInteger(durationDays) || durationDays < 1 || durationDays > 730 || !Number.isInteger(price) || price < durationDays || price > 100000) return res.status(400).json({ message: 'Plan price must be at least ₹1 per validity day, with a valid duration (1–730 days).' })
     const plan = await prisma.driverSubscriptionPlan.create({ data: { name, description: description || null, durationDays, price, isActive: req.body?.isActive !== false } })
     res.status(201).json({ plan, message: 'Subscription plan created.' })
   } catch (error) { next(error) }
@@ -112,7 +112,7 @@ router.patch('/admin/plans/:id', requireAdmin, async (req, res, next) => {
     if (!existing) return res.status(404).json({ message: 'Subscription plan not found.' })
     const name = String(req.body?.name ?? existing.name).trim().slice(0, 80), description = String(req.body?.description ?? existing.description ?? '').trim().slice(0, 300)
     const durationDays = Number(req.body?.durationDays ?? existing.durationDays), price = Number(req.body?.price ?? existing.price)
-    if (name.length < 2 || !Number.isInteger(durationDays) || durationDays < 1 || durationDays > 730 || !Number.isInteger(price) || price < 0 || price > 100000) return res.status(400).json({ message: 'Enter a valid plan name, duration and price.' })
+    if (name.length < 2 || !Number.isInteger(durationDays) || durationDays < 1 || durationDays > 730 || !Number.isInteger(price) || price < durationDays || price > 100000) return res.status(400).json({ message: 'Plan price must be at least ₹1 per validity day, with a valid duration (1–730 days).' })
     const plan = await prisma.driverSubscriptionPlan.update({ where: { id: existing.id }, data: { name, description: description || null, durationDays, price, isActive: typeof req.body?.isActive === 'boolean' ? req.body.isActive : existing.isActive } })
     res.json({ plan, message: 'Subscription plan updated.' })
   } catch (error) { next(error) }

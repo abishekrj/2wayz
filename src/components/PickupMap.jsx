@@ -48,7 +48,7 @@ export default function PickupMap({ value, onSelect }) {
             try {
               const result = await adminApi.reverseGeocode(lat, lng)
               if (!mounted || requestId !== requestRef.current || !result.place) return
-              onSelect({ ...result.place, name: result.place.address || result.place.name })
+              onSelect({ ...result.place, source: 'map', name: result.place.address || result.place.name })
               setStatus('')
             } catch {
               if (mounted && requestId === requestRef.current) {
@@ -92,9 +92,12 @@ export default function PickupMap({ value, onSelect }) {
       <div ref={containerRef} className="absolute inset-0" aria-label="Map to choose your pickup location" />
       {mapReady && (
         <>
-          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-full">
-            <MapPin size={43} fill="#073B83" stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
-            <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-wayz-yellow" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center">
+            <span className="mb-1.5 whitespace-nowrap rounded-full border border-white/80 bg-white px-3 py-1.5 text-[10px] font-bold text-wayz-blue shadow-lg">{value?.source === 'current-location' ? 'You are here' : 'Pickup point'}</span>
+            <div className="relative">
+              <MapPin size={43} fill="#073B83" stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
+              <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-wayz-yellow" />
+            </div>
           </div>
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/95 px-3.5 py-2 text-[11px] font-semibold text-wayz-ink shadow-lg backdrop-blur-sm">
             <LocateFixed size={14} className="text-wayz-blue" />

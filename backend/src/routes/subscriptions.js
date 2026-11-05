@@ -72,7 +72,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
     for (const payment of approvedPayments) {
       const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
       if (existing) continue
-      const approvalTime = payment.reviewedAt || payment.createdAt
+      const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
       const previous = await prisma.driverSubscription.findFirst({
         where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
         orderBy: { expiresAt: 'desc' }
@@ -165,7 +165,7 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
     for (const payment of approvedPayments) {
       let subscription = byPaymentId.get(payment.id)
       if (!subscription) {
-        const approvalTime = payment.reviewedAt || payment.createdAt
+        const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
         // Preserve the existing renewal chain when rebuilding a missing record.
         const previous = await prisma.driverSubscription.findFirst({
           where: {
@@ -252,7 +252,7 @@ router.patch('/admin/payments/:id', requireAdmin, async (req, res, next) => {
       })
       if (reviewUpdate.count !== 1) throw Object.assign(new Error('This payment request has already been reviewed.'), { statusCode: 409 })
       if (decision === 'APPROVED') {
-        const current = await tx.driverSubscription.findFirst({ where: { driverId: payment.driverId, status: 'ACTIVE', expiresAt: { gt: reviewedAt } }, orderBy: { expiresAt: 'desc' } })
+        const current = await tx.driverSubscription.findFirst({ where: { driverId: payment.driverId, startsAt: { lte: reviewedAt }, expiresAt: { gt: reviewedAt } }, orderBy: { expiresAt: 'desc' } })
         const startsAt = current?.expiresAt && current.expiresAt > reviewedAt ? current.expiresAt : reviewedAt
         const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
         await tx.driverSubscription.create({ data: { driverId: payment.driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt } })

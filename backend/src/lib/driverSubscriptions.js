@@ -5,7 +5,7 @@ export async function processDriverSubscriptions() {
   const now = new Date()
   const reminderLimit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
   const reminders = await prisma.driverSubscription.findMany({
-    where: { status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
+    where: { status: 'ACTIVE', isDailyPlan: false, startsAt: { lte: now }, expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
     select: { id: true, driverId: true, planName: true, expiresAt: true }
   })
   for (const subscription of reminders) {
@@ -21,7 +21,7 @@ export async function processDriverSubscriptions() {
   }
 
   const expired = await prisma.driverSubscription.findMany({
-    where: { status: 'ACTIVE', expiresAt: { lte: now } },
+    where: { status: 'ACTIVE', isDailyPlan: false, expiresAt: { lte: now } },
     select: { id: true, driverId: true, planName: true }
   })
   for (const subscription of expired) {
@@ -30,7 +30,7 @@ export async function processDriverSubscriptions() {
       data: { status: 'EXPIRED' }
     })
     if (!changed.count) continue
-    const currentSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: subscription.driverId, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, select: { id: true } })
+    const currentSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: subscription.driverId, status: 'ACTIVE', startsAt: { lte: now }, OR: [{ isDailyPlan: true }, { expiresAt: { gt: now } }] }, select: { id: true } })
     const driver = await prisma.driver.findUnique({ where: { id: subscription.driverId }, select: { isOnline: true } })
     if (!currentSubscription && driver?.isOnline) {
       await prisma.driver.update({ where: { id: subscription.driverId }, data: { isOnline: false } })
@@ -61,22 +61,38 @@ export async function reconcileApprovedDriverSubscriptions(db, driverId) {
   })
 
   let previousExpiry = null
+  let previousWasDaily = false
+  let previousDailyId = null
   const now = new Date()
+  const openEndedExpiry = new Date('9999-12-31T23:59:59.999Z')
   const reconciled = []
 
   for (const payment of payments) {
     const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
+    // A later approved plan replaces an earlier open-ended daily plan.
+    if (previousWasDaily && previousDailyId) {
+      await db.driverSubscription.updateMany({
+        where: { id: previousDailyId, status: 'ACTIVE' },
+        data: { status: 'REPLACED' }
+      })
+      previousExpiry = null
+      previousWasDaily = false
+      previousDailyId = null
+    }
     const startsAt = previousExpiry && previousExpiry > approvalTime ? previousExpiry : approvalTime
-    const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+    const isDailyPlan = Number(payment.durationDays) === 1
+    const expiresAt = isDailyPlan ? openEndedExpiry : new Date(startsAt.getTime() + payment.durationDays * 86400000)
     const status = expiresAt > now ? 'ACTIVE' : 'EXPIRED'
 
     const subscription = await db.driverSubscription.upsert({
       where: { paymentId: payment.id },
-      create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status },
-      update: { driverId, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status }
+      create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, durationDays: payment.durationDays, isDailyPlan, startsAt, expiresAt, status },
+      update: { driverId, planName: payment.planName, amount: payment.amount, durationDays: payment.durationDays, isDailyPlan, startsAt, expiresAt, status }
     })
 
     previousExpiry = expiresAt
+    previousWasDaily = isDailyPlan
+    previousDailyId = isDailyPlan ? subscription.id : null
     reconciled.push(subscription)
   }
 

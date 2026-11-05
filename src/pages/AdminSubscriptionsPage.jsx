@@ -39,7 +39,7 @@ export default function AdminSubscriptionsPage() {
     const reviewNote = decision === 'REJECTED' ? window.prompt('Reason for rejecting this payment?') : ''
     if (decision === 'REJECTED' && (!reviewNote || reviewNote.trim().length < 5)) return
     setBusy(true); setError(''); setNotice('')
-    try { const result = await adminApi.reviewSubscriptionPayment(payment.id, { status: decision, reviewNote }); setNotice(result.message); await loadPayments() }
+    try { const result = await adminApi.reviewSubscriptionPayment(payment.id, { status: decision, reviewNote }); setNotice(result.message); await Promise.all([loadPayments(), loadSubscriptions()]) }
     catch (e) { setError(e.message) } finally { setBusy(false) }
   }
 

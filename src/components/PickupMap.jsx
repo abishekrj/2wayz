@@ -5,7 +5,7 @@ import { adminApi } from '../lib/adminApi'
 
 const TIRUVANNAMALAI_CENTER = { lat: 12.2253, lng: 79.0747 }
 
-export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
+export default function PickupMap({ value, onSelect, activeField = 'pickup', route = null }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const dragTimerRef = useRef(null)
@@ -39,6 +39,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
         })
         mapRef.current = map
         dragListener = map.addListener('dragend', () => {
+          if (route) return
           const center = map.getCenter()
           if (!center) return
           const lat = center.lat()
@@ -89,9 +90,44 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup' }) {
     setStatus('')
   }, [value?.location?.lat, value?.location?.lng, mapReady, activeField])
 
+
+  useEffect(() => {
+    let active = true
+    let polylines = []
+    let markers = []
+    async function showRoute() {
+      const map = mapRef.current
+      if (!map || !route) return
+      try {
+        const { LatLngBounds } = await window.google.maps.importLibrary('core')
+        polylines = route.createPolylines({ polylineOptions: { strokeColor: '#073B83', strokeOpacity: 0.95, strokeWeight: 6 } })
+        polylines.forEach(line => line.setMap(map))
+        markers = await route.createWaypointAdvancedMarkers()
+        if (!active) {
+          polylines.forEach(line => line.setMap(null))
+          markers.forEach(marker => { marker.map = null })
+          return
+        }
+        markers.forEach(marker => { marker.map = map })
+        const bounds = new LatLngBounds()
+        route.path?.forEach(point => bounds.extend(point))
+        if (route.path?.length) map.fitBounds(bounds, 56)
+        setStatus('')
+      } catch {
+        if (active) setStatus('Route preview is temporarily unavailable.')
+      }
+    }
+    if (route) showRoute()
+    return () => {
+      active = false
+      polylines.forEach(line => line.setMap(null))
+      markers.forEach(marker => { marker.map = null })
+    }
+  }, [route, mapReady])
+
   return (
     <div className="relative h-[250px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[330px] lg:h-[390px]">
-      <div ref={containerRef} className="absolute inset-0" aria-label="Map to choose your pickup location" />
+      <div ref={containerRef} className="absolute inset-0" aria-label={route ? "Map showing selected driving route" : "Map to choose your pickup or destination location"} />
       {mapReady && (
         <>
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center">

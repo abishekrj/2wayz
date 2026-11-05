@@ -313,7 +313,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       )}
 
       {estimate && (
-        <section className="mt-3 grid grid-cols-3 items-stretch gap-1.5 rounded-2xl border border-blue-100 bg-white p-2.5 shadow-sm sm:mt-4 sm:gap-3 sm:p-3 md:grid-cols-4">
+        <section className="mt-3 grid grid-cols-3 items-stretch gap-1.5 rounded-2xl p-2.5 sm:mt-4 sm:gap-3 sm:p-3 md:grid-cols-4">
           <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
             <RouteIcon size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
             <div className="min-w-0">

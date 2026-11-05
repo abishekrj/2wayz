@@ -35,8 +35,8 @@ export default function LoginPage() {
         <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Password</span><span className="flex h-12 items-center rounded-xl border border-slate-200 px-3 focus-within:border-wayz-blue focus-within:ring-4 focus-within:ring-blue-100"><LockKeyhole size={17} className="mr-2 text-slate-400"/><input required minLength={8} maxLength={128} type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Enter your password" className="min-w-0 flex-1 border-0 bg-transparent text-sm outline-none ring-0 placeholder:text-slate-400 focus:ring-0"/><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility" className="ml-2 text-slate-400">{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></span></label>
         {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-xs leading-5 text-red-700">{error}</p>}
         <button disabled={submitting} type="submit" className="h-12 w-full rounded-xl bg-wayz-blue px-5 text-sm font-bold text-white shadow-sm hover:bg-wayz-navy disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Logging in…' : 'Login'}</button>
-        <div className="border-t border-slate-100 pt-2 text-center"><span className="bg-white px-3 text-xs text-slate-400">OR</span></div>
-        <button type="button" onClick={() => navigate('/driver/register')} className="h-11 w-full rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-700 hover:border-wayz-blue hover:bg-blue-50 -mb-3">Register as an auto driver</button>
+        <div className="pt-1 text-center"><span className="bg-white px-3 text-xs text-slate-400">OR</span></div>
+        <button type="button" onClick={() => navigate('/driver/register')} className="h-11 w-full rounded-xl px-5 text-sm font-bold text-slate-700 hover:bg-blue-50">Register as an auto driver</button>
       </form>
     </AuthLayout>
   )

@@ -29,6 +29,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
         const initialCenter = value?.location || TIRUVANNAMALAI_CENTER
         map = new Map(containerRef.current, {
           center: initialCenter,
+          mapId: 'DEMO_MAP_ID',
           zoom: value?.location ? 17 : 15,
           minZoom: 12,
           maxZoom: 20,
@@ -104,13 +105,12 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
         const { LatLngBounds } = await window.google.maps.importLibrary('core')
         polylines = route.createPolylines({ polylineOptions: { strokeColor: '#073B83', strokeOpacity: 0.95, strokeWeight: 6 } })
         polylines.forEach(line => line.setMap(map))
-        markers = await route.createWaypointAdvancedMarkers()
+        markers = await route.createWaypointAdvancedMarkers({ map })
         if (!active) {
           polylines.forEach(line => line.setMap(null))
           markers.forEach(marker => { marker.map = null })
           return
         }
-        markers.forEach(marker => { marker.map = map })
         const bounds = new LatLngBounds()
         route.path?.forEach(point => bounds.extend(point))
         if (route.path?.length) map.fitBounds(bounds, 56)

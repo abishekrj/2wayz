@@ -173,11 +173,11 @@ export default function BookingPanel({ initialDestination = null }) {
   )
 
   return (
-    <div id="book" className="relative z-30 w-full rounded-[24px] border border-slate-100 bg-white p-5 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:p-7">
+    <div id="book" className="relative z-30 w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:rounded-[24px] sm:p-7">
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Book your local auto</p>
-          <h2 className="mt-1 text-xl font-bold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
+          <h2 className="mt-1 text-lg font-bold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
         </div>
       </div>
 
@@ -189,13 +189,13 @@ export default function BookingPanel({ initialDestination = null }) {
           disabled={!pickup && !destination}
           aria-label="Swap pickup and destination"
           title="Swap pickup and destination"
-          className="mb-[9px] flex h-10 w-10 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 md:mb-[9px] md:h-10 md:w-10"
         >
           <ArrowLeftRight size={19} />
         </button>
         <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} savedPlaces={savedPlaces} />
 
-        <button disabled={busy} type="submit" className="flex h-[58px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70">
+        <button disabled={busy} type="submit" className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 sm:h-[58px]">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
         </button>

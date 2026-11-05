@@ -3,9 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight, ChevronDown, HelpCircle } from 'lucide-react'
 import BookingPanel from '../components/BookingPanel'
 import PickupMap from '../components/PickupMap'
-import GooglePlaceField from '../components/GooglePlaceField'
-import SavedPlacesManager from '../components/SavedPlacesManager'
-import { adminApi } from '../lib/adminApi'
 import { SiteHeader, SiteFooter } from '../components/SiteChrome'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
@@ -53,30 +50,10 @@ function useHomepageSections(){
 function SectionTitle({eyebrow,heading,description}){return <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">{eyebrow}</p><h2 className="mt-3 text-3xl font-bold text-wayz-ink sm:text-4xl">{heading}</h2>{description&&<p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>}</div>}
 function Hero({data,destination}) {
  const [pickup,setPickup]=useState(null)
- const [savedPlaces,setSavedPlaces]=useState([])
- const [isPassenger,setIsPassenger]=useState(false)
- const [showSavedPlaceManager,setShowSavedPlaceManager]=useState(false)
- useEffect(()=>{
-  let mounted=true
-  adminApi.passengerMe().then(()=>{
-   if(!mounted)return
-   setIsPassenger(true)
-   return adminApi.savedPlaces().then(result=>{if(mounted)setSavedPlaces(result.places||[])})
-  }).catch(()=>{if(mounted){setIsPassenger(false);setSavedPlaces([])}})
-  return()=>{mounted=false}
- },[])
  return <section className="relative isolate z-20 overflow-visible bg-[#f5f8fc] text-white">
-  <div className="relative">
-   <PickupMap value={pickup} onSelect={setPickup}/>
-   <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#061b35]/35 via-transparent to-[#f5f8fc]/55"/>
-   <div className="absolute left-4 right-4 top-3 z-30 mx-auto max-w-2xl rounded-2xl border border-white/80 bg-white/95 p-3 shadow-[0_12px_32px_rgba(3,25,58,.2)] backdrop-blur-sm sm:left-8 sm:right-auto sm:top-5 sm:w-[min(520px,calc(100%-4rem))] sm:p-4">
-    <GooglePlaceField label="PICKUP LOCATION" labelTone="dark" placeholder="Choose your pickup point" value={pickup} onSelect={setPickup} enableCurrentLocation savedPlaces={savedPlaces}/>
-    {isPassenger && <div className="mt-2 flex justify-end border-t border-slate-100 pt-2"><button type="button" onClick={()=>setShowSavedPlaceManager(true)} className="text-xs font-bold text-wayz-blue hover:underline">Manage saved places</button></div>}
-   </div>
-  </div>
+  <PickupMap value={pickup} onSelect={setPickup}/>
   <div className="relative z-20 mx-auto -mt-7 max-w-7xl px-4 pb-7 sm:-mt-12 sm:px-8 sm:pb-10 lg:-mt-14">
-   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup} savedPlaces={savedPlaces}/>
-   {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={()=>setShowSavedPlaceManager(false)} onChange={setSavedPlaces}/>}
+   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup}/>
   </div>
  </section>
 }

@@ -8,6 +8,8 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
   const [mapReady, setMapReady] = useState(false)
   const mapRef = useRef(null)
   const driverMarkerRef = useRef(null)
+  const driverRoutePolylineRef = useRef(null)
+  const driverRouteRequestRef = useRef({ lat: null, lng: null, requestedAt: 0 })
 
   useEffect(() => {
     let active = true
@@ -130,6 +132,63 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
     updateDriverMarker()
     return () => { active = false }
   }, [driverLocation?.lat, driverLocation?.lng, mapReady])
+
+  useEffect(() => {
+    let active = true
+
+    async function updateDriverToPickupRoute() {
+      const map = mapRef.current
+      const hasDriver = driverLocation && Number.isFinite(Number(driverLocation.lat)) && Number.isFinite(Number(driverLocation.lng))
+      const hasPickup = pickup?.lat != null && pickup?.lng != null && Number.isFinite(Number(pickup.lat)) && Number.isFinite(Number(pickup.lng))
+
+      if (!map || !hasDriver || !hasPickup || !mapReady) {
+        if (!hasDriver && driverRoutePolylineRef.current) {
+          driverRoutePolylineRef.current.setMap(null)
+          driverRoutePolylineRef.current = null
+        }
+        return
+      }
+
+      const origin = { lat: Number(driverLocation.lat), lng: Number(driverLocation.lng) }
+      const previous = driverRouteRequestRef.current
+      const toRadians = value => value * Math.PI / 180
+      const latDistance = toRadians(origin.lat - previous.lat)
+      const lngDistance = toRadians(origin.lng - previous.lng)
+      const distance = previous.lat == null ? Infinity : 6371000 * 2 * Math.asin(Math.sqrt(
+        Math.sin(latDistance / 2) ** 2 + Math.cos(toRadians(previous.lat)) * Math.cos(toRadians(origin.lat)) * Math.sin(lngDistance / 2) ** 2
+      ))
+      const elapsed = Date.now() - previous.requestedAt
+      // Avoid a Routes API request for every 5-second GPS heartbeat.
+      if (distance < 25 && elapsed < 15000) return
+      driverRouteRequestRef.current = { ...origin, requestedAt: Date.now() }
+
+      try {
+        const { Route: GoogleRoute } = await window.google.maps.importLibrary('routes')
+        const result = await GoogleRoute.computeRoutes({
+          origin,
+          destination: { lat: Number(pickup.lat), lng: Number(pickup.lng) },
+          travelMode: 'DRIVING',
+          fields: ['path'],
+        })
+        if (!active || !mapRef.current) return
+        const calculatedRoute = result.routes?.[0]
+        if (!calculatedRoute?.path?.length) return
+
+        const nextPolylines = calculatedRoute.createPolylines({
+          polylineOptions: { strokeColor: '#16a34a', strokeOpacity: 0.95, strokeWeight: 5, zIndex: 2 },
+        })
+        nextPolylines.forEach(polyline => polyline.setMap(mapRef.current))
+        if (driverRoutePolylineRef.current) driverRoutePolylineRef.current.setMap(null)
+        driverRoutePolylineRef.current = nextPolylines[0] || null
+        nextPolylines.slice(1).forEach(polyline => polyline.setMap(null))
+      } catch (error) {
+        console.error('Unable to update driver-to-pickup route:', error)
+      }
+    }
+
+    updateDriverToPickupRoute()
+    return () => { active = false }
+  }, [driverLocation?.lat, driverLocation?.lng, pickup?.lat, pickup?.lng, mapReady])
 
   return (
     <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-blue-100 bg-slate-100 sm:min-h-[340px] lg:h-full lg:min-h-[390px]">

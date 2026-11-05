@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import multer from 'multer'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
+import { validateImageUpload } from '../lib/validateImageUpload.js'
 
 const router = Router()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -81,7 +82,7 @@ router.post('/admin/upload', requireAdmin, (req, res, next) => {
   imageUpload.single('image')(req, res, error => {
     if (error) return res.status(400).json({ message: error.message || 'Image upload failed.' })
     if (!req.file) return res.status(400).json({ message: 'Choose an image to upload.' })
-    res.status(201).json({ url: `/uploads/${req.file.filename}` })
+    validateImageUpload(req, res, () => res.status(201).json({ url: `/uploads/${req.file.filename}` }))
   })
 })
 

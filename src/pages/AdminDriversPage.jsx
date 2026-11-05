@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Clock3, RefreshCw, Search, Users, X, FileClock } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api').replace(/\\/api\\/?$/, '')
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api').replace(/\/api\/?$/, '')
 
 const statuses = [
   { value: 'PENDING', label: 'Pending review' },

@@ -65,7 +65,7 @@ export default function AdminDriversPage() {
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Driver operations</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Registered drivers</h1>
+        <h1 className="mt-2 text-3xl font-bold text-wayz-ink">Registered drivers</h1>
         <p className="mt-2 text-sm text-slate-500">Review registrations and approve drivers before they can go online.</p>
       </div>
       <button onClick={load} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600"><RefreshCw size={16}/> Refresh</button>
@@ -104,7 +104,7 @@ export default function AdminDriversPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-extrabold text-wayz-ink">{driver.name}</h2>
+                    <h2 className="text-lg font-bold text-wayz-ink">{driver.name}</h2>
                     <span className={'rounded-full px-3 py-1 text-xs font-bold ' + (driver.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : driver.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800')}>{driver.status}</span>
                     {driver.isOnline && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Online</span>}
                   </div>

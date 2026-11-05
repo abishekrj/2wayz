@@ -44,7 +44,7 @@ export default function AdminLayout({ admin }) {
   }, [])
 
   useEffect(() => {
-    if (pathname.startsWith('/admin/drivers') || pathname.startsWith('/admin/wallet') || pathname.startsWith('/admin/driver-reports') || pathname.startsWith('/admin/live-map') || pathname.startsWith('/admin/driver-operations')) {
+    if (pathname.startsWith('/admin/drivers') || pathname.startsWith('/admin/wallet') || pathname.startsWith('/admin/driver-reports') || pathname.startsWith('/admin/live-map') || pathname.startsWith('/admin/driver-operations') || pathname.startsWith('/admin/subscriptions')) {
       setOpenSubmenu('driver')
     }
   }, [pathname])

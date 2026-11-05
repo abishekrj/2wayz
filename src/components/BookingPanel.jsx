@@ -187,7 +187,7 @@ export default function BookingPanel({ initialDestination = null }) {
         </button>
       </form>
 
-      {isPassenger && <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"><p className="text-xs text-slate-500">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
+      {isPassenger && <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"><p className="text-xs text-slate-500">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-blue-200 px-4 py-2.5 text-sm font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
       {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={setSavedPlaces}/>}
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 

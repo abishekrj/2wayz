@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight, ChevronDown, HelpCircle } from 'lucide-react'
 import BookingPanel from '../components/BookingPanel'
+import PickupMap from '../components/PickupMap'
 import { SiteHeader, SiteFooter } from '../components/SiteChrome'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
@@ -50,10 +51,26 @@ function SectionTitle({eyebrow,heading,description}){return <div className="mx-a
 function Hero({data,destination}) {
  const slides=Array.isArray(data.slides)&&data.slides.length?data.slides:defaults['hero-banner'].slides
  const [active,setActive]=useState(0)
+ const [pickup,setPickup]=useState(null)
  useEffect(()=>{if(active>=slides.length)setActive(0)},[active,slides.length])
  useEffect(()=>{const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),6500);return()=>window.clearInterval(timer)},[slides.length])
  const slide=slides[active]||slides[0]
- return <section className="hero-pattern relative isolate z-20 min-h-[430px] overflow-visible text-white sm:min-h-[450px]"><div className="absolute inset-0 bg-gradient-to-r from-[#042b65] via-[#073b83] to-[#0b4b91]"/>{slide.imageUrl&&<img src={mediaUrl(slide.imageUrl)} alt="" aria-hidden="true" loading="eager" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover object-center opacity-25 transition-opacity duration-500"/>}<div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 pt-8 sm:pb-10 sm:pt-10 lg:px-8 lg:pt-12"><div className="flex items-start justify-between gap-5"><div className="max-w-3xl"><span className="hidden items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-blue-50 md:inline-flex"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span><h1 className="mt-3 hidden whitespace-pre-line text-[1.75rem] font-bold leading-[1.12] tracking-tight sm:block sm:text-3xl lg:text-[40px]">{slide.title}</h1><p className="mt-2 hidden max-w-2xl text-xs leading-5 text-blue-50 sm:block sm:text-sm">{slide.description}</p></div></div><div className="relative z-20 mt-0 w-full sm:mt-8"><BookingPanel initialDestination={destination}/></div></div></section>
+ return <section className="relative isolate z-20 overflow-visible bg-[#f5f8fc] text-white">
+  <div className="relative">
+   <PickupMap value={pickup} onSelect={setPickup}/>
+   <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#061b35]/35 via-transparent to-[#f5f8fc]/55"/>
+   <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 mx-auto hidden max-w-7xl px-5 pt-8 sm:px-8 md:block lg:pt-10">
+    <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+     <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-[#062b58]/55 px-4 py-2 text-[10px] font-bold tracking-[.12em] text-white backdrop-blur-sm"><MapPin size={14} className="text-wayz-yellow"/>{slide.eyebrow}</span>
+     <h1 className="mt-3 whitespace-pre-line text-3xl font-bold leading-[1.12] tracking-tight lg:text-[40px]">{slide.title}</h1>
+     <p className="mt-2 max-w-2xl text-sm leading-5 text-white">{slide.description}</p>
+    </div>
+   </div>
+  </div>
+  <div className="relative z-20 mx-auto -mt-5 max-w-7xl px-5 pb-8 sm:-mt-12 sm:px-8 sm:pb-10">
+   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup}/>
+  </div>
+ </section>
 }
 
 const defaultFaqs = [

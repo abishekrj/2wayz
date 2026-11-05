@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, CarFront, MapPin, RefreshCw } from 'lucide-react'
+import { CalendarDays, CarFront, MapPin, RefreshCw, Star } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import { adminApi } from '../lib/adminApi'
 
@@ -22,6 +22,10 @@ export default function MyBookingsPage() {
   const [cancelDetails, setCancelDetails] = useState({})
   const [cancellingId, setCancellingId] = useState('')
   const [actionMessage, setActionMessage] = useState('')
+  const [reviewStars, setReviewStars] = useState({})
+  const [reviewTags, setReviewTags] = useState({})
+  const [reviewComments, setReviewComments] = useState({})
+  const [reviewingId, setReviewingId] = useState('')
 
   async function load() {
     setLoading(true)
@@ -37,6 +41,16 @@ export default function MyBookingsPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  async function submitReview(item) {
+    setError(''); setActionMessage(''); setReviewingId(item.id)
+    try {
+      const result = await adminApi.submitRideRating(item.id, { stars: reviewStars[item.id] || 5, tags: reviewTags[item.id] || [], comment: reviewComments[item.id] || '' })
+      setBookings(current => current.map(ride => ride.id === item.id ? { ...ride, rating: result.rating } : ride))
+      setActionMessage(result.message || 'Thank you for your feedback.')
+    } catch (err) { setError(err.message || 'Could not submit your rating.') }
+    finally { setReviewingId('') }
+  }
 
   async function cancelRide(item) {
     const reason = cancelReasons[item.id] || 'CHANGE_OF_PLANS'

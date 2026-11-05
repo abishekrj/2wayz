@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi } from '../lib/adminApi'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut, CarFront } from 'lucide-react'
+import { Menu, X, ChevronDown, MapPin, UserRound, CalendarCheck, LogOut, CarFront, Facebook, Instagram, Youtube, MessageCircle, Linkedin, Twitter } from 'lucide-react'
 import Brand from './Brand'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api'
@@ -155,9 +155,20 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const pages = useCmsNavigation()
+  const [socialLinks, setSocialLinks] = useState({})
+  useEffect(() => {
+    let active = true
+    fetch(API_BASE + '/homepage/social-links/public')
+      .then(response => { if (!response.ok) throw new Error('Social links unavailable'); return response.json() })
+      .then(data => { if (active) setSocialLinks(data.links || {}) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
   const fallbackFooterPages = [{slug:'about',footerLabel:'About 2WAYZ'},{slug:'how-it-works',footerLabel:'How it works'},{slug:'drivers',footerLabel:'For drivers'},{slug:'contact',footerLabel:'Contact'},{slug:'terms-and-conditions',footerLabel:'Terms and Conditions'},{slug:'privacy-policy',footerLabel:'Privacy Policy'}]
   const footerPages = [...fallbackFooterPages.map(fallback => pages.find(page => page.slug === fallback.slug) || fallback), ...pages.filter(page => !fallbackFooterPages.some(fallback => fallback.slug === page.slug))]
   return (
-    <footer id="contact" className="bg-[#052f6c] text-white"><div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_.8fr_.8fr] lg:px-8"><div><Brand light/><p className="mt-4 max-w-xs text-sm leading-6 text-blue-100">Your local mobility partner in Tiruvannamalai. Ride local. Reach easy.</p></div><div><h3 className="font-bold">Explore</h3><div className="mt-4 grid gap-3 text-sm text-blue-100">{footerPages.map(page=><Link key={page.slug} to={'/'+page.slug} className="hover:text-wayz-yellow">{page.footerLabel}</Link>)}</div></div><div><h3 className="font-bold">Get in touch</h3><p className="mt-4 text-sm text-blue-100">Tiruvannamalai, Tamil Nadu</p><p className="mt-3 inline-flex items-center gap-2 text-sm text-blue-100"><MapPin size={16}/> Tiruvannamalai, Tamil Nadu</p></div></div><div className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-blue-200 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span>© {new Date().getFullYear()} 2WAYZ. All rights reserved.</span><span>Local mobility. Made simple.</span></div></div></footer>
+    <footer id="contact" className="bg-[#052f6c] text-white"><div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_.8fr_.8fr] lg:px-8"><div><Brand light/><p className="mt-4 max-w-xs text-sm leading-6 text-blue-100">Your local mobility partner in Tiruvannamalai. Ride local. Reach easy.</p><div className="mt-5 flex flex-wrap items-center gap-3" aria-label="Follow 2WAYZ on social media">{[
+        ['facebook', Facebook, 'Facebook'], ['instagram', Instagram, 'Instagram'], ['youtube', Youtube, 'YouTube'], ['whatsapp', MessageCircle, 'WhatsApp'], ['linkedin', Linkedin, 'LinkedIn'], ['x', Twitter, 'X']
+      ].filter(([key]) => typeof socialLinks[key] === 'string' && /^https:\/\//i.test(socialLinks[key])).map(([key, Icon, label]) => <a key={key} href={socialLinks[key]} target="_blank" rel="noopener noreferrer" aria-label={`2WAYZ on ${label}`} title={label} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-blue-100 transition hover:border-wayz-yellow hover:bg-white/10 hover:text-wayz-yellow"><Icon size={19}/></a>)}</div></div><div><h3 className="font-bold">Explore</h3><div className="mt-4 grid gap-3 text-sm text-blue-100">{footerPages.map(page=><Link key={page.slug} to={'/'+page.slug} className="hover:text-wayz-yellow">{page.footerLabel}</Link>)}</div></div><div><h3 className="font-bold">Get in touch</h3><p className="mt-4 text-sm text-blue-100">Tiruvannamalai, Tamil Nadu</p><p className="mt-3 inline-flex items-center gap-2 text-sm text-blue-100"><MapPin size={16}/> Tiruvannamalai, Tamil Nadu</p></div></div><div className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-blue-200 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span>© {new Date().getFullYear()} 2WAYZ. All rights reserved.</span><span>Local mobility. Made simple.</span></div></div></footer>
   )
 }

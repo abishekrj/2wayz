@@ -260,7 +260,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
 
 
       {savedPlacesOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/55 p-3 sm:p-5" onMouseDown={event => { if (event.target === event.currentTarget) setSavedPlacesOpen(false) }}>
+        <div role="dialog" aria-modal="true" aria-label="Manage saved places" className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/55 p-3 sm:p-5" onMouseDown={event => { if (event.target === event.currentTarget) setSavedPlacesOpen(false) }}>
           <div className="flex max-h-[min(520px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">
               {savedPlacesMode !== 'add' && <button type="button" aria-label="Back" onClick={() => { setSavedPlacesMode('add'); setEditingSavedPlace(null); setSavedPlaceLocation(null); setSavedPlaceError('') }} className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"><ChevronLeft size={20}/></button>}

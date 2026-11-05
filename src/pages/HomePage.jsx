@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, MapPin, Landmark, Mountain, Leaf, Sun, Sparkles, ArrowUpRight, Zap, CalendarClock, BadgeIndianRupee, ShieldCheck, CheckCircle2, Smartphone, Route, UserPlus, Wallet, HeartHandshake, ChevronLeft, ChevronRight, ChevronDown, HelpCircle } from 'lucide-react'
 import BookingPanel from '../components/BookingPanel'
@@ -109,6 +109,9 @@ function Events({data}){
 export default function HomePage(){
  const cms=useHomepageSections(),location=useLocation()
  const [destination,setDestination]=useState(()=>location.state?.destination || null)
+ const placesCarouselRef=useRef(null)
+ const scrollPlaces=direction=>{const el=placesCarouselRef.current;if(!el)return;const card=el.querySelector(':scope > button');el.scrollBy({left:direction*(card?.getBoundingClientRect().width||el.clientWidth),behavior:'smooth'})}
+ useEffect(()=>{const el=placesCarouselRef.current;if(!el||featuredPlaces.length<2)return;const timer=window.setInterval(()=>{const card=el.querySelector(':scope > button');if(!card)return;const step=card.getBoundingClientRect().width+16;const max=el.scrollWidth-el.clientWidth;if(el.scrollLeft+el.clientWidth>=max-12)el.scrollTo({left:0,behavior:'smooth'});else el.scrollBy({left:step,behavior:'smooth'})},4500);return()=>window.clearInterval(timer)},[featuredPlaces.length])
  useEffect(()=>{if(destination){const timer=window.setTimeout(()=>document.getElementById('book')?.scrollIntoView({behavior:'smooth',block:'center'}),300);return()=>window.clearTimeout(timer)}},[destination])
  const benefits=cms.benefits.items||[]
  const steps=cms['how-it-works'].steps||[]
@@ -140,13 +143,19 @@ export default function HomePage(){
         <h2 className="mt-4 text-3xl font-bold tracking-tight text-wayz-ink sm:text-4xl">{cms['nearby-places'].heading}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">Discover well-loved temples, peaceful retreats and special places around our town.</p>
       </div>
-      <Link to="/places" className="inline-flex w-fit items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#174f91]">View all <ArrowRight size={16}/></Link>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex gap-2 sm:hidden">
+          <button type="button" onClick={()=>scrollPlaces(-1)} aria-label="Previous place" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-wayz-blue hover:text-wayz-blue"><ChevronLeft size={19}/></button>
+          <button type="button" onClick={()=>scrollPlaces(1)} aria-label="Next place" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-wayz-blue hover:text-wayz-blue"><ChevronRight size={19}/></button>
+        </div>
+        <Link to="/places" className="inline-flex w-fit items-center gap-2 rounded-xl bg-wayz-blue px-5 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#174f91]">View all <ArrowRight size={16}/></Link>
+      </div>
     </div>
-    <div className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div ref={placesCarouselRef} className="mt-9 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:pb-0 lg:grid-cols-4" style={{scrollbarWidth:'none'}}>
       {featuredPlaces.map((entry,i)=>{
         const place=typeof entry==='string'?{name:entry}:entry;
         const PlaceIcon=[Landmark,Mountain,Leaf,Sun,Sparkles,Landmark,Leaf,Mountain][i%8];
-        return <button key={place.name||i} onClick={()=>{setDestination({name:place.name,searchText:place.name+', Tiruvannamalai, Tamil Nadu, India',address:place.name+', Tiruvannamalai, Tamil Nadu, India',placeId:null,location:null});document.getElementById('book')?.scrollIntoView({behavior:'smooth',block:'center'})}} className="group relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white text-left shadow-[0_8px_28px_rgba(15,45,80,0.055)] transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(15,45,80,0.13)]">
+        return <button key={place.name||i} onClick={()=>{setDestination({name:place.name,searchText:place.name+', Tiruvannamalai, Tamil Nadu, India',address:place.name+', Tiruvannamalai, Tamil Nadu, India',placeId:null,location:null});document.getElementById('book')?.scrollIntoView({behavior:'smooth',block:'center'})}} className="group relative w-[86%] shrink-0 snap-center overflow-hidden rounded-[24px] border border-slate-200/80 bg-white text-left shadow-[0_8px_28px_rgba(15,45,80,0.055)] sm:w-auto sm:shrink transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(15,45,80,0.13)]">
           <div className="relative aspect-[5/4] overflow-hidden bg-[#e8f0fb]">
             {place.imageUrl||place.image
               ? <img src={mediaUrl(place.imageUrl||place.image)} alt={place.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"/>

@@ -60,10 +60,35 @@ async function sendPaymentProof(req, res, next, adminAccess = false) {
 router.get('/plans', requireDriver, async (_req, res, next) => { try { res.json({ plans: await prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] }) }) } catch (error) { next(error) } })
 router.get('/me', requireDriver, async (req, res, next) => {
   try {
+    const driverId = req.driverAuth.sub
     const now = new Date()
+
+    // Self-heal subscriptions approved by older app versions. The driver must
+    // not need to visit the Super Admin registry for an approved plan to activate.
+    const approvedPayments = await prisma.driverSubscriptionPayment.findMany({
+      where: { driverId, status: 'APPROVED' },
+      orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }]
+    })
+    for (const payment of approvedPayments) {
+      const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
+      if (existing) continue
+      const approvalTime = payment.reviewedAt || payment.createdAt
+      const previous = await prisma.driverSubscription.findFirst({
+        where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
+        orderBy: { expiresAt: 'desc' }
+      })
+      const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime ? previous.expiresAt : approvalTime
+      const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+      await prisma.driverSubscription.upsert({
+        where: { paymentId: payment.id },
+        create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status: 'ACTIVE' },
+        update: {}
+      })
+    }
+
     const [subscription, payments, plans] = await Promise.all([
-      prisma.driverSubscription.findFirst({ where: { driverId: req.driverAuth.sub, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
-      prisma.driverSubscriptionPayment.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true, proofUrl: true } }),
+      prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
+      prisma.driverSubscriptionPayment.findMany({ where: { driverId }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true, proofUrl: true } }),
       prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] })
     ])
     res.json({ subscription, payments: payments.map(payment => ({ ...payment, proofUrl: privatePaymentProofUrl(payment) })), plans, isSubscribed: Boolean(subscription) })

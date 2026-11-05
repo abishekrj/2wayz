@@ -28,6 +28,41 @@ const imageUpload = multer({
   }
 })
 
+const defaultSocialLinks = { facebook: '', instagram: '', youtube: '', whatsapp: '', linkedin: '', x: '' }
+
+router.get('/social-links/public', async (req, res, next) => {
+  try {
+    const section = await prisma.homePageSection.findUnique({ where: { slug: 'social-links' } })
+    res.json({ links: section?.isPublished ? { ...defaultSocialLinks, ...(section.content?.links || {}) } : defaultSocialLinks })
+  } catch (error) { next(error) }
+})
+
+router.get('/social-links/admin', requireAdmin, async (req, res, next) => {
+  try {
+    const section = await prisma.homePageSection.findUnique({ where: { slug: 'social-links' } })
+    res.json({ links: { ...defaultSocialLinks, ...(section?.content?.links || {}) } })
+  } catch (error) { next(error) }
+})
+
+router.put('/social-links/admin', requireAdmin, async (req, res, next) => {
+  try {
+    const incoming = req.body?.links
+    if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) return res.status(400).json({ message: 'Social media URLs are required.' })
+    const links = {}
+    for (const key of Object.keys(defaultSocialLinks)) {
+      const value = incoming[key] == null ? '' : String(incoming[key]).trim()
+      if (value && (!/^https:\/\//i.test(value) || value.length > 500)) return res.status(400).json({ message: `Enter a valid HTTPS URL for ${key}.` })
+      links[key] = value
+    }
+    const section = await prisma.homePageSection.upsert({
+      where: { slug: 'social-links' },
+      update: { title: 'Social Links', content: { links }, isPublished: true },
+      create: { slug: 'social-links', title: 'Social Links', content: { links }, isPublished: true, sortOrder: 99 }
+    })
+    res.json({ links: section.content.links, message: 'Social links saved successfully.' })
+  } catch (error) { next(error) }
+})
+
 router.get('/public', async (req, res, next) => {
   try {
     const sections = await prisma.homePageSection.findMany({ where: { isPublished: true }, orderBy: { sortOrder: 'asc' }, select: { slug: true, title: true, content: true, sortOrder: true } })

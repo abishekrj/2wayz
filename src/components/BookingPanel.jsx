@@ -148,7 +148,10 @@ export default function BookingPanel({ initialDestination = null }) {
 
     setBusy(true)
     try {
-      const routeEstimate = await calculateRoute(pickup, destination, fareSettings)
+      const latestFare = await adminApi.publicFareSettings().catch(() => null)
+      const activeFareSettings = latestFare?.settings || fareSettings
+      if (latestFare?.settings) setFareSettings(latestFare.settings)
+      const routeEstimate = await calculateRoute(pickup, destination, activeFareSettings)
       setEstimate(routeEstimate)
       setBooking({ mode: 'instant', pickup, destination, estimate: routeEstimate, vehicle: 'auto' })
       navigate('/travel-details')

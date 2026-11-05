@@ -75,6 +75,7 @@ export const adminApi = {
   },
   driverSubscriptionMe: () => request('/subscriptions/me'),
   submitSubscriptionPayment: async (form) => { const response = await fetch(`${API_BASE}/subscriptions/payments`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Subscription request failed.'); return data },
+  adminSubscriptions: (status = 'ACTIVE') => request(`/subscriptions/admin/subscriptions?status=${encodeURIComponent(status)}`),
   adminSubscriptionPlans: () => request('/subscriptions/admin/plans'),
   createSubscriptionPlan: (data) => request('/subscriptions/admin/plans', { method: 'POST', body: JSON.stringify(data) }),
   updateSubscriptionPlan: (id, data) => request(`/subscriptions/admin/plans/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),

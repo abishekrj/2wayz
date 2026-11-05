@@ -88,7 +88,7 @@ export default function PickupMap({ value, onSelect }) {
   }, [value?.location?.lat, value?.location?.lng, mapReady])
 
   return (
-    <div className="relative h-[285px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[350px] lg:h-[410px]">
+    <div className="relative h-[250px] w-full overflow-hidden bg-[#eaf1f8] sm:h-[330px] lg:h-[390px]">
       <div ref={containerRef} className="absolute inset-0" aria-label="Map to choose your pickup location" />
       {mapReady && (
         <>
@@ -96,7 +96,7 @@ export default function PickupMap({ value, onSelect }) {
             <MapPin size={43} fill="#073B83" stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
             <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-wayz-yellow" />
           </div>
-          <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/95 px-3.5 py-2 text-[11px] font-semibold text-wayz-ink shadow-lg backdrop-blur-sm">
+          <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/80 bg-white/95 px-3.5 py-2 text-[11px] font-semibold text-wayz-ink shadow-lg backdrop-blur-sm">
             <LocateFixed size={14} className="text-wayz-blue" />
             Drag the map to adjust pickup
           </div>

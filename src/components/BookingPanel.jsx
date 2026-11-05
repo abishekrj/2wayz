@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
   Search, Info, Clock3,
-  Route as RouteIcon, LoaderCircle, MapPin, ArrowLeftRight,
+  Route as RouteIcon, LoaderCircle, ArrowLeftRight,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
@@ -56,7 +56,7 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, savedPlaces = [] }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
@@ -158,8 +158,8 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         <h2 className="text-2xl font-bold leading-tight text-white">Where would you like to go?</h2>
       </div>
 
-      <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-        <GooglePlaceField key={destination?.name || 'destination-empty'} label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} savedPlaces={savedPlaces} />
+      <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Choose your pickup point" value={pickup} onSelect={selectPickup} enableCurrentLocation />
         <button
           type="button"
           onClick={swapLocations}
@@ -170,6 +170,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         >
           <ArrowLeftRight size={19} />
         </button>
+        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
         <button disabled={busy} type="submit" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 sm:h-[58px]">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}

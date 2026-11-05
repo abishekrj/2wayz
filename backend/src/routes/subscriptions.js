@@ -115,6 +115,30 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.query.status || 'ACTIVE').toUpperCase()
     const now = new Date()
+
+    // Repair approved legacy payments that predate subscription record creation.
+    // paymentId is unique, so this is safe to run repeatedly and concurrently.
+    const approvedPayments = await prisma.driverSubscriptionPayment.findMany({
+      where: { status: 'APPROVED' },
+      select: { id: true, driverId: true, planName: true, amount: true, durationDays: true, reviewedAt: true, updatedAt: true, createdAt: true }
+    })
+    for (const payment of approvedPayments) {
+      const startsAt = payment.reviewedAt || payment.updatedAt || payment.createdAt
+      const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+      await prisma.driverSubscription.upsert({
+        where: { paymentId: payment.id },
+        create: {
+          driverId: payment.driverId,
+          paymentId: payment.id,
+          planName: payment.planName,
+          amount: payment.amount,
+          startsAt,
+          expiresAt,
+          status: 'ACTIVE'
+        },
+        update: {}
+      })
+    }
     let where = {}
     if (status === 'ACTIVE') where = { status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }
     else if (status === 'EXPIRED') where = { OR: [{ status: 'EXPIRED' }, { expiresAt: { lte: now } }] }

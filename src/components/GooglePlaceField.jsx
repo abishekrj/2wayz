@@ -82,13 +82,19 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   }, [editing, dropdownOpen, suggestions.length])
 
   useEffect(() => {
-    if (!editing || !query.trim() || !placesRef.current) {
+    if (!editing || !query.trim()) {
       setSuggestions([])
+      setSearching(false)
+      return
+    }
+    if (!placesRef.current) {
+      setSuggestions([])
+      setSearching(loading)
       return
     }
     const requestId = ++requestRef.current
+    setSearching(true)
     const timer = window.setTimeout(async () => {
-      setSearching(true)
       try {
         const { suggestions: results = [] } = await placesRef.current.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input: query.trim(),
@@ -103,7 +109,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       }
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [query, editing])
+  }, [query, editing, loading])
 
   async function useCurrentLocation() {
     if (!navigator.geolocation) {
@@ -260,6 +266,11 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50"><Star size={15}/></span>
                 Manage saved places
               </button>
+            </div>
+          )}
+          {query.trim() && suggestions.length === 0 && (
+            <div className="px-4 py-3 text-sm text-slate-500" role="status" aria-live="polite">
+              {searching ? 'Searching nearby places…' : error || 'No places found. Try a different search.'}
             </div>
           )}
           {suggestions.map((item, index) => {

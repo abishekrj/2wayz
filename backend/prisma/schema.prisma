@@ -62,6 +62,12 @@ model Driver {
   passwordHash      String
   vehicleNumber     String        @unique
   licenceNumber     String
+  drivingLicenceExpiryDate DateTime?
+  vehicleInsuranceExpiryDate DateTime?
+  fcExpiryDate      DateTime?
+  age               Int?
+  profilePhotoUrl   String?
+  complianceNoticeSentAt DateTime?
   serviceArea       String        @default("Tiruvannamalai")
   status            String        @default("PENDING")
   isOnline          Boolean       @default(false)

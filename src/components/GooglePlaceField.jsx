@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, LoaderCircle } from 'lucide-react'
+import { MapPin, LoaderCircle, X } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 let mapsPromise
@@ -159,7 +159,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   }
 
   return (
-    <div className="relative z-40 min-w-0">
+    <div className="relative z-10 min-w-0 focus-within:z-[60]">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
@@ -181,10 +181,29 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">{selectedName}</span>
         )}
         {(loading || searching || locating) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
+        {selectedName && !editing && (
+          <button
+            type="button"
+            aria-label={`Clear ${label.toLowerCase()}`}
+            title="Clear location"
+            onClick={event => {
+              event.stopPropagation()
+              setQuery('')
+              setSuggestions([])
+              setError('')
+              setEditing(true)
+              onSelect(null)
+              requestAnimationFrame(() => inputRef.current?.focus())
+            }}
+            className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-wayz-blue"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        )}
       </div>
 
       {editing && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-[1000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+        <div className="absolute left-0 right-0 top-full z-[70] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
           {suggestions.map((item, index) => {
             const prediction = item.placePrediction
             return (

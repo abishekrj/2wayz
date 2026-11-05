@@ -5,7 +5,7 @@ export async function processDriverSubscriptions() {
   const now = new Date()
   const reminderLimit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
   const reminders = await prisma.driverSubscription.findMany({
-    where: { status: 'ACTIVE', expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
+    where: { status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
     select: { id: true, driverId: true, planName: true, expiresAt: true }
   })
   for (const subscription of reminders) {
@@ -30,12 +30,13 @@ export async function processDriverSubscriptions() {
       data: { status: 'EXPIRED' }
     })
     if (!changed.count) continue
+    const currentSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: subscription.driverId, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, select: { id: true } })
     const driver = await prisma.driver.findUnique({ where: { id: subscription.driverId }, select: { isOnline: true } })
-    if (driver?.isOnline) {
+    if (!currentSubscription && driver?.isOnline) {
       await prisma.driver.update({ where: { id: subscription.driverId }, data: { isOnline: false } })
       await prisma.driverActivity.create({ data: { driverId: subscription.driverId, eventType: 'OFFLINE', description: 'Automatically set offline because the 2WAYZ subscription expired.' } })
     }
-    await notify({
+    if (!currentSubscription) await notify({
       role: 'DRIVER', recipientId: subscription.driverId, type: 'SUBSCRIPTION_EXPIRED',
       title: '2WAYZ subscription expired',
       message: 'Your ' + subscription.planName + ' subscription has expired. Submit a renewal payment and wait for Super Admin confirmation before receiving new rides.'

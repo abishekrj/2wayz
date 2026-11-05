@@ -7,7 +7,6 @@ import {
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import RouteMap from './RouteMap'
-import SavedPlacesManager from './SavedPlacesManager'
 import { adminApi } from '../lib/adminApi'
 
 const DEFAULT_FARE = { baseFare: 30, includedDistanceKm: 1, perKmRate: 18, minimumFare: 50, roundingIncrement: 5, isActive: true }
@@ -57,7 +56,7 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, savedPlaces = [], onSavedPlacesChange, isPassenger = false }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, savedPlaces = [] }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
@@ -71,7 +70,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   const [activeRide, setActiveRide] = useState(null)
   const [checkingActiveRide, setCheckingActiveRide] = useState(true)
   const [fareSettings, setFareSettings] = useState(DEFAULT_FARE)
-  const [showSavedPlaceManager, setShowSavedPlaceManager] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -178,8 +176,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         </button>
       </form>
 
-      {isPassenger && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-3"><p className="text-xs text-blue-100">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-white/70 bg-white px-4 py-2.5 text-sm font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
-      {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={onSavedPlacesChange || (() => {})}/>}
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       {estimate && (

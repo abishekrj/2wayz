@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
 import { ensureRideStartOtp } from '../lib/rideStartOtp.js'
+import { getFareSettings, getEffectiveFareSettings } from './fareSettings.js'
 
 const router = Router()
 function requirePassenger(req, res, next) {
@@ -28,9 +29,12 @@ function validPoint(point) {
     Number.isFinite(Number(point.location?.lat)) && Number(point.location.lat) >= -90 && Number(point.location.lat) <= 90 &&
     Number.isFinite(Number(point.location?.lng)) && Number(point.location.lng) >= -180 && Number(point.location.lng) <= 180
 }
-function fareFor(distanceKmValue) {
-  const raw = Math.max(50, 30 + Math.max(0, distanceKmValue - 1) * 18)
-  return Math.ceil(raw / 5) * 5
+function fareFor(distanceKmValue, settings) {
+  const raw = Math.max(
+    settings.minimumFare,
+    settings.baseFare + Math.max(0, distanceKmValue - settings.includedDistanceKm) * settings.perKmRate
+  )
+  return Math.ceil(raw / settings.roundingIncrement) * settings.roundingIncrement
 }
 
 async function calculateVerifiedRoute(origin, destination) {
@@ -153,7 +157,8 @@ router.post('/', requirePassenger, async (req, res, next) => {
       if (!Number.isFinite(scheduledAt.getTime()) || scheduledAt.getTime() < Date.now() + 10 * 60 * 1000 || scheduledAt.getTime() > Date.now() + 30 * 24 * 60 * 60 * 1000) return res.status(400).json({ message: 'Choose a scheduled time at least 10 minutes and no more than 30 days from now.' })
     }
     const estimatedMinutes = Math.min(600, Math.max(1, verifiedRoute.durationMinutes || Math.round(distanceKmValue * 4)))
-    const fare = fareFor(distanceKmValue)
+    const fareSettings = getEffectiveFareSettings(await getFareSettings())
+    const fare = fareFor(distanceKmValue, fareSettings)
     const reference = '2W-' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 90 + 10)
     const booking = await prisma.$transaction(async tx => {
       // Serialize booking creation per passenger so two simultaneous requests cannot create duplicate active rides.
@@ -178,6 +183,11 @@ router.post('/', requirePassenger, async (req, res, next) => {
         distanceKm: Number(distanceKmValue.toFixed(2)),
         estimatedMinutes,
         estimatedFare: fare,
+        fareBaseAmount: fareSettings.baseFare,
+        fareIncludedDistanceKm: fareSettings.includedDistanceKm,
+        farePerKmRate: fareSettings.perKmRate,
+        fareMinimumAmount: fareSettings.minimumFare,
+        fareRoundingIncrement: fareSettings.roundingIncrement,
         mode,
         scheduledAt,
         ...(mode === 'schedule' ? { dispatchStatus: 'SCHEDULED' } : {})
@@ -211,7 +221,7 @@ router.post('/', requirePassenger, async (req, res, next) => {
     const responseMessage = mode === 'schedule'
       ? `Scheduled ride saved. 2WAYZ will start finding drivers ${Math.min(120, Math.max(1, Number(process.env.SCHEDULED_DISPATCH_LEAD_MINUTES) || 15))} minutes before pickup.`
       : offersCreated ? 'Ride request sent to nearby drivers.' : 'Ride request saved. No nearby online driver is available right now.'
-    res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, mode: booking.mode, scheduledAt: booking.scheduledAt, dispatchStatus: booking.dispatchStatus }, offersCreated, message: responseMessage })
+    res.status(201).json({ booking: { id: booking.id, reference: booking.reference, status: booking.status, distanceKm: booking.distanceKm, estimatedMinutes: booking.estimatedMinutes, estimatedFare: booking.estimatedFare, fareBaseAmount: booking.fareBaseAmount, fareIncludedDistanceKm: booking.fareIncludedDistanceKm, farePerKmRate: booking.farePerKmRate, fareMinimumAmount: booking.fareMinimumAmount, fareRoundingIncrement: booking.fareRoundingIncrement, mode: booking.mode, scheduledAt: booking.scheduledAt, dispatchStatus: booking.dispatchStatus }, offersCreated, message: responseMessage })
   } catch (error) { next(error) }
 })
 

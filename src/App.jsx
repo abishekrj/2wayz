@@ -45,16 +45,39 @@ function ScrollToTop() {
 function ModalBodyScrollLock() {
   useEffect(() => {
     let locked = false
-    let previousOverflow = ''
+    let scrollY = 0
+    let previousStyles = null
 
     const syncScrollLock = () => {
       const modalOpen = Boolean(document.querySelector('[aria-modal="true"]'))
       if (modalOpen && !locked) {
-        previousOverflow = document.body.style.overflow
+        scrollY = window.scrollY
+        previousStyles = {
+          bodyOverflow: document.body.style.overflow,
+          bodyPosition: document.body.style.position,
+          bodyTop: document.body.style.top,
+          bodyWidth: document.body.style.width,
+          bodyLeft: document.body.style.left,
+          bodyRight: document.body.style.right,
+          htmlOverflow: document.documentElement.style.overflow,
+        }
+        document.documentElement.style.overflow = 'hidden'
         document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${scrollY}px`
+        document.body.style.left = '0'
+        document.body.style.right = '0'
+        document.body.style.width = '100%'
         locked = true
       } else if (!modalOpen && locked) {
-        document.body.style.overflow = previousOverflow
+        document.documentElement.style.overflow = previousStyles.htmlOverflow
+        document.body.style.overflow = previousStyles.bodyOverflow
+        document.body.style.position = previousStyles.bodyPosition
+        document.body.style.top = previousStyles.bodyTop
+        document.body.style.width = previousStyles.bodyWidth
+        document.body.style.left = previousStyles.bodyLeft
+        document.body.style.right = previousStyles.bodyRight
+        window.scrollTo(0, scrollY)
         locked = false
       }
     }
@@ -65,7 +88,16 @@ function ModalBodyScrollLock() {
 
     return () => {
       observer.disconnect()
-      if (locked) document.body.style.overflow = previousOverflow
+      if (locked && previousStyles) {
+        document.documentElement.style.overflow = previousStyles.htmlOverflow
+        document.body.style.overflow = previousStyles.bodyOverflow
+        document.body.style.position = previousStyles.bodyPosition
+        document.body.style.top = previousStyles.bodyTop
+        document.body.style.width = previousStyles.bodyWidth
+        document.body.style.left = previousStyles.bodyLeft
+        document.body.style.right = previousStyles.bodyRight
+        window.scrollTo(0, scrollY)
+      }
     }
   }, [])
 

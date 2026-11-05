@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star, IndianRupee } from 'lucide-react'
+import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star, IndianRupee, CalendarClock } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -78,6 +78,7 @@ export default function AdminLayout({ admin }) {
             <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
               <NavLink to="/admin/drivers" onClick={() => setMobileOpen(false)} className={submenuClass}><Users size={14}/>Registered Drivers</NavLink>
               <NavLink to="/admin/wallet" onClick={() => setMobileOpen(false)} className={submenuClass}><Wallet size={14}/>Driver Wallet</NavLink>
+              <NavLink to="/admin/subscriptions" onClick={() => setMobileOpen(false)} className={submenuClass}><CalendarClock size={14}/>Subscriptions</NavLink>
               <NavLink to="/admin/driver-reports" onClick={() => setMobileOpen(false)} className={submenuClass}><BarChart3 size={14}/>Driver Reports</NavLink>
               <NavLink to="/admin/live-map" onClick={() => setMobileOpen(false)} className={submenuClass}><MapPinned size={14}/>Live Driver Maps</NavLink>
               <NavLink to="/admin/driver-operations" onClick={() => setMobileOpen(false)} className={submenuClass}><Activity size={14}/>Driver Operations</NavLink>

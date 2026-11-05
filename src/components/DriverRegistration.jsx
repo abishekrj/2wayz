@@ -12,7 +12,7 @@ export default function DriverRegistration() {
   const [profilePhoto, setProfilePhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [form, setForm] = useState({ name: '', mobile: '', password: '', vehicleNumber: '', licenceNumber: '', drivingLicenceExpiryDate: '', vehicleInsuranceExpiryDate: '', fcExpiryDate: '', age: '', area: 'Tiruvannamalai' })
-  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
+  const minExpiryDate = (() => { const d = new Date(); d.setDate(d.getDate()+1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
   function choosePhoto(event) { const file = event.target.files?.[0] || null; setProfilePhoto(file); setPhotoPreview(file ? URL.createObjectURL(file) : '') }
   const update = event => setForm(current => ({ ...current, [event.target.name]: event.target.value }))
   async function submit(event) {
@@ -29,7 +29,7 @@ export default function DriverRegistration() {
     } catch (err) { setError(err.message || 'Registration could not be submitted.') }
     finally { setLoading(false) }
   }
-  const inputClass = 'mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm font-medium outline-none transition focus:border-wayz-blue focus:ring-2 focus:ring-blue-100'
+  const inputClass = 'mt-2 h-12 w-full rounded-lg border border-slate-300 px-4 text-base font-normal outline-none transition focus:border-wayz-blue focus:ring-2 focus:ring-blue-100'
   return <AuthLayout title="Register as a driver" subtitle="Join the 2WAYZ local driver network. Your account must be verified before you can go online." footer={<p>Already registered? <Link to="/driver/login" className="font-bold text-wayz-blue hover:underline">Driver sign in</Link></p>}>
     {submitted ? <div className="rounded-2xl bg-emerald-50 p-6 text-center"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/><h3 className="mt-3 text-xl font-bold text-wayz-ink">Registration received</h3><p className="mt-2 text-sm leading-6 text-slate-600">{successMessage}</p><Link to="/driver/login" className="mt-5 inline-flex rounded-xl bg-wayz-blue px-5 py-3 text-sm font-bold text-white">Continue to driver sign in</Link></div> :
     <form onSubmit={submit} className="space-y-6">
@@ -54,7 +54,7 @@ export default function DriverRegistration() {
         <div className="mb-4 flex items-center gap-3"><span className="rounded-lg bg-amber-50 p-2 text-amber-700"><CarFront size={19}/></span><div><h3 className="text-base font-bold text-wayz-ink">Vehicle details</h3><p className="text-xs text-slate-500">Registration and fitness information</p></div></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-semibold text-slate-700">Auto / vehicle number<input required name="vehicleNumber" value={form.vehicleNumber} onChange={update} minLength={5} maxLength={20} placeholder="TN XX XX 0000" className={inputClass}/></label>
-          <label className="text-sm font-semibold text-slate-700">Vehicle insurance expiry date<input required type="date" name="vehicleInsuranceExpiryDate" value={form.vehicleInsuranceExpiryDate} onChange={update} min={today} className={inputClass}/></label>
+          <label className="text-sm font-semibold text-slate-700">Vehicle insurance expiry date<input required type="date" name="vehicleInsuranceExpiryDate" value={form.vehicleInsuranceExpiryDate} onChange={update} min={minExpiryDate} className={inputClass}/></label>
           <label className="text-sm font-semibold text-slate-700">FC expiry date (Fitness Certificate)<input required type="date" name="fcExpiryDate" value={form.fcExpiryDate} onChange={update} min={today} className={inputClass}/></label>
         </div>
       </section>

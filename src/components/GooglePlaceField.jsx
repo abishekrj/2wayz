@@ -23,7 +23,7 @@ export function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, onFocus, enableCurrentLocation = false, savedPlaces = [], labelTone = 'light' }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, onFocus, onManageSavedPlaces, enableCurrentLocation = false, savedPlaces = [], labelTone = 'light' }) {
   const inputRef = useRef(null)
   const fieldRef = useRef(null)
   const placesRef = useRef(null)
@@ -215,7 +215,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
           <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">{selectedName}</span>
         )}
         {(loading || searching || locating) && <LoaderCircle className="ml-2 shrink-0 animate-spin text-slate-400" size={17} />}
-        {selectedName && !editing && (
+        {selectedName && (
           <button
             type="button"
             aria-label={`Clear ${label.toLowerCase()}`}
@@ -226,6 +226,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
               setSuggestions([])
               setError('')
               setEditing(true)
+              setDropdownOpen(true)
               onSelect(null)
               requestAnimationFrame(() => inputRef.current?.focus())
             }}
@@ -238,21 +239,27 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
       {editing && (dropdownOpen || suggestions.length > 0) && (
         <div className="absolute left-0 right-0 top-full z-[70] mt-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
-          {savedPlaces.length > 0 && !query.trim() && (
+          {!query.trim() && (
             <div className="border-b border-slate-100 px-3 py-2">
-              <p className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Saved places</p>
-              {savedPlaces.map(place => {
-                const SavedIcon = place.category === 'HOME' ? Home : place.category === 'WORK' ? BriefcaseBusiness : Star
-                return (
-                  <button key={place.id} type="button" onMouseDown={event => event.preventDefault()} onClick={() => chooseSavedPlace(place)} className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-blue-50">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-wayz-blue"><SavedIcon size={17}/></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-slate-800">{place.label}</span>
-                      <span className="block truncate text-xs text-slate-500">{place.address || place.name}</span>
-                    </span>
-                  </button>
-                )
-              })}
+              {savedPlaces.length > 0 && <>
+                <p className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Saved places</p>
+                {savedPlaces.map(place => {
+                  const SavedIcon = place.category === 'HOME' ? Home : place.category === 'WORK' ? BriefcaseBusiness : Star
+                  return (
+                    <button key={place.id} type="button" onMouseDown={event => event.preventDefault()} onClick={() => chooseSavedPlace(place)} className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-blue-50">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-wayz-blue"><SavedIcon size={17}/></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-slate-800">{place.label}</span>
+                        <span className="block truncate text-xs text-slate-500">{place.address || place.name}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </>}
+              <button type="button" onMouseDown={event => event.preventDefault()} onClick={() => { setDropdownOpen(false); if (onManageSavedPlaces) onManageSavedPlaces(); else window.dispatchEvent(new Event('wayz:manage-saved-places')) }} className="mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-sm font-semibold text-wayz-blue transition hover:bg-blue-50">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50"><Star size={15}/></span>
+                Manage saved places
+              </button>
             </div>
           )}
           {suggestions.map((item, index) => {

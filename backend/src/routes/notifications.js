@@ -54,6 +54,21 @@ router.patch('/me/:id/read', roleAuth, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+router.delete('/me/:id', roleAuth, async (req, res, next) => {
+  try {
+    const result = await prisma.notification.deleteMany({
+      where: {
+        id: req.params.id,
+        recipientRole: req.notificationAuth.role,
+        recipientId: req.notificationAuth.id,
+        readAt: { not: null }
+      }
+    })
+    if (!result.count) return res.status(404).json({ message: 'Read notification not found.' })
+    res.json({ message: 'Read notification deleted.' })
+  } catch (error) { next(error) }
+})
+
 router.post('/me/read-all', roleAuth, async (req, res, next) => {
   try {
     await prisma.notification.updateMany({

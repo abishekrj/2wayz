@@ -55,7 +55,7 @@ export default function UpcomingEvents() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">Mark your calendar</p>
-            <h2 id="upcoming-events-heading" className="mt-2 text-3xl font-extrabold text-wayz-ink sm:text-4xl">Upcoming Events</h2>
+            <h2 id="upcoming-events-heading" className="mt-2 text-3xl font-bold text-wayz-ink sm:text-4xl">Upcoming Events</h2>
             <p className="mt-2 text-sm text-slate-500">Important celebrations and dates around the year.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export default function UpcomingEvents() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"><CalendarDays size={14}/>{event.dateLabel}</span>
                 <div className="mt-4 flex items-center gap-3">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15"><Icon size={25}/></span>
-                  <h3 className="text-2xl font-extrabold sm:text-3xl">{event.title}</h3>
+                  <h3 className="text-2xl font-bold sm:text-3xl">{event.title}</h3>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-white/85">{event.subtitle}</p>
               </div>

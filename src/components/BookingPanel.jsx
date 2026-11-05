@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  Search, Clock3, Route as RouteIcon, BadgeIndianRupee, LoaderCircle, ArrowLeftRight,
+  Search, Clock3, Route as RouteIcon, BadgeIndianRupee, LoaderCircle, ArrowLeftRight, X, ChevronLeft, Pencil, Trash2, Home, BriefcaseBusiness, Star,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import { adminApi } from '../lib/adminApi'
@@ -71,6 +71,15 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   const [activeRide, setActiveRide] = useState(null)
   const [checkingActiveRide, setCheckingActiveRide] = useState(true)
   const [fareSettings, setFareSettings] = useState(DEFAULT_FARE)
+  const [savedPlaces, setSavedPlaces] = useState([])
+  const [savedPlacesOpen, setSavedPlacesOpen] = useState(false)
+  const [savedPlacesMode, setSavedPlacesMode] = useState('add')
+  const [editingSavedPlace, setEditingSavedPlace] = useState(null)
+  const [savedPlaceCategory, setSavedPlaceCategory] = useState('HOME')
+  const [savedPlaceLabel, setSavedPlaceLabel] = useState('Home')
+  const [savedPlaceLocation, setSavedPlaceLocation] = useState(null)
+  const [savedPlaceBusy, setSavedPlaceBusy] = useState(false)
+  const [savedPlaceError, setSavedPlaceError] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -79,6 +88,23 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       .catch(() => {})
       .finally(() => { if (mounted) setCheckingActiveRide(false) })
     return () => { mounted = false }
+  }, [])
+
+
+  useEffect(() => {
+    let mounted = true
+    adminApi.savedPlaces().then(result => { if (mounted) setSavedPlaces(result.places || []) }).catch(() => {})
+    const openManager = () => {
+      setSavedPlacesMode('add')
+      setEditingSavedPlace(null)
+      setSavedPlaceCategory('HOME')
+      setSavedPlaceLabel('Home')
+      setSavedPlaceLocation(null)
+      setSavedPlaceError('')
+      setSavedPlacesOpen(true)
+    }
+    window.addEventListener('wayz:manage-saved-places', openManager)
+    return () => { mounted = false; window.removeEventListener('wayz:manage-saved-places', openManager) }
   }, [])
 
   useEffect(() => {
@@ -116,6 +142,59 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
     setEstimate(null)
     onEstimateChange?.(null)
     setError('')
+  }
+
+
+  async function refreshSavedPlaces() {
+    try {
+      const result = await adminApi.savedPlaces()
+      setSavedPlaces(result.places || [])
+    } catch (err) {
+      setSavedPlaceError(err.message || 'Unable to load saved places.')
+    }
+  }
+  function editSavedPlace(place) {
+    setEditingSavedPlace(place)
+    setSavedPlaceCategory(place.category)
+    setSavedPlaceLabel(place.label)
+    setSavedPlaceLocation({ source: 'saved-place', placeId: place.placeId || undefined, name: place.name, address: place.address, location: { lat: place.latitude, lng: place.longitude } })
+    setSavedPlacesMode('edit')
+    setSavedPlaceError('')
+  }
+  async function saveSavedPlace(event) {
+    event.preventDefault()
+    if (!savedPlaceLocation || !savedPlaceLocation.location) {
+      setSavedPlaceError('Please choose a location from the Google suggestions.')
+      return
+    }
+    setSavedPlaceBusy(true)
+    setSavedPlaceError('')
+    const payload = { category: savedPlaceCategory, label: savedPlaceLabel.trim(), name: savedPlaceLocation.name, address: savedPlaceLocation.address || savedPlaceLocation.name, placeId: savedPlaceLocation.placeId, location: savedPlaceLocation.location }
+    try {
+      if (savedPlacesMode === 'edit' && editingSavedPlace) await adminApi.updateSavedPlace(editingSavedPlace.id, payload)
+      else await adminApi.createSavedPlace(payload)
+      await refreshSavedPlaces()
+      setSavedPlacesMode('list')
+      setEditingSavedPlace(null)
+      setSavedPlaceLocation(null)
+    } catch (err) {
+      setSavedPlaceError(err.message || 'Unable to save this place.')
+    } finally {
+      setSavedPlaceBusy(false)
+    }
+  }
+  async function deleteSavedPlace(place) {
+    if (!window.confirm('Remove "' + place.label + '" from saved places?')) return
+    setSavedPlaceBusy(true)
+    setSavedPlaceError('')
+    try {
+      await adminApi.deleteSavedPlace(place.id)
+      await refreshSavedPlaces()
+    } catch (err) {
+      setSavedPlaceError(err.message || 'Unable to remove this place.')
+    } finally {
+      setSavedPlaceBusy(false)
+    }
   }
 
   function swapLocations() {
@@ -170,7 +249,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       </div>
 
       <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Choose your pickup point" value={pickup} onSelect={selectPickup} onFocus={() => onActiveFieldChange?.('pickup')} enableCurrentLocation />
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Choose your pickup point" value={pickup} onSelect={selectPickup} onFocus={() => onActiveFieldChange?.('pickup')} savedPlaces={savedPlaces} enableCurrentLocation />
         <button
           type="button"
           onClick={swapLocations}
@@ -181,7 +260,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         >
           <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} onFocus={() => onActiveFieldChange?.('destination')} />
+        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} onFocus={() => onActiveFieldChange?.('destination')} savedPlaces={savedPlaces} />
         <button disabled={busy} type="submit" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 sm:h-[58px]">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
@@ -191,6 +270,47 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
       </div>
+
+
+      {savedPlacesOpen && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/55 p-3 sm:p-5" onMouseDown={event => { if (event.target === event.currentTarget) setSavedPlacesOpen(false) }}>
+          <div className="flex max-h-[min(520px,90vh)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">
+              {savedPlacesMode !== 'add' && <button type="button" aria-label="Back" onClick={() => { setSavedPlacesMode('add'); setEditingSavedPlace(null); setSavedPlaceLocation(null); setSavedPlaceError('') }} className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"><ChevronLeft size={20}/></button>}
+              <div className="min-w-0 flex-1"><h3 className="text-base font-bold text-wayz-ink">{savedPlacesMode === 'list' ? 'Saved places' : savedPlacesMode === 'edit' ? 'Edit saved place' : 'Your shortcuts'}</h3><p className="text-xs text-slate-500">{savedPlacesMode === 'list' ? 'Manage your saved locations' : 'Add a place for quicker bookings'}</p></div>
+              <button type="button" aria-label="Close" onClick={() => setSavedPlacesOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"><X size={18}/></button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              {savedPlacesMode === 'list' ? (
+                <div className="space-y-2">
+                  {savedPlaces.length === 0 && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">You haven't saved any places yet.</p>}
+                  {savedPlaces.map(place => {
+                    const PlaceIcon = place.category === 'HOME' ? Home : place.category === 'WORK' ? BriefcaseBusiness : Star
+                    return <div key={place.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-wayz-blue"><PlaceIcon size={17}/></span>
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-800">{place.label}</p><p className="truncate text-xs text-slate-500">{place.address}</p></div>
+                      <button type="button" aria-label={'Edit ' + place.label} onClick={() => editSavedPlace(place)} className="flex h-8 w-8 items-center justify-center rounded-lg text-wayz-blue hover:bg-blue-50"><Pencil size={15}/></button>
+                      <button type="button" aria-label={'Delete ' + place.label} disabled={savedPlaceBusy} onClick={() => deleteSavedPlace(place)} className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-50"><Trash2 size={15}/></button>
+                    </div>
+                  })}
+                </div>
+              ) : (
+                <form onSubmit={saveSavedPlace} className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {['HOME','WORK','FAVOURITE'].map(category => <button key={category} type="button" onClick={() => { setSavedPlaceCategory(category); if (!editingSavedPlace) setSavedPlaceLabel(category === 'HOME' ? 'Home' : category === 'WORK' ? 'Work' : '') }} className={'rounded-lg border px-2 py-2 text-xs font-bold ' + (savedPlaceCategory === category ? 'border-wayz-blue bg-blue-50 text-wayz-blue' : 'border-slate-200 text-slate-500')}>{category === 'FAVOURITE' ? 'Favourite' : category === 'HOME' ? 'Home' : 'Work'}</button>)}
+                  </div>
+                  <label className="block text-xs font-semibold text-slate-600">Place label</label>
+                  <input value={savedPlaceLabel} onChange={event => setSavedPlaceLabel(event.target.value)} maxLength={40} required placeholder="e.g. Home, Office, Temple" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-800 outline-none focus:border-wayz-blue focus:ring-2 focus:ring-blue-100"/>
+                  <GooglePlaceField label="SELECT LOCATION" placeholder="Search for a place" labelTone="dark" value={savedPlaceLocation} onSelect={setSavedPlaceLocation} savedPlaces={[]} />
+                  <button type="submit" disabled={savedPlaceBusy} className="flex min-h-11 w-full items-center justify-center rounded-lg bg-wayz-yellow px-4 py-2.5 text-sm font-bold text-wayz-ink disabled:opacity-60">{savedPlaceBusy ? 'Saving…' : savedPlacesMode === 'edit' ? 'Update place' : 'Save place'}</button>
+                  {savedPlacesMode === 'add' && <button type="button" onClick={() => { setSavedPlacesMode('list'); setSavedPlaceError(''); refreshSavedPlaces() }} className="w-full py-2 text-sm font-semibold text-wayz-blue">View saved places ({savedPlaces.length})</button>}
+                </form>
+              )}
+              {savedPlaceError && <p role="alert" className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{savedPlaceError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
 
       {estimate && (
         <section className="mt-3 grid grid-cols-4 items-stretch gap-1.5 rounded-2xl border border-blue-100 bg-white p-2.5 shadow-sm sm:mt-4 sm:gap-3 sm:p-3">

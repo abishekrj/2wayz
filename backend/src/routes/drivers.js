@@ -76,7 +76,7 @@ async function ensureApprovedDriverSubscriptions(driverId) {
   for (const payment of payments) {
     const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
     if (existing) continue
-    const approvalTime = payment.reviewedAt || payment.createdAt
+    const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
     const previous = await prisma.driverSubscription.findFirst({
       where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
       orderBy: { expiresAt: 'desc' }

@@ -189,7 +189,7 @@ export default function BookingPanel({ initialDestination = null }) {
           disabled={!pickup && !destination}
           aria-label="Swap pickup and destination"
           title="Swap pickup and destination"
-          className="flex h-9 w-9 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 md:mb-[9px] md:h-10 md:w-10"
+          className="flex h-9 w-9 rotate-90 items-center justify-center justify-self-center rounded-full border border-blue-200 bg-white text-wayz-blue shadow-sm transition hover:border-wayz-blue hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 md:mb-[9px] md:h-10 md:w-10 md:rotate-0"
         >
           <ArrowLeftRight size={19} />
         </button>

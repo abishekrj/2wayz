@@ -23,7 +23,7 @@ export function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false, savedPlaces = [] }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false, savedPlaces = [], labelTone = 'light' }) {
   const inputRef = useRef(null)
   const fieldRef = useRef(null)
   const placesRef = useRef(null)
@@ -116,7 +116,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       try {
         const result = await adminApi.reverseGeocode(position.coords.latitude, position.coords.longitude)
         if (!result.place) throw new Error('Could not identify your current location. Please search for your pickup point.')
-        if (!valueRef.current) onSelect(result.place)
+        if (!valueRef.current) onSelect({ ...result.place, source: 'current-location' })
       } catch (err) {
         setError(err.message || 'Unable to identify your current location. Please search manually.')
       } finally {
@@ -159,6 +159,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
     setEditing(false)
     setError('')
     onSelect({
+      source: 'saved-place',
       placeId: place.placeId || undefined,
       name: place.name,
       address: place.address,
@@ -178,6 +179,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       setEditing(false)
       setError('')
       onSelect({
+        source: 'search',
         placeId: place.id,
         name,
         address: place.formattedAddress || name,
@@ -192,7 +194,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
   return (
     <div ref={fieldRef} className="relative z-10 min-w-0 focus-within:z-[60]">
-      <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-white">{label}</span>
+      <span className={`mb-2 block text-[11px] font-bold tracking-[.13em] ${labelTone === 'dark' ? 'text-wayz-blue' : 'text-white'}`}>{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
         className={`relative flex min-h-[56px] items-center rounded-xl border-2 border-slate-300 bg-white pl-14 pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}

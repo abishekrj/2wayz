@@ -31,10 +31,13 @@ if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECR
 const app = express()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 app.use('/uploads', (req, res, next) => {
-  if (
-    req.path === '/wallet' || req.path.startsWith('/wallet/') ||
-    req.path === '/subscriptions' || req.path.startsWith('/subscriptions/')
-  ) return res.sendStatus(404)
+  let requestedPath
+  try { requestedPath = decodeURIComponent(req.path).toLowerCase() }
+  catch { return res.sendStatus(400) }
+  const privateDirectories = ['/wallet', '/subscriptions']
+  if (privateDirectories.some(directory => requestedPath === directory || requestedPath.startsWith(directory + '/'))) {
+    return res.sendStatus(404)
+  }
   next()
 }, express.static(path.resolve(currentDir, '../uploads'), { maxAge: '7d', dotfiles: 'deny' }))
 const port = Number(process.env.PORT || 5001)

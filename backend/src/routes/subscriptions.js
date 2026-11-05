@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify } from '../lib/notifications.js'
+import { validateImageUpload } from '../lib/validateImageUpload.js'
 
 const router = Router()
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -20,7 +21,7 @@ function requireDriver(req, res, next) {
   try { const payload = jwt.verify(token, process.env.JWT_SECRET); if (payload.role !== 'DRIVER') return res.status(401).json({ message: 'Invalid driver session.' }); req.driverAuth = payload; next() }
   catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
 }
-function handleUpload(req, res, next) { upload.single('proof')(req, res, error => { if (error) return res.status(400).json({ message: error.message || 'Payment proof upload failed.' }); next() }) }
+function handleUpload(req, res, next) { upload.single('proof')(req, res, error => { if (error) return res.status(400).json({ message: error.message || 'Payment proof upload failed.' }); validateImageUpload(req, res, next) }) }
 
 router.get('/plans', requireDriver, async (_req, res, next) => { try { res.json({ plans: await prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] }) }) } catch (error) { next(error) } })
 router.get('/me', requireDriver, async (req, res, next) => {

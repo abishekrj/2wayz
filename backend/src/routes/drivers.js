@@ -67,6 +67,13 @@ async function requireDriver(req, res, next) {
 }
 
 
+// Local-only switch for testing the driver dashboard and GPS flow when
+// subscription/payment history is unavailable. Production always enforces wallet eligibility.
+function allowUnsubscribedDriversInDevelopment() {
+  return process.env.NODE_ENV !== 'production' &&
+    process.env.ALLOW_UNSUBSCRIBED_DRIVERS_IN_DEV === 'true'
+}
+
 async function walletEligibility(driverId) {
   const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
   if (!activeSubscription) {
@@ -159,7 +166,7 @@ router.post('/availability', requireDriver, async (req, res, next) => {
     const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
     if (expiredDocuments.length) return res.status(403).json({ message: `Your account is suspended because these documents have expired: ${expiredDocuments.join(', ')}. Contact 2WAYZ after renewal.` })
     if (driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account must be approved before going online.' })
-    if (online) {
+    if (online && !allowUnsubscribedDriversInDevelopment()) {
       const walletStatus = await walletEligibility(driver.id)
       if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
     }

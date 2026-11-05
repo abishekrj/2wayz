@@ -192,7 +192,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
 
   return (
     <div ref={fieldRef} className="relative z-10 min-w-0 focus-within:z-[60]">
-      <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-white">{label}</span>
+      <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
         className={`relative flex min-h-[56px] items-center rounded-xl border-2 border-slate-300 bg-white pl-14 pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}

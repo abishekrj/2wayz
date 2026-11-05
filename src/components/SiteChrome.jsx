@@ -126,7 +126,7 @@ export function SiteHeader() {
         </div>
       </div>
       <button type="button" aria-label="Close navigation overlay" onClick={() => setMenuOpen(false)} className={`fixed inset-0 z-40 bg-slate-950/40 transition-opacity duration-300 md:hidden ${menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`} />
-      <nav aria-label="Mobile navigation" aria-hidden={!menuOpen} className={`fixed inset-y-0 left-0 z-50 w-[min(84vw,340px)] overflow-y-auto border-r border-slate-200 bg-white px-4 pb-6 pt-4 text-sm shadow-2xl transition-transform duration-300 ease-out md:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <nav aria-label="Mobile navigation" aria-hidden={!menuOpen} className={`fixed inset-y-0 left-0 z-50 w-[min(84vw,340px)] flex flex-col gap-1 overflow-y-auto border-r border-slate-200 bg-white px-4 pb-6 pt-4 text-sm shadow-2xl transition-transform duration-300 ease-out md:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
           <Brand />
           <button type="button" aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy"><X size={20}/></button>

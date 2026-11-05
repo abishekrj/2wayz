@@ -20,7 +20,7 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
             <div className="w-full rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_20px_60px_rgba(15,42,80,.08)] sm:p-9">
               <div className="mb-7"><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Welcome to 2WAYZ</p><h2 className="mt-2 text-3xl font-bold tracking-tight text-wayz-ink">{title}</h2><p className="mt-2 text-sm leading-6 text-slate-500">{subtitle}</p></div>
               {children}
-              {footer && <div className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-500">{footer}</div>}
+              {footer && <div className="mt-4 text-center text-sm text-slate-500">{footer}</div>}
               <div className="mt-5 text-center"><Link to="/" className="text-xs font-semibold text-slate-400 hover:text-wayz-blue">Back to home</Link></div>
             </div>
           </section>

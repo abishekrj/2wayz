@@ -33,7 +33,6 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
           fullscreenControl: true, clickableIcons: false,
         })
         mapRef.current = map
-        setMapReady(true)
 
         if (route?.createPolylines && route?.createWaypointAdvancedMarkers) {
           polylines = route.createPolylines({ polylineOptions: { strokeColor: '#2563eb', strokeOpacity: 0.95, strokeWeight: 6 } })
@@ -83,11 +82,15 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
       } catch (error) {
         if (active) setMapError(error.message || 'Unable to display the route map.')
       } finally {
-        if (active) setLoading(false)
+        if (active) {
+          setMapReady(true)
+          setLoading(false)
+        }
       }
     }
 
     setLoading(true)
+    setMapReady(false)
     setMapError('')
     renderRoute()
     return () => {

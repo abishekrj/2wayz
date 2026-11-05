@@ -56,14 +56,17 @@ async function calculateRoute(pickup, destination, fareSettings) {
   }
 }
 
-export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange }) {
+export default function BookingPanel({ initialDestination = null, pickup: externalPickup, onPickupChange, destination: externalDestination, onDestinationChange, activeField, onActiveFieldChange }) {
   const navigate = useNavigate()
   const { setBooking } = useBooking()
   const [internalPickup, setInternalPickup] = useState(null)
   const isPickupControlled = typeof onPickupChange === 'function'
   const pickup = isPickupControlled ? externalPickup : internalPickup
   const setPickup = isPickupControlled ? onPickupChange : setInternalPickup
-  const [destination, setDestination] = useState(null)
+  const [internalDestination, setInternalDestination] = useState(null)
+  const isDestinationControlled = typeof onDestinationChange === 'function'
+  const destination = isDestinationControlled ? externalDestination : internalDestination
+  const setDestination = isDestinationControlled ? onDestinationChange : setInternalDestination
   const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -133,8 +136,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       if (latestFare?.settings) setFareSettings(latestFare.settings)
       const routeEstimate = await calculateRoute(pickup, destination, activeFareSettings)
       setEstimate(routeEstimate)
-      setBooking({ mode: 'instant', pickup, destination, estimate: routeEstimate, vehicle: 'auto' })
-      navigate('/travel-details')
+      setEstimate(routeEstimate)
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')
     } finally {
@@ -159,7 +161,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       </div>
 
       <form onSubmit={submit} className="relative z-20 grid grid-cols-1 items-end gap-2.5 sm:gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <GooglePlaceField label="PICKUP LOCATION" placeholder="Choose your pickup point" value={pickup} onSelect={selectPickup} enableCurrentLocation />
+        <GooglePlaceField label="PICKUP LOCATION" placeholder="Choose your pickup point" value={pickup} onSelect={selectPickup} onFocus={() => onActiveFieldChange?.('pickup')} enableCurrentLocation />
         <button
           type="button"
           onClick={swapLocations}
@@ -170,7 +172,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         >
           <ArrowLeftRight size={19} />
         </button>
-        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} />
+        <GooglePlaceField label="DESTINATION" placeholder="Where would you like to go?" tone="red" value={destination} onSelect={selectDestination} onFocus={() => onActiveFieldChange?.('destination')} />
         <button disabled={busy} type="submit" className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-wayz-yellow px-5 py-3 font-bold text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-70 sm:h-[58px]">
           {busy ? <LoaderCircle className="animate-spin" size={19} /> : <Search size={19} />}
           {busy ? 'Calculating route…' : 'Get fare estimate'}
@@ -235,6 +237,10 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
               <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Selected route</p>
               <RouteMap route={estimate.route} />
             </div>
+          </div>
+          <div className="mt-5 flex flex-col gap-3 border-t border-blue-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs leading-5 text-slate-500">Review your route and fare. You can still change either location above.</p>
+            <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-wayz-yellow px-6 py-3 text-sm font-bold text-wayz-ink shadow-sm transition hover:bg-amber-300">Continue to booking</button>
           </div>
         </section>
       )}

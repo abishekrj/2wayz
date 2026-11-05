@@ -21,16 +21,6 @@ button,input { font:inherit; }
 /* Google input icon is disabled with the supported noInputIcon option. */
 
 /* Standardise Tailwind arbitrary border-radius utilities to 8px. */
-[class*="rounded-["],
-[class*="rounded-t-["],
-[class*="rounded-r-["],
-[class*="rounded-b-["],
-[class*="rounded-l-["],
-[class*="rounded-s-["],
-[class*="rounded-e-["],
-[class*="rounded-tl-["],
-[class*="rounded-tr-["],
-[class*="rounded-br-["],
-[class*="rounded-bl-["] {
+[class*="rounded-"][class*="-["] {
   border-radius: 0.5rem !important;
 }

@@ -109,7 +109,6 @@ router.post('/register', registerLimiter, handleProfileUpload, async (req, res, 
     const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
     const serviceArea = String(req.body?.serviceArea || 'Tiruvannamalai').trim().slice(0, 100)
     if (name.length < 2 || name.length > 100) return res.status(400).json({ message: 'Enter a name between 2 and 100 characters.' })
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error('Enter a valid ' + label + '.'), { statusCode: 400 })
     if (password.length < 8 || password.length > 128) return res.status(400).json({ message: 'Password must contain at least 8 characters.' })
     if (vehicleNumber.length < 5 || vehicleNumber.length > 20) return res.status(400).json({ message: 'Enter a valid vehicle registration number.' })
     if (licenceNumber.length < 5 || licenceNumber.length > 40) return res.status(400).json({ message: 'Enter a valid driving licence number.' })
@@ -352,7 +351,6 @@ router.patch('/bookings/:bookingId/status', requireDriver, async (req, res, next
     if (nextStatus === 'COMPLETED') data.finalFare = finalFare
     if (nextStatus === 'IN_PROGRESS') {
       const submittedOtp = String(req.body?.otp || '').trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error('Enter a valid ' + label + '.'), { statusCode: 400 })
       const current = await prisma.booking.findUnique({ where: { id: booking.id }, select: { rideStartOtpHash: true, rideStartOtpAttempts: true, rideStartOtpVerifiedAt: true } })
       if (current?.rideStartOtpVerifiedAt) return res.status(409).json({ message: 'This ride has already been verified. Refresh your active rides.' })
       if (!current?.rideStartOtpHash) return res.status(409).json({ message: 'Ride OTP is not available yet. Ask the passenger to refresh their booking screen.' })

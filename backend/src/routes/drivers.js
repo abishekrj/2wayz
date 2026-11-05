@@ -211,8 +211,10 @@ router.get('/offers', requireDriver, async (req, res, next) => {
   try {
     const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your driver account is not approved yet.' })
-    const walletStatus = await walletEligibility(driver.id)
-    if (!walletStatus.eligible) return res.json({ offers: [], walletBlocked: true, message: walletStatus.message })
+    if (!allowUnsubscribedDriversInDevelopment()) {
+      const walletStatus = await walletEligibility(driver.id)
+      if (!walletStatus.eligible) return res.json({ offers: [], walletBlocked: true, message: walletStatus.message })
+    }
     const offers = await prisma.driverOffer.findMany({
       where: { driverId: driver.id, status: 'OFFERED', booking: { status: 'REQUESTED' } },
       include: { booking: true },
@@ -230,8 +232,10 @@ router.post('/offers/:offerId/accept', requireDriver, async (req, res, next) => 
     if (!driver) return res.status(404).json({ message: 'Driver account not found.' })
     const expiredDocuments = await suspendDriverIfDocumentsExpired(driver)
     if (expiredDocuments.length || driver.status !== 'APPROVED') return res.status(403).json({ message: 'Your account is not eligible to accept rides. Check your driver approval and document expiry status.' })
-    const walletStatus = await walletEligibility(driverId)
-    if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
+    if (!allowUnsubscribedDriversInDevelopment()) {
+      const walletStatus = await walletEligibility(driverId)
+      if (!walletStatus.eligible) return res.status(403).json({ message: walletStatus.message })
+    }
     const accepted = await prisma.$transaction(async tx => {
       // Share a per-driver lock with Super Admin manual assignment.
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${driverId}, 0))::text`

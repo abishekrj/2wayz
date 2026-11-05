@@ -23,7 +23,7 @@ export function loadGoogleMaps() {
   return mapsPromise
 }
 
-export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false, savedPlaces = [], labelTone = 'light' }) {
+export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, onFocus, enableCurrentLocation = false, savedPlaces = [], labelTone = 'light' }) {
   const inputRef = useRef(null)
   const fieldRef = useRef(null)
   const placesRef = useRef(null)
@@ -205,7 +205,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
             ref={inputRef}
             value={query}
             onChange={event => { setQuery(event.target.value); setError('') }}
-            onFocus={() => { setError(''); setDropdownOpen(true) }}
+            onFocus={() => { setError(''); setDropdownOpen(true); onFocus?.() }}
             onKeyDown={event => { if (event.key === 'Escape') { setSuggestions([]); setDropdownOpen(false); if (selectedName) setEditing(false) } }}
             placeholder={placeholder}
             autoComplete="off"

@@ -199,51 +199,22 @@ export default function HomePage(){
   <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-blue-50 blur-3xl"/>
   <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
    <div className="grid items-stretch gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-    <div className="relative flex h-full min-h-[320px] items-center justify-center overflow-hidden rounded-[30px] bg-[#eaf3fc] px-4 py-8 sm:min-h-[440px] sm:px-8 lg:min-h-full">
-     <div className="pointer-events-none absolute left-6 top-6 h-20 w-20 rounded-full border border-blue-200/70"/>
-     <div className="pointer-events-none absolute bottom-7 right-7 h-28 w-28 rounded-full border border-amber-200/80"/>
-     <svg viewBox="0 0 520 370" role="img" aria-label="Illustration of a local auto rickshaw journey" className="relative z-10 h-auto w-full max-w-[540px] drop-shadow-[0_14px_18px_rgba(23,61,112,0.08)]" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="260" cy="322" rx="190" ry="17" fill="#cbdcf0" opacity=".65"/>
-      <path d="M42 286c66-34 126-34 192 0s126 34 244-4" fill="none" stroke="#b8cde6" strokeWidth="5" strokeLinecap="round" strokeDasharray="10 12"/>
-      <g opacity=".92">
-       <path d="M70 258v-70h34v70M112 258v-94h38v94M158 258v-58h28v58M344 258v-76h35v76M389 258v-105h42v105M440 258v-62h30v62" fill="#d6e6f7"/>
-       <path d="M104 188h-34l17-22zM150 164h-38l19-23zM431 153h-42l21-24z" fill="#9dbce0"/>
-       <path d="M202 258v-78h42v78M194 180h58l-29-30z" fill="#c1d8f0"/>
-       <path d="M208 258v-52h30v52M222 150v-25M214 138h16" stroke="#8eafd6" strokeWidth="4" strokeLinecap="round"/>
-      </g>
-      <path d="M24 304c94-25 170-25 238 0s145 26 234-2" fill="none" stroke="#fff" strokeWidth="18" strokeLinecap="round" opacity=".85"/>
-      <path d="M24 304c94-25 170-25 238 0s145 26 234-2" fill="none" stroke="#a9c5e5" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 10"/>
-      <path d="M72 95c0-23 19-42 42-42h58" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>
-      <circle cx="72" cy="95" r="8" fill="#f5bd36"/>
-      <path d="M396 75h42c17 0 30 13 30 30v23" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M468 128l-9-13h18z" fill="#9bb9dc"/>
-      <g transform="translate(88 112)">
-       <path d="M70 129h250l-15-92c-4-23-23-39-46-39H147c-18 0-34 10-42 26l-35 68z" fill="#f5bd36" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
-       <path d="M120 29c6-12 16-18 29-18h98c15 0 27 10 30 25l10 49H91z" fill="#dceafa" stroke="#173d70" strokeWidth="7" strokeLinejoin="round"/>
-       <path d="M181 14v70M254 14l14 70" stroke="#173d70" strokeWidth="6"/>
-       <path d="M62 94h258l22 45H48z" fill="#13845b" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
-       <path d="M48 139h296v27H48z" fill="#f5bd36" stroke="#173d70" strokeWidth="8" strokeLinejoin="round"/>
-       <path d="M84 166h53l-10 31H92zM270 166h48l-9 31h-48z" fill="#173d70"/>
-       <circle cx="112" cy="202" r="29" fill="#173d70"/><circle cx="112" cy="202" r="12" fill="#dceafa"/>
-       <circle cx="286" cy="202" r="29" fill="#173d70"/><circle cx="286" cy="202" r="12" fill="#dceafa"/>
-       <path d="M48 105H20c-10 0-18 8-18 18v17h47M344 105h20c10 0 18 8 18 18v17h-40" fill="none" stroke="#173d70" strokeWidth="8" strokeLinecap="round"/>
-       <path d="M78 116h28M302 116h22" stroke="#fff" strokeWidth="7" strokeLinecap="round"/>
-       <path d="M176 96h48" stroke="#173d70" strokeWidth="6" strokeLinecap="round"/>
-      </g>
-      <g transform="translate(354 24)">
-       <path d="M35 0C16 0 1 15 1 34c0 25 34 59 34 59s34-34 34-59C69 15 54 0 35 0z" fill="#2563a6"/>
-       <circle cx="35" cy="34" r="12" fill="#fff"/>
-      </g>
-      <g transform="translate(40 205)">
-       <circle cx="28" cy="28" r="27" fill="#fff" stroke="#d7e5f5" strokeWidth="3"/>
-       <path d="M28 12v18l12 7" fill="none" stroke="#2563a6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-      </g>
-      <g transform="translate(412 220)">
-       <circle cx="27" cy="27" r="26" fill="#fff" stroke="#d7e5f5" strokeWidth="3"/>
-       <path d="M14 28l9 9 18-20" fill="none" stroke="#13845b" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-      </g>
-     </svg>
-     <div className="absolute bottom-5 left-5 rounded-xl border border-white bg-white/95 px-3 py-2 shadow-sm sm:bottom-7 sm:left-7"><p className="text-[10px] font-bold uppercase tracking-[.15em] text-wayz-blue">Local rides</p><p className="mt-0.5 text-xs font-bold text-wayz-ink">Made for our town</p></div>
+    <div className="relative h-full min-h-[320px] overflow-hidden rounded-[30px] bg-[#eaf3fc] sm:min-h-[440px] lg:min-h-full">
+     <img
+      src="https://images.squarespace-cdn.com/content/v1/5ab542d1365f02611dabe9e1/1562780737887-MP6OGAG1U58I877FJELH/Image-214%2B%281%29.png"
+      alt="A yellow auto rickshaw outside the Arunachaleswarar Temple in Tiruvannamalai"
+      className="absolute inset-0 h-full w-full object-cover object-center"
+      loading="lazy"
+      decoding="async"
+     />
+     <div className="absolute inset-0 bg-gradient-to-t from-[#102b4d]/65 via-transparent to-transparent"/>
+     <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3 sm:bottom-7 sm:left-7 sm:right-7">
+      <div className="rounded-xl border border-white/70 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm">
+       <p className="text-[10px] font-bold uppercase tracking-[.15em] text-wayz-blue">Local rides</p>
+       <p className="mt-0.5 text-sm font-bold text-wayz-ink">Made for our town</p>
+      </div>
+      <span className="rounded-lg bg-black/35 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur-sm">Photo: Matt Carey</span>
+     </div>
     </div>
     <div>
      <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.2em] text-wayz-blue"><Sparkles size={15}/> THE 2WAYZ BENEFITS</p>

@@ -95,6 +95,8 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
       mapRef.current = null
       setMapReady(false)
       if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
+      if (driverRoutePolylineRef.current) { driverRoutePolylineRef.current.setMap(null); driverRoutePolylineRef.current = null }
+      driverRouteRequestRef.current = { lat: null, lng: null, requestedAt: 0 }
       polylines.forEach(polyline => polyline.setMap(null))
       markers.forEach(marker => { marker.map = null })
     }

@@ -70,14 +70,21 @@ export default function TravelDetailsPage() {
     <PageLayout>
       <div className="min-h-[70vh] bg-[#f5f8fc]">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-          <button type="button" onClick={() => navigate('/')} className="mb-5 inline-flex items-center gap-2 rounded-lg px-1 py-2 text-sm font-semibold text-wayz-blue transition hover:gap-3">
-            <ArrowLeft size={17}/> Back to edit
-          </button>
-
-          <header className="mb-6 sm:mb-8">
-            <p className="text-[11px] font-bold uppercase tracking-[.2em] text-wayz-blue">FARE ESTIMATE</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-wayz-ink sm:text-3xl">Review your ride</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">Check your route and estimated fare before requesting an auto.</p>
+          <header className="mb-6 flex items-start gap-3 sm:mb-8">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              aria-label="Back to edit ride"
+              title="Back to edit ride"
+              className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-wayz-blue shadow-sm transition hover:bg-blue-50"
+            >
+              <ArrowLeft size={18}/>
+            </button>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[.2em] text-wayz-blue">FARE ESTIMATE</p>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-wayz-ink sm:text-3xl">Review your ride</h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">Check your route and estimated fare before requesting an auto.</p>
+            </div>
           </header>
 
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,.75fr)] lg:gap-7">

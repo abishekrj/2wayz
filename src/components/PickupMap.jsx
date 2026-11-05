@@ -75,6 +75,8 @@ export default function PickupMap({ value, onSelect }) {
   }, [])
 
   useEffect(() => {
+    requestRef.current += 1
+    window.clearTimeout(dragTimerRef.current)
     const map = mapRef.current
     const location = value?.location
     if (!map || !location || !Number.isFinite(Number(location.lat)) || !Number.isFinite(Number(location.lng))) return

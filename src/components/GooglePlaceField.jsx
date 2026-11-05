@@ -163,9 +163,9 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}
-        className={`relative flex min-h-[58px] items-center rounded-xl border-2 border-slate-300 bg-white pl-[64px] pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
+        className={`relative flex min-h-[56px] items-center rounded-xl border-2 border-slate-300 bg-white pl-14 pr-3 shadow-sm transition-colors duration-150 hover:border-slate-400 focus-within:border-[#2563a6] focus-within:ring-4 focus-within:ring-blue-100 ${tone === 'red' ? 'text-rose-500' : 'text-emerald-600'} ${selectedName && !editing ? 'cursor-text' : ''}`}
       >
-        <Icon size={36} className="absolute left-3 top-1/2 z-[99] box-content h-10 w-10 -translate-y-1/2 bg-white" />
+        <Icon size={27} className="absolute left-3 top-1/2 z-[99] box-content h-8 w-8 -translate-y-1/2 bg-white" />
         {editing ? (
           <input
             ref={inputRef}
@@ -175,7 +175,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
             onKeyDown={event => { if (event.key === 'Escape') { setSuggestions([]); if (selectedName) setEditing(false) } }}
             placeholder={placeholder}
             autoComplete="off"
-            className="h-[54px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
+            className="h-[52px] min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] font-medium text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-0 focus:outline-none focus:ring-0"
           />
         ) : (
           <span className="min-w-0 flex-1 truncate py-2 text-left text-sm font-semibold text-slate-800">{selectedName}</span>

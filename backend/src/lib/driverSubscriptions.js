@@ -5,7 +5,7 @@ export async function processDriverSubscriptions() {
   const now = new Date()
   const reminderLimit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
   const reminders = await prisma.driverSubscription.findMany({
-    where: { status: 'ACTIVE', isDailyPlan: false, startsAt: { lte: now }, expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
+    where: { status: 'ACTIVE', isDailyPlan: false, durationDays: { not: 1 }, startsAt: { lte: now }, expiresAt: { gt: now, lte: reminderLimit }, expiryNoticeSentAt: null },
     select: { id: true, driverId: true, planName: true, expiresAt: true }
   })
   for (const subscription of reminders) {
@@ -21,7 +21,7 @@ export async function processDriverSubscriptions() {
   }
 
   const expired = await prisma.driverSubscription.findMany({
-    where: { status: 'ACTIVE', isDailyPlan: false, expiresAt: { lte: now } },
+    where: { status: 'ACTIVE', isDailyPlan: false, durationDays: { not: 1 }, expiresAt: { lte: now } },
     select: { id: true, driverId: true, planName: true }
   })
   for (const subscription of expired) {

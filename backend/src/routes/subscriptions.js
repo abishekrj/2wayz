@@ -68,7 +68,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
     await prisma.$transaction(tx => reconcileApprovedDriverSubscriptions(tx, driverId))
 
     const [subscription, payments, plans] = await Promise.all([
-      prisma.driverSubscription.findFirst({ where: { driverId, startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
+      prisma.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: now }, OR: [{ isDailyPlan: true }, { expiresAt: { gt: now } }] }, orderBy: { startsAt: 'desc' } }),
       prisma.driverSubscriptionPayment.findMany({ where: { driverId }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true, proofUrl: true } }),
       prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] })
     ])
@@ -150,7 +150,7 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
     for (const payment of approvedPayments) {
       const subscription = byPaymentId.get(payment.id)
       if (!subscription) continue
-      const isActiveNow = subscription.startsAt <= now && subscription.expiresAt > now
+      const isActiveNow = subscription.status === 'ACTIVE' && subscription.startsAt <= now && (subscription.isDailyPlan || subscription.expiresAt > now)
       if (status === 'ACTIVE' && !isActiveNow) continue
       if (status === 'EXPIRED' && isActiveNow) continue
 
@@ -205,10 +205,12 @@ router.patch('/admin/payments/:id', requireAdmin, async (req, res, next) => {
       })
       if (reviewUpdate.count !== 1) throw Object.assign(new Error('This payment request has already been reviewed.'), { statusCode: 409 })
       if (decision === 'APPROVED') {
-        const current = await tx.driverSubscription.findFirst({ where: { driverId: payment.driverId, startsAt: { lte: reviewedAt }, expiresAt: { gt: reviewedAt } }, orderBy: { expiresAt: 'desc' } })
-        const startsAt = current?.expiresAt && current.expiresAt > reviewedAt ? current.expiresAt : reviewedAt
-        const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
-        await tx.driverSubscription.create({ data: { driverId: payment.driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt } })
+        const current = await tx.driverSubscription.findFirst({ where: { driverId: payment.driverId, status: 'ACTIVE', startsAt: { lte: reviewedAt }, OR: [{ isDailyPlan: true }, { expiresAt: { gt: reviewedAt } }] }, orderBy: { startsAt: 'desc' } })
+        const startsAt = current && !current.isDailyPlan && current.expiresAt > reviewedAt ? current.expiresAt : reviewedAt
+        const isDailyPlan = payment.durationDays === 1
+        const expiresAt = isDailyPlan ? new Date('9999-12-31T23:59:59.999Z') : new Date(startsAt.getTime() + payment.durationDays * 86400000)
+        if (current?.isDailyPlan) await tx.driverSubscription.update({ where: { id: current.id }, data: { status: 'REPLACED' } })
+        await tx.driverSubscription.create({ data: { driverId: payment.driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, durationDays: payment.durationDays, isDailyPlan, startsAt, expiresAt } })
       }
       return payment
     })

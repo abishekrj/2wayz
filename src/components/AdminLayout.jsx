@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star } from 'lucide-react'
+import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star, IndianRupee } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -87,6 +87,10 @@ export default function AdminLayout({ admin }) {
 
         <NavLink to="/admin/bookings" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
           <ClipboardList size={18} />Booking Management
+        </NavLink>
+
+        <NavLink to="/admin/fare-settings" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}>
+          <IndianRupee size={18} />Fare Settings
         </NavLink>
 
         <NavLink to="/admin/ratings" onClick={() => setMobileOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? "bg-white/15 text-white" : "text-blue-100 hover:bg-white/10"}`}><Star size={18}/>Ratings & Feedback</NavLink>

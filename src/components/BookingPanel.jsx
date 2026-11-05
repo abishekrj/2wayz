@@ -176,10 +176,10 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   )
 
   return (
-    <div id="book" className="relative z-30 w-full rounded-2xl border border-white/20 bg-[#073B83] p-4 text-left shadow-[0_18px_55px_rgba(3,25,58,.22)] sm:rounded-[24px] sm:p-7">
-      <div className="flex flex-col gap-4 border-b border-white/20 pb-5 sm:flex-row sm:items-center sm:justify-between">
+    <div id="book" className="relative z-30 w-full rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-[0_18px_55px_rgba(3,25,58,.18)] sm:rounded-[24px] sm:p-7">
+      <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white sm:text-2xl">Where would you like to go?</h2>
+          <h2 className="text-lg font-bold text-wayz-ink sm:text-2xl">Where would you like to go?</h2>
         </div>
       </div>
 
@@ -203,7 +203,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
         </button>
       </form>
 
-      {isPassenger && <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/20 pt-3"><p className="text-xs text-blue-100">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-white/70 bg-white px-4 py-2.5 text-sm font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
+      {isPassenger && <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"><p className="text-xs text-slate-500">Save places you visit often for quicker booking.</p><button type="button" onClick={() => setShowSavedPlaceManager(true)} className="rounded-lg border border-blue-200 px-4 py-2.5 text-sm font-bold text-wayz-blue hover:bg-blue-50">Manage saved places</button></div>}
       {showSavedPlaceManager && <SavedPlacesManager places={savedPlaces} onClose={() => setShowSavedPlaceManager(false)} onChange={setSavedPlaces}/>}
       {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 

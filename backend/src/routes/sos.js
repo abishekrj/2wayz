@@ -7,19 +7,25 @@ import { requireAdmin } from '../middleware/requireAdmin.js'
 const router = Router()
 const activeStatuses = ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS']
 
-function requireRideUser(req, res, next) {
+async function requireRideUser(req, res, next) {
+  let matched = null
   for (const [cookie, role] of [['twoWayzPassenger', 'PASSENGER'], ['twoWayzDriver', 'DRIVER']]) {
     const token = req.cookies?.[cookie]
     if (!token) continue
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET)
-      if (payload.role === role) {
-        req.rideUser = { role, id: payload.sub }
-        return next()
-      }
+      if (payload.role === role) { matched = { role, id: payload.sub }; break }
     } catch {}
   }
-  return res.status(401).json({ message: 'Please sign in to send an SOS alert.' })
+  if (!matched) return res.status(401).json({ message: 'Please sign in to send an SOS alert.' })
+  try {
+    const account = matched.role === 'PASSENGER'
+      ? await prisma.passengerUser.findUnique({ where: { id: matched.id }, select: { id: true, isActive: true } })
+      : await prisma.driver.findUnique({ where: { id: matched.id }, select: { id: true } })
+    if (!account || (matched.role === 'PASSENGER' && !account.isActive)) return res.status(401).json({ message: 'This account is no longer available.' })
+    req.rideUser = matched
+    next()
+  } catch (error) { next(error) }
 }
 
 router.post('/trigger', requireRideUser, async (req, res, next) => {

@@ -95,7 +95,7 @@ export default function SavedPlacesManager({ places, onChange, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/65 p-3 sm:p-5" role="dialog" aria-modal="true" aria-labelledby="saved-places-title">
-      <div className="flex h-[min(680px,calc(100dvh-24px))] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-2xl sm:h-[min(680px,calc(100dvh-40px))] sm:p-7">
+      <div className="flex h-[min(520px,calc(100dvh-24px))] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white p-5 shadow-2xl sm:h-[min(520px,calc(100dvh-40px))] sm:p-7">
         <div className="flex shrink-0 items-center gap-3">
           {view === 'list' && <button type="button" onClick={showAdd} aria-label="Back to add place" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-wayz-blue"><ArrowLeft size={19}/></button>}
           <div className="min-w-0 flex-1">

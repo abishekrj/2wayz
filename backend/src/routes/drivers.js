@@ -234,6 +234,20 @@ router.post('/bookings/:bookingId/cancel', requireDriver, async (req, res, next)
   } catch (error) { if (error.statusCode) return res.status(error.statusCode).json({ message: error.message }); next(error) }
 })
 
+
+router.get('/ratings', requireDriver, async (req, res, next) => {
+  try {
+    const [aggregate, ratings] = await Promise.all([
+      prisma.rating.aggregate({ where: { driverId: req.driverAuth.sub, isVisible: true }, _avg: { stars: true }, _count: { _all: true } }),
+      prisma.rating.findMany({
+        where: { driverId: req.driverAuth.sub, isVisible: true }, orderBy: { createdAt: 'desc' }, take: 20,
+        select: { id: true, stars: true, tags: true, comment: true, createdAt: true, booking: { select: { reference: true } } }
+      })
+    ])
+    res.json({ averageRating: Number((aggregate._avg.stars || 0).toFixed(1)), totalRatings: aggregate._count._all, ratings })
+  } catch (error) { next(error) }
+})
+
 router.get('/active', requireDriver, async (req, res, next) => {
   try {
     const bookings = await prisma.booking.findMany({

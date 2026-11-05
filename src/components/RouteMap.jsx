@@ -13,7 +13,6 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
     let active = true
     let polylines = []
     let markers = []
-    let directionsRenderer
 
     async function renderRoute() {
       try {
@@ -48,18 +47,34 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
           route.path?.forEach(point => bounds.extend(point))
           if (route.path?.length) map.fitBounds(bounds, 48)
         } else if (hasCoordinates) {
-          const { DirectionsService, DirectionsRenderer } = await window.google.maps.importLibrary('routes')
+          // Use the current Google Maps Routes Library rather than the legacy service.
+          const { Route: GoogleRoute } = await window.google.maps.importLibrary('routes')
           if (!active) return
-          directionsRenderer = new DirectionsRenderer({
-            map, suppressMarkers: false, preserveViewport: false,
-            polylineOptions: { strokeColor: '#2563eb', strokeOpacity: 0.95, strokeWeight: 6 },
-          })
-          const directions = await new DirectionsService().route({
+          const result = await GoogleRoute.computeRoutes({
             origin: { lat: Number(pickup.lat), lng: Number(pickup.lng) },
             destination: { lat: Number(destination.lat), lng: Number(destination.lng) },
-            travelMode: window.google.maps.TravelMode.DRIVING,
+            travelMode: 'DRIVING',
+            fields: ['path'],
           })
-          if (active) directionsRenderer.setDirections(directions)
+          if (!active) return
+          const calculatedRoute = result.routes?.[0]
+          if (!calculatedRoute?.path?.length) {
+            throw new Error('Google Maps could not find a driving route for these pickup and destination points.')
+          }
+          polylines = calculatedRoute.createPolylines({
+            polylineOptions: { strokeColor: '#2563eb', strokeOpacity: 0.95, strokeWeight: 6 },
+          })
+          polylines.forEach(polyline => polyline.setMap(map))
+          markers = await calculatedRoute.createWaypointAdvancedMarkers({ map })
+          if (!active) {
+            polylines.forEach(polyline => polyline.setMap(null))
+            markers.forEach(marker => { marker.map = null })
+            return
+          }
+          markers.forEach(marker => { marker.map = map })
+          const bounds = new LatLngBounds()
+          calculatedRoute.path.forEach(point => bounds.extend(point))
+          map.fitBounds(bounds, 48)
         } else {
           setMapError('The saved route coordinates are unavailable for this ride.')
         }
@@ -80,7 +95,6 @@ export default function RouteMap({ route, driverLocation = null, pickup = null, 
       if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
       polylines.forEach(polyline => polyline.setMap(null))
       markers.forEach(marker => { marker.map = null })
-      if (directionsRenderer) directionsRenderer.setMap(null)
     }
   }, [route, pickup?.lat, pickup?.lng, destination?.lat, destination?.lng])
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../context/BookingContext'
 import {
-  Search, Clock3, Route as RouteIcon, BadgeIndianRupee, LoaderCircle, ArrowLeftRight, X, ChevronLeft, Pencil, Trash2, Home, BriefcaseBusiness, Star,
+  Search, LoaderCircle, ArrowLeftRight, X, ChevronLeft, Pencil, Trash2, Home, BriefcaseBusiness, Star,
 } from 'lucide-react'
 import GooglePlaceField from './GooglePlaceField'
 import { adminApi } from '../lib/adminApi'
@@ -65,7 +65,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   const isDestinationControlled = typeof onDestinationChange === 'function'
   const destination = isDestinationControlled ? externalDestination : internalDestination
   const setDestination = isDestinationControlled ? onDestinationChange : setInternalDestination
-  const [estimate, setEstimate] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [activeRide, setActiveRide] = useState(null)
@@ -120,27 +119,20 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   useEffect(() => {
     if (!initialDestination) return
     setDestination(initialDestination)
-    setEstimate(null)
     setError('')
   }, [initialDestination])
 
   useEffect(() => {
-    setEstimate(null)
-    onEstimateChange?.(null)
     setError('')
   }, [pickup, destination])
 
   function selectPickup(value) {
     setPickup(value)
-    setEstimate(null)
-    onEstimateChange?.(null)
     setError('')
   }
 
   function selectDestination(value) {
     setDestination(value)
-    setEstimate(null)
-    onEstimateChange?.(null)
     setError('')
   }
 
@@ -208,9 +200,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
   async function submit(event) {
     event.preventDefault()
     setError('')
-    setEstimate(null)
-    onEstimateChange?.(null)
-
     if (!pickup || !destination) {
       setError('Choose both locations from the Google suggestions.')
       return
@@ -222,8 +211,8 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       const activeFareSettings = latestFare?.settings || fareSettings
       if (latestFare?.settings) setFareSettings(latestFare.settings)
       const routeEstimate = await calculateRoute(pickup, destination, activeFareSettings)
-      setEstimate(routeEstimate)
-      onEstimateChange?.(routeEstimate.route)
+      setBooking({ mode: 'instant', pickup, destination, estimate: routeEstimate, vehicle: 'auto' })
+      navigate('/travel-details')
     } catch (err) {
       setError(err.message || 'Unable to calculate the route. Please try again.')
     } finally {
@@ -310,33 +299,6 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
             </div>
           </div>
         </div>
-      )}
-
-      {estimate && (
-        <section className="mt-3 grid grid-cols-3 items-stretch gap-1.5 rounded-2xl sm:mt-4 sm:gap-3 md:grid-cols-4">
-          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
-            <RouteIcon size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
-            <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs font-bold text-wayz-ink sm:text-base">{estimate.km.toFixed(1)} km</p>
-              <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Distance</p>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
-            <Clock3 size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
-            <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs font-bold text-wayz-ink sm:text-base">{estimate.durationMinutes} min</p>
-              <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Time</p>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
-            <BadgeIndianRupee size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
-            <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs font-bold text-wayz-ink sm:text-base">₹{estimate.fare}</p>
-              <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Price</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="col-span-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-wayz-yellow px-5 py-3 text-center text-sm font-bold leading-tight text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 md:col-span-1 sm:min-h-[58px]">Continue booking</button>
-        </section>
       )}
     </div>
   )

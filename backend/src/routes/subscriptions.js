@@ -49,7 +49,9 @@ async function sendPaymentProof(req, res, next, adminAccess = false) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/i.test(filename)) return res.sendStatus(404)
     res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })
     res.sendFile(filename, { root: uploadDir }, error => {
-      if (error && !res.headersSent) next(error)
+      if (!error || res.headersSent) return
+      if (error.code === 'ENOENT') return res.sendStatus(404)
+      next(error)
     })
   } catch (error) { next(error) }
 }

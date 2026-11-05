@@ -70,6 +70,13 @@ export const adminApi = {
     if (!response.ok) throw new Error(data.message || 'Driver profile update failed.')
     return data
   },
+  driverSubscriptionMe: () => request('/subscriptions/me'),
+  submitSubscriptionPayment: async (form) => { const response = await fetch(`${API_BASE}/subscriptions/payments`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Subscription request failed.'); return data },
+  adminSubscriptionPlans: () => request('/subscriptions/admin/plans'),
+  createSubscriptionPlan: (data) => request('/subscriptions/admin/plans', { method: 'POST', body: JSON.stringify(data) }),
+  updateSubscriptionPlan: (id, data) => request(`/subscriptions/admin/plans/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  adminSubscriptionPayments: (status = 'PENDING') => request(`/subscriptions/admin/payments${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  reviewSubscriptionPayment: (id, data) => request(`/subscriptions/admin/payments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) }),
   walletMe: () => request('/wallet/me'),
   submitWalletRecharge: async (form) => { const response = await fetch(`${API_BASE}/wallet/recharges`, { method: 'POST', credentials: 'include', body: form }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || 'Recharge request failed.'); return data },
   walletSettings: () => request('/wallet/admin/settings'),

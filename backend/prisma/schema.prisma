@@ -81,6 +81,8 @@ model Driver {
   offers            DriverOffer[]
   wallet            DriverWallet?
   walletRecharges   WalletRecharge[]
+  subscriptionPayments DriverSubscriptionPayment[]
+  subscriptions DriverSubscription[]
   activities        DriverActivity[]
   financialAdjustments BookingAdjustment[]
   @@index([status, isOnline, locationUpdatedAt])
@@ -343,3 +345,53 @@ model FareSettings {
   createdAt             DateTime @default(now())
 }
 
+
+
+model DriverSubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  durationDays Int
+  price        Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  payments     DriverSubscriptionPayment[]
+  @@index([isActive, price])
+}
+
+model DriverSubscriptionPayment {
+  id               String   @id @default(cuid())
+  driverId         String
+  planId           String
+  planName         String
+  durationDays     Int
+  amount           Int
+  paymentMethod    String
+  paymentReference String?
+  proofUrl         String?
+  status           String   @default("PENDING")
+  reviewNote       String?
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  driver           Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  plan             DriverSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  @@index([driverId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+model DriverSubscription {
+  id        String   @id @default(cuid())
+  driverId  String
+  paymentId String   @unique
+  planName  String
+  amount    Int
+  startsAt  DateTime
+  expiresAt DateTime
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  @@index([driverId, status, expiresAt])
+}

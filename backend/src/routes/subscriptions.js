@@ -114,49 +114,72 @@ router.patch('/admin/plans/:id', requireAdmin, async (req, res, next) => {
 router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.query.status || 'ACTIVE').toUpperCase()
-    const now = new Date()
+    if (!['ACTIVE', 'EXPIRED', 'ALL'].includes(status)) {
+      return res.status(400).json({ message: 'Choose ACTIVE, EXPIRED or ALL subscriptions.' })
+    }
 
-    // Repair approved legacy payments that predate subscription record creation.
-    // paymentId is unique, so this is safe to run repeatedly and concurrently.
+    // Approved payment records are the source of truth. A subscription row may
+    // be absent for approvals made by an older version of the application.
     const approvedPayments = await prisma.driverSubscriptionPayment.findMany({
       where: { status: 'APPROVED' },
-      select: { id: true, driverId: true, planName: true, amount: true, durationDays: true, reviewedAt: true, updatedAt: true, createdAt: true }
-    })
-    for (const payment of approvedPayments) {
-      const startsAt = payment.reviewedAt || payment.updatedAt || payment.createdAt
-      const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
-      await prisma.driverSubscription.upsert({
-        where: { paymentId: payment.id },
-        create: {
-          driverId: payment.driverId,
-          paymentId: payment.id,
-          planName: payment.planName,
-          amount: payment.amount,
-          startsAt,
-          expiresAt,
-          status: 'ACTIVE'
-        },
-        update: {}
-      })
-    }
-    let where = {}
-    if (status === 'ACTIVE') where = { status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }
-    else if (status === 'EXPIRED') where = { OR: [{ status: 'EXPIRED' }, { expiresAt: { lte: now } }] }
-    else if (status !== 'ALL') return res.status(400).json({ message: 'Choose ACTIVE, EXPIRED or ALL subscriptions.' })
-    const records = await prisma.driverSubscription.findMany({
-      where,
       include: {
         driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } }
       },
-      orderBy: [{ expiresAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ reviewedAt: 'desc' }, { createdAt: 'desc' }],
       take: 500
     })
-    const payments = records.length ? await prisma.driverSubscriptionPayment.findMany({
-      where: { id: { in: records.map(record => record.paymentId) } },
-      select: { id: true, paymentMethod: true, paymentReference: true, reviewedAt: true, createdAt: true }
-    }) : []
-    const paymentById = new Map(payments.map(payment => [payment.id, payment]))
-    res.json({ subscriptions: records.map(record => ({ ...record, payment: paymentById.get(record.paymentId) || null })) })
+    const existing = approvedPayments.length
+      ? await prisma.driverSubscription.findMany({
+          where: { paymentId: { in: approvedPayments.map(payment => payment.id) } }
+        })
+      : []
+    const byPaymentId = new Map(existing.map(subscription => [subscription.paymentId, subscription]))
+    const now = new Date()
+    const subscriptions = []
+
+    for (const payment of approvedPayments) {
+      let subscription = byPaymentId.get(payment.id)
+      if (!subscription) {
+        const startsAt = payment.reviewedAt || payment.createdAt
+        const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+        subscription = await prisma.driverSubscription.upsert({
+          where: { paymentId: payment.id },
+          create: {
+            driverId: payment.driverId,
+            paymentId: payment.id,
+            planName: payment.planName,
+            amount: payment.amount,
+            startsAt,
+            expiresAt,
+            status: 'ACTIVE'
+          },
+          update: {}
+        })
+      }
+
+      // Determine current validity from the dates, not a possibly stale status flag.
+      const startsAt = subscription.startsAt
+      const expiresAt = subscription.expiresAt
+      const isActiveNow = startsAt <= now && expiresAt > now
+      if (status === 'ACTIVE' && !isActiveNow) continue
+      if (status === 'EXPIRED' && isActiveNow) continue
+
+      subscriptions.push({
+        ...subscription,
+        status: isActiveNow ? 'ACTIVE' : 'EXPIRED',
+        driver: payment.driver,
+        payment: {
+          id: payment.id,
+          paymentMethod: payment.paymentMethod,
+          paymentReference: payment.paymentReference,
+          reviewedAt: payment.reviewedAt,
+          createdAt: payment.createdAt
+        }
+      })
+    }
+
+    subscriptions.sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt))
+    res.json({ subscriptions })
   } catch (error) { next(error) }
 })
 

@@ -313,7 +313,7 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
       )}
 
       {estimate && (
-        <section className="mt-3 grid grid-cols-4 items-stretch gap-1.5 rounded-2xl border border-blue-100 bg-white p-2.5 shadow-sm sm:mt-4 sm:gap-3 sm:p-3">
+        <section className="mt-3 grid grid-cols-3 items-stretch gap-1.5 rounded-2xl border border-blue-100 bg-white p-2.5 shadow-sm sm:mt-4 sm:gap-3 sm:p-3 md:grid-cols-4">
           <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
             <RouteIcon size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
             <div className="min-w-0">
@@ -321,21 +321,21 @@ export default function BookingPanel({ initialDestination = null, pickup: extern
               <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Distance</p>
             </div>
           </div>
-          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-white/20 bg-transparent px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
-            <Clock3 size={15} className="shrink-0 text-white/80 sm:size-[17px]" />
+          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
+            <Clock3 size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
             <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs font-bold text-white sm:text-base">{estimate.durationMinutes} min</p>
-              <p className="text-[9px] font-medium text-white/75 sm:text-xs">Time</p>
+              <p className="whitespace-nowrap text-xs font-bold text-wayz-ink sm:text-base">{estimate.durationMinutes} min</p>
+              <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Time</p>
             </div>
           </div>
-          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-white/20 bg-transparent px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
-            <BadgeIndianRupee size={15} className="shrink-0 text-white/80 sm:size-[17px]" />
+          <div className="flex min-w-0 flex-col items-center justify-center rounded-lg border border-blue-100 bg-white px-1 py-2 text-center sm:flex-row sm:gap-2 sm:px-3 sm:py-2.5">
+            <BadgeIndianRupee size={15} className="shrink-0 text-wayz-blue sm:size-[17px]" />
             <div className="min-w-0">
-              <p className="whitespace-nowrap text-xs font-bold text-white sm:text-base">₹{estimate.fare}</p>
-              <p className="text-[9px] font-medium text-white/75 sm:text-xs">Price</p>
+              <p className="whitespace-nowrap text-xs font-bold text-wayz-ink sm:text-base">₹{estimate.fare}</p>
+              <p className="text-[9px] font-medium text-slate-500 sm:text-xs">Price</p>
             </div>
           </div>
-          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="flex min-w-0 min-h-[52px] items-center justify-center rounded-xl bg-wayz-yellow px-2 py-3 text-center text-xs font-bold leading-tight text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 sm:h-[58px] sm:px-4 sm:text-sm">Continue booking</button>
+          <button type="button" onClick={() => { setBooking({ mode: 'instant', pickup, destination, estimate, vehicle: 'auto' }); navigate('/travel-details') }} className="col-span-3 flex min-h-[52px] w-full items-center justify-center rounded-xl bg-wayz-yellow px-5 py-3 text-center text-sm font-bold leading-tight text-wayz-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-300 md:col-span-1 sm:min-h-[58px]">Continue booking</button>
         </section>
       )}
     </div>

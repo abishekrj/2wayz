@@ -39,7 +39,7 @@ function downloadCsv(rows, from, to) {
 function Metric({ label, value, detail, icon: Icon }) {
   return <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
     <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold text-slate-500">{label}</p><Icon size={18} className="text-wayz-blue"/></div>
-    <p className="mt-3 text-2xl font-extrabold tracking-tight text-wayz-ink">{value}</p>
+    <p className="mt-3 text-2xl font-bold tracking-tight text-wayz-ink">{value}</p>
     {detail && <p className="mt-1 text-xs text-slate-400">{detail}</p>}
   </div>
 }
@@ -101,7 +101,7 @@ export default function AdminDriverReportsPage() {
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Performance analytics</p>
-        <h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Driver Performance & Reports</h1>
+        <h1 className="mt-2 text-3xl font-bold text-wayz-ink">Driver Performance & Reports</h1>
         <p className="mt-2 text-sm text-slate-500">Review completed rides, driver responses, fares and wallet commission.</p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -127,7 +127,7 @@ export default function AdminDriverReportsPage() {
 
     {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
     {loading ? <p className="mt-6 rounded-xl border bg-white p-8 text-sm text-slate-500">Loading performance report…</p> : summary && <>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-extrabold text-wayz-ink">Period overview</h2><p className="text-xs text-slate-400">{from} to {to}</p></div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold text-wayz-ink">Period overview</h2><p className="text-xs text-slate-400">{from} to {to}</p></div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Ride requests" value={summary.totalRequests} detail="Requests created in this period" icon={CarFront}/>
         <Metric label="Completed rides" value={summary.totalCompleted} detail="Trips completed by drivers" icon={TrendingUp}/>
@@ -142,7 +142,7 @@ export default function AdminDriverReportsPage() {
 
       <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
-          <div><h2 className="font-extrabold text-wayz-ink">Driver-wise performance</h2><p className="mt-1 text-xs text-slate-500">Search drivers by name, mobile, vehicle or service area.</p></div>
+          <div><h2 className="font-bold text-wayz-ink">Driver-wise performance</h2><p className="mt-1 text-xs text-slate-500">Search drivers by name, mobile, vehicle or service area.</p></div>
           <div className="relative w-full sm:max-w-sm"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search driver records" className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-wayz-blue"/></div>
         </div>
         {!hasRows ? <p className="p-8 text-center text-sm text-slate-500">No driver performance records match this filter.</p> :
@@ -159,7 +159,7 @@ export default function AdminDriverReportsPage() {
       </section>
 
       <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 p-4 sm:p-5"><h2 className="font-extrabold text-wayz-ink">Daily ride summary</h2><p className="mt-1 text-xs text-slate-500">Daily completed rides, cancellations, final fares and estimated driver net earnings.</p></div>
+        <div className="border-b border-slate-100 p-4 sm:p-5"><h2 className="font-bold text-wayz-ink">Daily ride summary</h2><p className="mt-1 text-xs text-slate-500">Daily completed rides, cancellations, final fares and estimated driver net earnings.</p></div>
         {daily.length === 0 ? <p className="p-8 text-center text-sm text-slate-500">No completed or cancelled rides in this period.</p> :
           <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Completed</th><th className="px-4 py-3">Cancelled</th><th className="px-4 py-3">Final fares</th><th className="px-4 py-3">Net earnings</th></tr></thead><tbody className="divide-y divide-slate-100">{daily.map(day => <tr key={day.date}><td className="px-4 py-3 font-medium">{day.date}</td><td className="px-4 py-3 text-emerald-700">{day.completedRides}</td><td className="px-4 py-3">{day.cancelledRides}</td><td className="px-4 py-3 font-semibold">{money(day.fares)}</td><td className="px-4 py-3 font-semibold text-emerald-700">{money(day.netEarnings)}</td></tr>)}</tbody></table></div>}
       </section>

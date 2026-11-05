@@ -93,7 +93,7 @@ export function SiteHeader() {
 
   return (
     <header className="relative z-30 border-b border-slate-100 bg-white">
-      <div className="mx-auto flex min-h-[80px] max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+      <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4 lg:min-h-[80px] lg:px-8">
         <Brand />
         <nav aria-label="Main navigation" className="mx-4 hidden flex-1 items-center justify-center gap-6 text-sm md:flex lg:gap-8">
           {navigation.map((item) => {
@@ -123,7 +123,7 @@ export function SiteHeader() {
         </div>
         <button aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg border border-slate-200 p-2 text-wayz-navy md:hidden">{menuOpen ? <X/> : <Menu/>}</button>
       </div>
-      {menuOpen && <nav aria-label="Mobile navigation" className="grid gap-1 border-t border-slate-100 bg-white px-5 py-3 text-sm md:hidden">
+      {menuOpen && <nav aria-label="Mobile navigation" className="grid gap-1 border-t border-slate-100 bg-white px-4 py-3 text-sm md:hidden">
         {navigation.map((item) => {
           const active = pathname === item.to
           return <Link key={item.to} onClick={() => setMenuOpen(false)} to={item.to} aria-current={active ? 'page' : undefined} className={`rounded-lg px-3 py-3 transition ${active ? 'bg-blue-50 font-bold text-wayz-blue' : 'font-semibold text-slate-700 hover:bg-wayz-mist'}`}>{item.label}</Link>

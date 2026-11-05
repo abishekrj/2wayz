@@ -20,6 +20,7 @@ import sosRoutes from './routes/sos.js'
 import reviewRoutes from './routes/reviews.js'
 import savedPlaceRoutes from './routes/savedPlaces.js'
 import fareSettingsRoutes from './routes/fareSettings.js'
+import { suspendDriversWithExpiredDocuments } from './lib/driverCompliance.js'
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error('DATABASE_URL and a JWT_SECRET of at least 32 characters are required.')
@@ -67,4 +68,7 @@ app.use((error, req, res, next) => {
 })
 app.listen(port, () => {
   console.log(`2WAYZ API listening on port ${port}`)
+  const checkDriverDocuments = () => suspendDriversWithExpiredDocuments().catch(error => console.error('Driver document expiry check failed:', error))
+  checkDriverDocuments()
+  setInterval(checkDriverDocuments, 60 * 1000)
 })

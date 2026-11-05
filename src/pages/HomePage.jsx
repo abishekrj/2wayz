@@ -50,10 +50,12 @@ function useHomepageSections(){
 function SectionTitle({eyebrow,heading,description}){return <div className="mx-auto max-w-2xl text-center"><p className="text-xs font-bold uppercase tracking-[.2em] text-wayz-blue">{eyebrow}</p><h2 className="mt-3 text-3xl font-bold text-wayz-ink sm:text-4xl">{heading}</h2>{description&&<p className="mt-3 text-sm leading-6 text-slate-500">{description}</p>}</div>}
 function Hero({data,destination}) {
  const [pickup,setPickup]=useState(null)
+ const [dropoff,setDropoff]=useState(destination || null)
+ const [activeField,setActiveField]=useState('pickup')
  return <section className="relative isolate z-20 overflow-visible bg-[#f5f8fc] text-white">
-  <PickupMap value={pickup} onSelect={setPickup}/>
+  <PickupMap value={activeField === 'destination' ? dropoff : pickup} onSelect={activeField === 'destination' ? setDropoff : setPickup} activeField={activeField}/>
   <div className="relative z-20 mx-auto -mt-7 max-w-7xl px-4 pb-7 sm:-mt-12 sm:px-8 sm:pb-10 lg:-mt-14">
-   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup}/>
+   <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup} destination={dropoff} onDestinationChange={setDropoff} activeField={activeField} onActiveFieldChange={setActiveField}/>
   </div>
  </section>
 }

@@ -112,20 +112,24 @@ export default function DriverPortalPage() {
     return () => window.clearInterval(timer)
   }, [driver?.isOnline, refreshOffers])
 
+  const hasActiveRide = activeBookings.some(item => ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(item.status))
+  const shouldShareGps = Boolean(driver?.isOnline || hasActiveRide)
+
   useEffect(() => {
-    if (!driver?.isOnline) return
+    if (!driver?.id || !shouldShareGps) return
     if (!navigator.geolocation) { setGpsError('This browser does not support GPS location.'); return }
     watchId.current = navigator.geolocation.watchPosition(async position => {
       const now = Date.now()
-      if (now - lastSentAt.current < 12000) return
+      const minimumInterval = hasActiveRide ? 5000 : 12000
+      if (now - lastSentAt.current < minimumInterval) return
       lastSentAt.current = now
       try {
         await adminApi.driverLocation(position.coords.latitude, position.coords.longitude)
         setGpsError('')
       } catch (err) { setGpsError(err.message || 'Unable to update GPS location.') }
-    }, err => setGpsError(err.code === 1 ? 'Location permission was denied. Turn it on to remain available for rides.' : 'GPS signal unavailable. Move to an area with better reception.'), { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 })
+    }, err => setGpsError(err.code === 1 ? 'Location permission was denied. Enable location access to share your position during an active ride.' : 'GPS signal unavailable. Move to an area with better reception.'), { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 })
     return () => { if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current); watchId.current = null }
-  }, [driver?.isOnline])
+  }, [driver?.id, shouldShareGps, hasActiveRide])
 
   async function login(event) {
     event.preventDefault(); setError(''); setBusy(true)

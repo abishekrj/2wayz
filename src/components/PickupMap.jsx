@@ -93,7 +93,7 @@ export default function PickupMap({ value, onSelect }) {
       {mapReady && (
         <>
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center">
-            <span className="mb-1.5 whitespace-nowrap rounded-full border border-white/80 bg-[#073B83] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">Pickup point</span>
+            <span className="relative mb-2 whitespace-nowrap rounded-lg border border-white/80 bg-[#073B83] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-x-[7px] after:border-t-[7px] after:border-x-transparent after:border-t-[#073B83] after:content-['']">Pickup point</span>
             <div className="relative">
               <MapPin size={43} fill="#073B83" stroke="white" strokeWidth={1.8} className="drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]" />
               <span className="absolute left-1/2 top-[13px] h-2 w-2 -translate-x-1/2 rounded-full bg-wayz-yellow" />

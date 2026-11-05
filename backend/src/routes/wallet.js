@@ -19,7 +19,10 @@ const upload = multer({
     filename: (_req, file, cb) => cb(null, randomUUID() + path.extname(file.originalname).toLowerCase())
   }),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype))
+  fileFilter: (_req, file, cb) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(new Error('Upload a JPG, PNG or WEBP image.'))
+    cb(null, true)
+  }
 })
 function handleProofUpload(req, res, next) {
   upload.single('proof')(req, res, error => {

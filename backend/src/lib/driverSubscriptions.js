@@ -50,8 +50,14 @@ export async function processDriverSubscriptions() {
  */
 export async function reconcileApprovedDriverSubscriptions(db, driverId) {
   const payments = await db.driverSubscriptionPayment.findMany({
-    where: { driverId, status: 'APPROVED' },
-    orderBy: [{ reviewedAt: 'asc' }, { updatedAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
+    where: { driverId, status: 'APPROVED' }
+  })
+  // Sort by the best available approval timestamp; reviewedAt is null on
+  // records approved by older app versions.
+  payments.sort((a, b) => {
+    const aTime = (a.reviewedAt || a.updatedAt || a.createdAt).getTime()
+    const bTime = (b.reviewedAt || b.updatedAt || b.createdAt).getTime()
+    return aTime - bTime || a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)
   })
 
   let previousExpiry = null

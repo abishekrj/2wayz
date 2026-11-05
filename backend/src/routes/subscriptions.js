@@ -18,11 +18,19 @@ const upload = multer({ storage: multer.diskStorage({ destination: (_req, _file,
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return cb(new Error('Upload a JPG, PNG or WEBP image.'))
     cb(null, true)
   } })
-function requireDriver(req, res, next) {
+async function requireDriver(req, res, next) {
   const token = req.cookies?.twoWayzDriver
   if (!token) return res.status(401).json({ message: 'Please sign in as a driver.' })
-  try { const payload = jwt.verify(token, process.env.JWT_SECRET); if (payload.role !== 'DRIVER') return res.status(401).json({ message: 'Invalid driver session.' }); req.driverAuth = payload; next() }
+  let payload
+  try { payload = jwt.verify(token, process.env.JWT_SECRET) }
   catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
+  if (payload.role !== 'DRIVER') return res.status(401).json({ message: 'Invalid driver session.' })
+  try {
+    const driver = await prisma.driver.findUnique({ where: { id: payload.sub }, select: { id: true } })
+    if (!driver) return res.status(401).json({ message: 'Your driver account is no longer available.' })
+    req.driverAuth = payload
+    next()
+  } catch (error) { next(error) }
 }
 function handleUpload(req, res, next) { upload.single('proof')(req, res, error => { if (error) return res.status(400).json({ message: error.message || 'Payment proof upload failed.' }); validateImageUpload(req, res, next) }) }
 

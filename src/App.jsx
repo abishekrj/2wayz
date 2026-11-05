@@ -27,6 +27,7 @@ import AdminFareSettingsPage from './pages/AdminFareSettingsPage'
 import AdminNotificationsPage from './pages/AdminNotificationsPage'
 import AdminSosPage from './pages/AdminSosPage'
 import AdminRatingsPage from './pages/AdminRatingsPage'
+import AdminSubscriptionsPage from './pages/AdminSubscriptionsPage'
 import CmsContentPage from './pages/CmsContentPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
@@ -59,6 +60,7 @@ function AdminRoutes() {
       <Route path="driver-operations" element={<AdminDriverOperationsPage/>}/>
       <Route path="driver-reports" element={<AdminDriverReportsPage/>}/>
       <Route path="wallet" element={<AdminWalletPage/>}/>
+      <Route path="subscriptions" element={<AdminSubscriptionsPage/>}/>
       <Route path="bookings" element={<AdminBookingsPage/>}/>
       <Route path="fare-settings" element={<AdminFareSettingsPage/>}/>
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>

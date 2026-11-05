@@ -63,6 +63,7 @@ export async function reconcileApprovedDriverSubscriptions(db, driverId) {
   let previousExpiry = null
   let previousWasDaily = false
   let previousDailyId = null
+  let previousDailyStart = null
   const now = new Date()
   const openEndedExpiry = new Date('9999-12-31T23:59:59.999Z')
   const reconciled = []
@@ -75,9 +76,10 @@ export async function reconcileApprovedDriverSubscriptions(db, driverId) {
         where: { id: previousDailyId, status: 'ACTIVE' },
         data: { status: 'REPLACED' }
       })
-      previousExpiry = null
+      previousExpiry = previousDailyStart
       previousWasDaily = false
       previousDailyId = null
+      previousDailyStart = null
     }
     const startsAt = previousExpiry && previousExpiry > approvalTime ? previousExpiry : approvalTime
     const isDailyPlan = Number(payment.durationDays) === 1
@@ -93,6 +95,7 @@ export async function reconcileApprovedDriverSubscriptions(db, driverId) {
     previousExpiry = expiresAt
     previousWasDaily = isDailyPlan
     previousDailyId = isDailyPlan ? subscription.id : null
+    previousDailyStart = isDailyPlan ? startsAt : null
     reconciled.push(subscription)
   }
 

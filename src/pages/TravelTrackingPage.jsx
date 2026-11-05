@@ -57,7 +57,7 @@ export default function TravelTrackingPage() {
   const { pickup, destination, estimate } = booking
   const status = serverBooking?.status || booking.bookingStatus || 'REQUESTED'
   const driver = serverBooking?.driver || null
-  const liveDriverLocation = driver?.locationIsFresh && Number.isFinite(Number(driver.currentLat)) && Number.isFinite(Number(driver.currentLng)) ? { lat: Number(driver.currentLat), lng: Number(driver.currentLng) } : null
+  const liveDriverLocation = driver?.currentLat != null && driver?.currentLng != null && Number.isFinite(Number(driver.currentLat)) && Number.isFinite(Number(driver.currentLng)) ? { lat: Number(driver.currentLat), lng: Number(driver.currentLng) } : null
 
   async function cancelBooking() {
     if (!booking?.bookingId || cancelling) return

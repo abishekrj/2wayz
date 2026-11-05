@@ -46,7 +46,7 @@ async function sendPaymentProof(req, res, next, adminAccess = false) {
     if (!payment?.proofUrl) return res.sendStatus(404)
     if (!adminAccess && payment.driverId !== req.driverAuth.sub) return res.sendStatus(404)
     const filename = path.basename(payment.proofUrl)
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpe?g|png|webp)$/i.test(filename)) return res.sendStatus(404)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpe?g|png|webp)$/i.test(filename)) return res.sendStatus(404)
     res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })
     res.sendFile(filename, { root: uploadDir }, error => {
       if (error && !res.headersSent) next(error)

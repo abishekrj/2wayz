@@ -5,25 +5,31 @@ import { requireAdmin } from '../middleware/requireAdmin.js'
 
 const router = Router()
 
-function roleAuth(req, res, next) {
+async function roleAuth(req, res, next) {
   const requestedRole = String(req.query.role || '').toUpperCase()
   const candidates = requestedRole === 'DRIVER'
     ? [['twoWayzDriver', 'DRIVER']]
     : requestedRole === 'PASSENGER'
       ? [['twoWayzPassenger', 'PASSENGER']]
       : [['twoWayzPassenger', 'PASSENGER'], ['twoWayzDriver', 'DRIVER']]
+  let matched = null
   for (const [cookie, role] of candidates) {
     const token = req.cookies?.[cookie]
     if (!token) continue
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET)
-      if (payload.role === role) {
-        req.notificationAuth = { role, id: payload.sub }
-        return next()
-      }
+      if (payload.role === role) { matched = { role, id: payload.sub }; break }
     } catch {}
   }
-  return res.status(401).json({ message: 'Please sign in to view notifications.' })
+  if (!matched) return res.status(401).json({ message: 'Please sign in to view notifications.' })
+  try {
+    const account = matched.role === 'PASSENGER'
+      ? await prisma.passengerUser.findUnique({ where: { id: matched.id }, select: { id: true, isActive: true } })
+      : await prisma.driver.findUnique({ where: { id: matched.id }, select: { id: true } })
+    if (!account || (matched.role === 'PASSENGER' && !account.isActive)) return res.status(401).json({ message: 'This account is no longer available.' })
+    req.notificationAuth = matched
+    next()
+  } catch (error) { next(error) }
 }
 
 router.get('/me', roleAuth, async (req, res, next) => {

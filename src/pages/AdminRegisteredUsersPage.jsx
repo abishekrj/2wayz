@@ -38,8 +38,8 @@ export default function AdminRegisteredUsersPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-xs font-bold uppercase tracking-widest text-wayz-blue">User management</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Registered Users</h1><p className="mt-2 text-sm text-slate-500">View passenger accounts created on 2WAYZ.</p></div>
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"><Users className="text-wayz-blue" size={20}/><div><p className="text-xs text-slate-500">Total registered</p><p className="text-xl font-extrabold text-wayz-ink">{data.pagination.total}</p></div></div>
+        <div><p className="text-xs font-bold uppercase tracking-widest text-wayz-blue">User management</p><h1 className="mt-2 text-3xl font-bold text-wayz-ink">Registered Users</h1><p className="mt-2 text-sm text-slate-500">View passenger accounts created on 2WAYZ.</p></div>
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"><Users className="text-wayz-blue" size={20}/><div><p className="text-xs text-slate-500">Total registered</p><p className="text-xl font-bold text-wayz-ink">{data.pagination.total}</p></div></div>
       </div>
 
       <form onSubmit={submitSearch} className="mt-7 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row">

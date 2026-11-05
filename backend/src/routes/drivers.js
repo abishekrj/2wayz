@@ -12,6 +12,7 @@ import { notify, notifyBooking } from '../lib/notifications.js'
 import { createRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
 import { expiredDriverDocuments, istTodayString, suspendDriverIfDocumentsExpired } from '../lib/driverCompliance.js'
 import { validateImageUpload } from '../lib/validateImageUpload.js'
+import { reconcileApprovedDriverSubscriptions } from '../lib/driverSubscriptions.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -69,26 +70,7 @@ async function requireDriver(req, res, next) {
 
 
 async function ensureApprovedDriverSubscriptions(driverId) {
-  const payments = await prisma.driverSubscriptionPayment.findMany({
-    where: { driverId, status: 'APPROVED' },
-    orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }]
-  })
-  for (const payment of payments) {
-    const existing = await prisma.driverSubscription.findUnique({ where: { paymentId: payment.id } })
-    if (existing) continue
-    const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
-    const previous = await prisma.driverSubscription.findFirst({
-      where: { driverId, startsAt: { lte: approvalTime }, expiresAt: { gt: approvalTime } },
-      orderBy: { expiresAt: 'desc' }
-    })
-    const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime ? previous.expiresAt : approvalTime
-    const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
-    await prisma.driverSubscription.upsert({
-      where: { paymentId: payment.id },
-      create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status: 'ACTIVE' },
-      update: {}
-    })
-  }
+  await prisma.$transaction(tx => reconcileApprovedDriverSubscriptions(tx, driverId))
 }
 
 async function walletEligibility(driverId) {

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, Clock3, RefreshCw, Search, Users, X, FileClock } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5001/api').replace(/\\/api\\/?$/, '')
+
 const statuses = [
   { value: 'PENDING', label: 'Pending review' },
   { value: 'APPROVED', label: 'Approved' },
@@ -138,7 +140,7 @@ export default function AdminDriversPage() {
                     {driver.isOnline && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Online</span>}
                   </div>
                   <div className="mb-3 flex items-center gap-3">
-                    {driver.profilePhotoUrl ? <img src={`http://127.0.0.1:5001${driver.profilePhotoUrl}`} alt={driver.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover"/> : <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">No photo</span>}
+                    {driver.profilePhotoUrl ? <img src={`${API_ORIGIN}${driver.profilePhotoUrl}`} alt={driver.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover"/> : <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-400">No photo</span>}
                     <div><p className="text-sm font-semibold text-slate-700">{driver.age ? `Age ${driver.age}` : 'Age not provided'}</p><p className="mt-1 text-xs text-slate-500">Profile photo</p></div>
                   </div>
                   <p className="mt-2 text-sm text-slate-600">{driver.phone} · {driver.serviceArea}</p>
@@ -149,7 +151,6 @@ export default function AdminDriversPage() {
                     <p>FC expires: <strong>{driver.fcExpiryDate ? new Date(driver.fcExpiryDate).toLocaleDateString('en-IN') : 'Not provided'}</strong></p>
                   </div>
                   <p className="mt-1 text-sm text-slate-600">Vehicle: <strong>{driver.vehicleNumber}</strong></p>
-                  <p className="mt-1 text-sm text-slate-600">Driving licence: <strong>{driver.licenceNumber}</strong></p>
                   <p className="mt-2 text-xs text-slate-400">Registered {new Date(driver.createdAt).toLocaleString('en-IN')}</p>
                   {driver.currentLat != null && <p className="mt-1 text-xs text-slate-500">Last GPS: {driver.currentLat.toFixed(5)}, {driver.currentLng.toFixed(5)} {driver.locationUpdatedAt ? '· ' + new Date(driver.locationUpdatedAt).toLocaleString('en-IN') : ''}</p>}
                 </div>

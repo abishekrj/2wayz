@@ -33,6 +33,27 @@ async function requireDriver(req, res, next) {
   } catch (error) { next(error) }
 }
 function handleUpload(req, res, next) { upload.single('proof')(req, res, error => { if (error) return res.status(400).json({ message: error.message || 'Payment proof upload failed.' }); validateImageUpload(req, res, next) }) }
+function privatePaymentProofUrl(payment) {
+  return payment?.proofUrl ? `/api/subscriptions/payments/${payment.id}/proof` : null
+}
+
+async function sendPaymentProof(req, res, next, adminAccess = false) {
+  try {
+    const payment = await prisma.driverSubscriptionPayment.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, driverId: true, proofUrl: true }
+    })
+    if (!payment?.proofUrl) return res.sendStatus(404)
+    if (!adminAccess && payment.driverId !== req.driverAuth.sub) return res.sendStatus(404)
+    const filename = path.basename(payment.proofUrl)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpe?g|png|webp)$/i.test(filename)) return res.sendStatus(404)
+    res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })
+    res.sendFile(filename, { root: uploadDir }, error => {
+      if (error && !res.headersSent) next(error)
+    })
+  } catch (error) { next(error) }
+}
+
 
 router.get('/plans', requireDriver, async (_req, res, next) => { try { res.json({ plans: await prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] }) }) } catch (error) { next(error) } })
 router.get('/me', requireDriver, async (req, res, next) => {
@@ -40,10 +61,10 @@ router.get('/me', requireDriver, async (req, res, next) => {
     const now = new Date()
     const [subscription, payments, plans] = await Promise.all([
       prisma.driverSubscription.findFirst({ where: { driverId: req.driverAuth.sub, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
-      prisma.driverSubscriptionPayment.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true } }),
+      prisma.driverSubscriptionPayment.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true, proofUrl: true } }),
       prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] })
     ])
-    res.json({ subscription, payments, plans, isSubscribed: Boolean(subscription) })
+    res.json({ subscription, payments: payments.map(payment => ({ ...payment, proofUrl: privatePaymentProofUrl(payment) })), plans, isSubscribed: Boolean(subscription) })
   } catch (error) { next(error) }
 })
 router.post('/payments', requireDriver, handleUpload, async (req, res, next) => {
@@ -58,7 +79,7 @@ router.post('/payments', requireDriver, handleUpload, async (req, res, next) => 
     if (await prisma.driverSubscriptionPayment.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })) return res.status(409).json({ message: 'You already have a subscription payment awaiting Super Admin review.' })
     const payment = await prisma.driverSubscriptionPayment.create({ data: { driverId: req.driverAuth.sub, planId: plan.id, planName: plan.name, durationDays: plan.durationDays, amount: plan.price, paymentMethod, paymentReference: paymentReference || null, proofUrl: req.file ? '/uploads/subscriptions/' + req.file.filename : null } })
     await notify({ role: 'ADMIN', type: 'SUBSCRIPTION_PAYMENT', title: 'Driver subscription payment received', message: 'A driver submitted a ' + paymentMethod.toLowerCase() + ' subscription payment request for ' + plan.name + ' (₹' + plan.price + ').' })
-    res.status(201).json({ payment, message: 'Subscription payment request submitted. Your plan will activate after Super Admin confirmation.' })
+    res.status(201).json({ payment: { ...payment, proofUrl: privatePaymentProofUrl(payment) }, message: 'Subscription payment request submitted. Your plan will activate after Super Admin confirmation.' })
   } catch (error) { next(error) }
 })
 router.get('/admin/plans', requireAdmin, async (_req, res, next) => { try { res.json({ plans: await prisma.driverSubscriptionPlan.findMany({ orderBy: [{ isActive: 'desc' }, { durationDays: 'asc' }] }) }) } catch (error) { next(error) } })
@@ -83,8 +104,21 @@ router.patch('/admin/plans/:id', requireAdmin, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 router.get('/admin/payments', requireAdmin, async (req, res, next) => {
-  try { const status = String(req.query.status || '').toUpperCase(); const where = ['PENDING', 'APPROVED', 'REJECTED'].includes(status) ? { status } : {}; const payments = await prisma.driverSubscriptionPayment.findMany({ where, include: { driver: { select: { id: true, name: true, phone: true, vehicleNumber: true } }, plan: { select: { name: true } } }, orderBy: { createdAt: 'desc' }, take: 200 }); res.json({ payments }) } catch (error) { next(error) }
+  try {
+    const status = String(req.query.status || '').toUpperCase()
+    const where = ['PENDING', 'APPROVED', 'REJECTED'].includes(status) ? { status } : {}
+    const payments = await prisma.driverSubscriptionPayment.findMany({
+      where,
+      include: { driver: { select: { id: true, name: true, phone: true, vehicleNumber: true } }, plan: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200
+    })
+    res.json({ payments: payments.map(payment => ({ ...payment, proofUrl: privatePaymentProofUrl(payment) })) })
+  } catch (error) { next(error) }
 })
+
+router.get('/payments/:id/proof', requireDriver, (req, res, next) => sendPaymentProof(req, res, next))
+router.get('/admin/payments/:id/proof', requireAdmin, (req, res, next) => sendPaymentProof(req, res, next, true))
 router.patch('/admin/payments/:id', requireAdmin, async (req, res, next) => {
   try {
     const decision = String(req.body?.status || '').toUpperCase(), reviewNote = String(req.body?.reviewNote || '').trim().slice(0, 500)

@@ -57,7 +57,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
               setStatus('')
             } catch {
               if (mounted && requestId === requestRef.current) {
-                setStatus('Could not identify this point. You can search for the pickup address.')
+                setStatus('Could not identify this point. You can search for the location.')
               }
             }
           }, 450)
@@ -66,7 +66,7 @@ export default function PickupMap({ value, onSelect, activeField = 'pickup', rou
         setStatus(value?.location ? '' : `Move the map to choose your ${activeField === 'destination' ? 'drop' : 'pickup'} point`)
       })
       .catch(() => {
-        if (mounted) setStatus('Map unavailable. You can still search for your pickup location.')
+        if (mounted) setStatus('Map unavailable. You can still search for a location.')
       })
 
     return () => {

@@ -42,6 +42,36 @@ function ScrollToTop() {
   return null
 }
 
+function ModalBodyScrollLock() {
+  useEffect(() => {
+    let locked = false
+    let previousOverflow = ''
+
+    const syncScrollLock = () => {
+      const modalOpen = Boolean(document.querySelector('[aria-modal="true"]'))
+      if (modalOpen && !locked) {
+        previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        locked = true
+      } else if (!modalOpen && locked) {
+        document.body.style.overflow = previousOverflow
+        locked = false
+      }
+    }
+
+    const observer = new MutationObserver(syncScrollLock)
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-modal'] })
+    syncScrollLock()
+
+    return () => {
+      observer.disconnect()
+      if (locked) document.body.style.overflow = previousOverflow
+    }
+  }, [])
+
+  return null
+}
+
 function AdminRoutes() {
   const [admin,setAdmin] = useState(null)
   const [checking,setChecking] = useState(true)
@@ -81,6 +111,7 @@ function AdminRoutes() {
 export default function App() {
   return <BookingProvider><BrowserRouter>
     <ScrollToTop />
+    <ModalBodyScrollLock />
     <PWAInstallPrompt />
     <Routes>
       <Route path="/admin/*" element={<AdminRoutes/>}/>

@@ -21,6 +21,7 @@ export default function AdminDriversPage() {
   const [notice, setNotice] = useState('')
   const [editingDriver, setEditingDriver] = useState(null)
   const [documentForm, setDocumentForm] = useState({ age: '', drivingLicenceExpiryDate: '', vehicleInsuranceExpiryDate: '', fcExpiryDate: '' })
+  const minExpiryDate = (() => { const date = new Date(); date.setDate(date.getDate() + 1); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` })()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -167,7 +168,7 @@ export default function AdminDriversPage() {
       <form onSubmit={saveDocuments} className="max-h-[calc(100dvh-24px)] w-full max-w-xl space-y-4 overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-center justify-between gap-3"><div><h2 id="edit-driver-documents-title" className="text-xl font-bold text-wayz-ink">Update driver documents</h2><p className="mt-1 text-sm text-slate-500">{editingDriver.name} · {editingDriver.phone}</p></div><button type="button" onClick={() => setEditingDriver(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close"><X size={20}/></button></div>
         <label className="block text-sm font-semibold text-slate-700">Age<input required type="number" min="18" max="100" value={documentForm.age} onChange={e => setDocumentForm(v => ({...v, age:e.target.value}))} className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-base"/></label>
-        <label className="block text-sm font-semibold text-slate-700">Driving licence expiry date<input required type="date" min={new Date().toLocaleDateString('en-CA')} value={documentForm.drivingLicenceExpiryDate} onChange={e => setDocumentForm(v => ({...v, drivingLicenceExpiryDate:e.target.value}))} className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-base"/></label>
+        <label className="block text-sm font-semibold text-slate-700">Driving licence expiry date<input required type="date" min={minExpiryDate} value={documentForm.drivingLicenceExpiryDate} onChange={e => setDocumentForm(v => ({...v, drivingLicenceExpiryDate:e.target.value}))} className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-base"/></label>
         <label className="block text-sm font-semibold text-slate-700">Vehicle insurance expiry date<input required type="date" min={new Date().toLocaleDateString('en-CA')} value={documentForm.vehicleInsuranceExpiryDate} onChange={e => setDocumentForm(v => ({...v, vehicleInsuranceExpiryDate:e.target.value}))} className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-base"/></label>
         <label className="block text-sm font-semibold text-slate-700">FC expiry date<input required type="date" min={new Date().toLocaleDateString('en-CA')} value={documentForm.fcExpiryDate} onChange={e => setDocumentForm(v => ({...v, fcExpiryDate:e.target.value}))} className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-base"/></label>
         <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800">Updating dates does not automatically reactivate a suspended driver. Review the renewed documents, then use Approve to restore ride access.</p>

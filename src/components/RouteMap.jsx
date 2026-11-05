@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LoaderCircle, MapPinned } from 'lucide-react'
 
-export default function RouteMap({ route, driverLocation = null }) {
+export default function RouteMap({ route, driverLocation = null, pickup = null, destination = null }) {
   const mapElementRef = useRef(null)
   const [mapError, setMapError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -11,55 +11,58 @@ export default function RouteMap({ route, driverLocation = null }) {
 
   useEffect(() => {
     let active = true
-    let map
     let polylines = []
     let markers = []
+    let directionsRenderer
 
     async function renderRoute() {
       try {
-        if (!window.google?.maps?.importLibrary) {
-          throw new Error('Google Maps is not available. Please reload the page.')
-        }
-
+        if (!window.google?.maps?.importLibrary) throw new Error('Google Maps is not available. Please reload the page.')
         const [{ Map }, { LatLngBounds }] = await Promise.all([
           window.google.maps.importLibrary('maps'),
           window.google.maps.importLibrary('core'),
         ])
-
         if (!active || !mapElementRef.current) return
 
-        map = new Map(mapElementRef.current, {
-          center: { lat: 12.2253, lng: 79.0747 },
-          zoom: 13,
-          mapId: 'DEMO_MAP_ID',
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: true,
-          clickableIcons: false,
+        const hasCoordinates = pickup?.lat != null && pickup?.lng != null && destination?.lat != null && destination?.lng != null &&
+          [pickup.lat, pickup.lng, destination.lat, destination.lng].every(value => Number.isFinite(Number(value)))
+        const map = new Map(mapElementRef.current, {
+          center: hasCoordinates ? { lat: Number(pickup.lat), lng: Number(pickup.lng) } : { lat: 12.2253, lng: 79.0747 },
+          zoom: 13, mapId: 'DEMO_MAP_ID', mapTypeControl: false, streetViewControl: false,
+          fullscreenControl: true, clickableIcons: false,
         })
-
         mapRef.current = map
         setMapReady(true)
-        polylines = route.createPolylines({
-          polylineOptions: {
-            strokeColor: '#2563eb',
-            strokeOpacity: 0.95,
-            strokeWeight: 6,
-          },
-        })
-        polylines.forEach(polyline => polyline.setMap(map))
 
-        markers = await route.createWaypointAdvancedMarkers({ map })
-        if (!active) {
-          polylines.forEach(polyline => polyline.setMap(null))
-          markers.forEach(marker => { marker.map = null })
-          return
+        if (route?.createPolylines && route?.createWaypointAdvancedMarkers) {
+          polylines = route.createPolylines({ polylineOptions: { strokeColor: '#2563eb', strokeOpacity: 0.95, strokeWeight: 6 } })
+          polylines.forEach(polyline => polyline.setMap(map))
+          markers = await route.createWaypointAdvancedMarkers({ map })
+          if (!active) {
+            polylines.forEach(polyline => polyline.setMap(null))
+            markers.forEach(marker => { marker.map = null })
+            return
+          }
+          markers.forEach(marker => { marker.map = map })
+          const bounds = new LatLngBounds()
+          route.path?.forEach(point => bounds.extend(point))
+          if (route.path?.length) map.fitBounds(bounds, 48)
+        } else if (hasCoordinates) {
+          const { DirectionsService, DirectionsRenderer } = await window.google.maps.importLibrary('routes')
+          if (!active) return
+          directionsRenderer = new DirectionsRenderer({
+            map, suppressMarkers: false, preserveViewport: false,
+            polylineOptions: { strokeColor: '#2563eb', strokeOpacity: 0.95, strokeWeight: 6 },
+          })
+          const directions = await new DirectionsService().route({
+            origin: { lat: Number(pickup.lat), lng: Number(pickup.lng) },
+            destination: { lat: Number(destination.lat), lng: Number(destination.lng) },
+            travelMode: window.google.maps.TravelMode.DRIVING,
+          })
+          if (active) directionsRenderer.setDirections(directions)
+        } else {
+          setMapError('The saved route coordinates are unavailable for this ride.')
         }
-        markers.forEach(marker => { marker.map = map })
-
-        const bounds = new LatLngBounds()
-        route.path?.forEach(point => bounds.extend(point))
-        if (route.path?.length) map.fitBounds(bounds, 48)
       } catch (error) {
         if (active) setMapError(error.message || 'Unable to display the route map.')
       } finally {
@@ -70,7 +73,6 @@ export default function RouteMap({ route, driverLocation = null }) {
     setLoading(true)
     setMapError('')
     renderRoute()
-
     return () => {
       active = false
       mapRef.current = null
@@ -78,8 +80,9 @@ export default function RouteMap({ route, driverLocation = null }) {
       if (driverMarkerRef.current) { driverMarkerRef.current.map = null; driverMarkerRef.current = null }
       polylines.forEach(polyline => polyline.setMap(null))
       markers.forEach(marker => { marker.map = null })
+      if (directionsRenderer) directionsRenderer.setMap(null)
     }
-  }, [route])
+  }, [route, pickup?.lat, pickup?.lng, destination?.lat, destination?.lng])
 
   useEffect(() => {
     let active = true

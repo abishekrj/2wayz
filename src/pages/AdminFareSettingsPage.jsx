@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshCw, Save, IndianRupee, Info } from 'lucide-react'
+import { RefreshCw, Save, Info } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const STARTER = { baseFare: 30, includedDistanceKm: 1, perKmRate: 18, minimumFare: 50, roundingIncrement: 5, isActive: true }

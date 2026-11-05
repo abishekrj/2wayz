@@ -55,7 +55,7 @@ function Hero({data,destination}) {
    <PickupMap value={pickup} onSelect={setPickup}/>
    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#061b35]/35 via-transparent to-[#f5f8fc]/55"/>
   </div>
-  <div className="relative z-20 mx-auto -mt-5 max-w-7xl px-5 pb-8 sm:-mt-12 sm:px-8 sm:pb-10">
+  <div className="relative z-20 mx-auto -mt-7 max-w-7xl px-4 pb-7 sm:-mt-12 sm:px-8 sm:pb-10 lg:-mt-14">
    <BookingPanel initialDestination={destination} pickup={pickup} onPickupChange={setPickup}/>
   </div>
  </section>

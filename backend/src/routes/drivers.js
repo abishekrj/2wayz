@@ -1,4 +1,8 @@
 import { Router } from 'express'
+import { mkdir } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import multer from 'multer'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { rateLimit } from 'express-rate-limit'
@@ -6,11 +10,45 @@ import { prisma } from '../lib/prisma.js'
 import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
 import { createRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
+import { expiredDriverDocuments, istTodayString } from '../lib/driverCompliance.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
 const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false })
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 8, standardHeaders: 'draft-7', legacyHeaders: false })
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const driverUploadDir = path.resolve(currentDir, '../../uploads')
+const profilePhotoUpload = multer({
+  storage: multer.diskStorage({
+    destination: async (_req, _file, callback) => {
+      try { await mkdir(driverUploadDir, { recursive: true }); callback(null, driverUploadDir) }
+      catch (error) { callback(error) }
+    },
+    filename: (_req, file, callback) => callback(null, `driver-profile-${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname).toLowerCase()}`)
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) return callback(new Error('Upload a JPG, PNG or WEBP profile photo.'))
+    callback(null, true)
+  }
+})
+
+function parseFutureDate(value, label) {
+  const date = String(value || '')
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) throw Object.assign(new Error(`Enter a valid ${label}.`), { statusCode: 400 })
+  const parsed = new Date(`${date}T00:00:00.000Z`)
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw Object.assign(new Error(`Enter a valid ${label}.`), { statusCode: 400 })
+  if (date <= istTodayString()) throw Object.assign(new Error(`${label} must be a future date. Expired documents cannot be registered.`), { statusCode: 400 })
+  return parsed
+}
+
+function handleProfileUpload(req, res, next) {
+  profilePhotoUpload.single('profilePhoto')(req, res, error => {
+    if (error) return res.status(400).json({ message: error.message || 'Profile photo upload failed.' })
+    next()
+  })
+}
 
 function requireDriver(req, res, next) {
   const token = req.cookies?.twoWayzDriver
@@ -42,23 +80,29 @@ function distanceKm(aLat, aLng, bLat, bLng) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-const publicDriver = driver => ({ id: driver.id, name: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber, serviceArea: driver.serviceArea, status: driver.status, isOnline: driver.isOnline, currentLat: driver.currentLat, currentLng: driver.currentLng, locationUpdatedAt: driver.locationUpdatedAt })
+const publicDriver = driver => ({ id: driver.id, name: driver.name, phone: driver.phone, vehicleNumber: driver.vehicleNumber, serviceArea: driver.serviceArea, status: driver.status, isOnline: driver.isOnline, currentLat: driver.currentLat, currentLng: driver.currentLng, locationUpdatedAt: driver.locationUpdatedAt, profilePhotoUrl: driver.profilePhotoUrl })
 
-router.post('/register', registerLimiter, async (req, res, next) => {
+router.post('/register', registerLimiter, handleProfileUpload, async (req, res, next) => {
   try {
     const name = String(req.body?.name || '').trim()
     const phone = String(req.body?.phone || '').replace(/\D/g, '')
     const password = String(req.body?.password || '')
     const vehicleNumber = String(req.body?.vehicleNumber || '').trim().toUpperCase()
     const licenceNumber = String(req.body?.licenceNumber || '').trim().toUpperCase()
+    const age = Number(req.body?.age)
+    const drivingLicenceExpiryDate = parseFutureDate(req.body?.drivingLicenceExpiryDate, 'driving licence expiry date')
+    const vehicleInsuranceExpiryDate = parseFutureDate(req.body?.vehicleInsuranceExpiryDate, 'vehicle insurance expiry date')
+    const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
     const serviceArea = String(req.body?.serviceArea || 'Tiruvannamalai').trim().slice(0, 100)
     if (name.length < 2 || name.length > 100) return res.status(400).json({ message: 'Enter a name between 2 and 100 characters.' })
     if (!/^\d{10}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid 10-digit mobile number.' })
     if (password.length < 8 || password.length > 128) return res.status(400).json({ message: 'Password must contain at least 8 characters.' })
     if (vehicleNumber.length < 5 || vehicleNumber.length > 20) return res.status(400).json({ message: 'Enter a valid vehicle registration number.' })
     if (licenceNumber.length < 5 || licenceNumber.length > 40) return res.status(400).json({ message: 'Enter a valid driving licence number.' })
+    if (!Number.isInteger(age) || age < 18 || age > 100) return res.status(400).json({ message: 'Driver must be at least 18 years old.' })
+    if (!req.file) return res.status(400).json({ message: 'Upload a profile photo to continue.' })
     const passwordHash = await bcrypt.hash(password, 12)
-    const driver = await prisma.driver.create({ data: { name, phone, passwordHash, vehicleNumber, licenceNumber, serviceArea }, select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true } })
+    const driver = await prisma.driver.create({ data: { name, phone, passwordHash, vehicleNumber, licenceNumber, age, drivingLicenceExpiryDate, vehicleInsuranceExpiryDate, fcExpiryDate, profilePhotoUrl: `/uploads/${req.file.filename}`, serviceArea }, select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true, age: true, drivingLicenceExpiryDate: true, vehicleInsuranceExpiryDate: true, fcExpiryDate: true, profilePhotoUrl: true } })
     res.status(201).json({ driver, message: 'Registration received. A 2WAYZ administrator must verify your details before you can go online.' })
   } catch (error) {
     if (error.code === 'P2002') return res.status(409).json({ message: 'This mobile number or vehicle number is already registered.' })
@@ -436,8 +480,8 @@ router.get('/admin/:id/activity', requireAdmin, async (req, res, next) => {
 
 router.get('/admin', requireAdmin, async (req, res, next) => {
   try {
-    const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined
-    const drivers = await prisma.driver.findMany({ where: status ? { status } : {}, orderBy: { createdAt: 'desc' }, select: { id: true, name: true, phone: true, vehicleNumber: true, licenceNumber: true, serviceArea: true, status: true, isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true, createdAt: true } })
+    const status = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined
+    const drivers = await prisma.driver.findMany({ where: status ? { status } : {}, orderBy: { createdAt: 'desc' }, select: { id: true, name: true, phone: true, vehicleNumber: true, licenceNumber: true, drivingLicenceExpiryDate: true, vehicleInsuranceExpiryDate: true, fcExpiryDate: true, age: true, profilePhotoUrl: true, complianceNoticeSentAt: true, serviceArea: true, status: true, isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true, createdAt: true } })
     res.json({ drivers })
   } catch (error) { next(error) }
 })
@@ -446,9 +490,14 @@ router.patch('/admin/:id/status', requireAdmin, async (req, res, next) => {
   try {
     const status = String(req.body?.status || '').toUpperCase()
     if (!['APPROVED', 'REJECTED', 'PENDING'].includes(status)) return res.status(400).json({ message: 'Invalid driver status.' })
-    const existing = await prisma.driver.findUnique({ where: { id: req.params.id }, select: { id: true, isOnline: true } })
+    const existing = await prisma.driver.findUnique({ where: { id: req.params.id } })
     if (!existing) return res.status(404).json({ message: 'Driver not found.' })
-    const driver = await prisma.driver.update({ where: { id: req.params.id }, data: { status, isOnline: false }, select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true, isOnline: true } })
+    if (status === 'APPROVED') {
+      if (!existing.age || !existing.profilePhotoUrl || !existing.drivingLicenceExpiryDate || !existing.vehicleInsuranceExpiryDate || !existing.fcExpiryDate) return res.status(400).json({ message: 'Complete the driver profile and all required document details before approval.' })
+      const expired = expiredDriverDocuments(existing)
+      if (expired.length) return res.status(400).json({ message: `Cannot approve this driver. Expired documents: ${expired.join(', ')}.` })
+    }
+    const driver = await prisma.driver.update({ where: { id: req.params.id }, data: { status, isOnline: false, ...(status === 'APPROVED' ? { complianceNoticeSentAt: null } : {}) }, select: { id: true, name: true, phone: true, vehicleNumber: true, serviceArea: true, status: true, isOnline: true } })
     if (existing.isOnline) await prisma.driverActivity.create({ data: { driverId: driver.id, eventType: 'OFFLINE', description: 'Driver was taken offline by Super Admin.' } })
     res.json({ driver, message: 'Driver status updated.' })
   } catch (error) { if (error.code === 'P2025') return res.status(404).json({ message: 'Driver not found.' }); next(error) }

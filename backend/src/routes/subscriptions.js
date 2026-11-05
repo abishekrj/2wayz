@@ -82,9 +82,10 @@ router.post('/payments', requireDriver, handleUpload, async (req, res, next) => 
       // Serialize submissions per driver so concurrent requests cannot create duplicate pending payments.
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${req.driverAuth.sub}, 1))::text`
       const pendingCount = await tx.driverSubscriptionPayment.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })
-      if (pendingCount) throw Object.assign(new Error('You already have a subscription payment awaiting Super Admin review.'), { statusCode: 409 })
+      if (pendingCount) return null
       return tx.driverSubscriptionPayment.create({ data: { driverId: req.driverAuth.sub, planId: plan.id, planName: plan.name, durationDays: plan.durationDays, amount: plan.price, paymentMethod, paymentReference: paymentReference || null, proofUrl: req.file ? '/uploads/subscriptions/' + req.file.filename : null } })
     })
+    if (!payment) return res.status(409).json({ message: 'You already have a subscription payment awaiting Super Admin review.' })
     await notify({ role: 'ADMIN', type: 'SUBSCRIPTION_PAYMENT', title: 'Driver subscription payment received', message: 'A driver submitted a ' + paymentMethod.toLowerCase() + ' subscription payment request for ' + plan.name + ' (₹' + plan.price + ').' })
     res.status(201).json({ payment: { ...payment, proofUrl: privatePaymentProofUrl(payment) }, message: 'Subscription payment request submitted. Your plan will activate after Super Admin confirmation.' })
   } catch (error) { next(error) }

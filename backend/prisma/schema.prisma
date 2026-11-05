@@ -51,6 +51,7 @@ model PassengerUser {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   bookings     Booking[]
+  ratings      Rating[]
 }
 
 model Driver {
@@ -69,6 +70,7 @@ model Driver {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   bookings          Booking[]
+  ratings           Rating[]
   offers            DriverOffer[]
   wallet            DriverWallet?
   walletRecharges   WalletRecharge[]
@@ -122,6 +124,7 @@ model Booking {
   offers             DriverOffer[]
   financialAdjustments BookingAdjustment[]
   tripShareLink       TripShareLink?
+  rating              Rating?
   sosAlerts           SOSAlert[]
   @@index([passengerId, createdAt])
   @@index([driverId, status])
@@ -275,4 +278,25 @@ model SOSAlert {
   @@index([status, createdAt])
   @@index([bookingId, createdAt])
   @@index([triggeredByRole, triggeredById, createdAt])
+}
+
+
+model Rating {
+  id             String        @id @default(cuid())
+  bookingId      String        @unique
+  passengerId    String
+  driverId       String
+  stars          Int
+  tags           String[]      @default([])
+  comment        String?
+  isVisible      Boolean       @default(true)
+  moderationNote String?
+  hiddenAt       DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  booking        Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  passenger      PassengerUser @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+  driver         Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  @@index([driverId, isVisible, createdAt])
+  @@index([isVisible, createdAt])
 }

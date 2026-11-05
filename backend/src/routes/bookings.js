@@ -8,10 +8,7 @@ import { ensureRideStartOtp } from '../lib/rideStartOtp.js'
 import { getFareSettings, getEffectiveFareSettings } from './fareSettings.js'
 
 const router = Router()
-function allowUnsubscribedDriversInDevelopment() {
-  return process.env.NODE_ENV !== 'production' &&
-    process.env.ALLOW_UNSUBSCRIBED_DRIVERS_IN_DEV === 'true'
-}
+
 function requirePassenger(req, res, next) {
   const token = req.cookies?.twoWayzPassenger
   if (!token) return res.status(401).json({ message: 'Please log in before requesting a ride.' })
@@ -420,7 +417,7 @@ router.get('/admin/:bookingId/eligible-drivers', requireAdmin, async (req, res, 
         select: { id: true, reference: true }
       })
       const reasons = []
-      if (!allowUnsubscribedDriversInDevelopment()) {
+      {
         const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: driver.id, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
         if (!activeSubscription) reasons.push('No active 2WAYZ subscription')
       }
@@ -466,7 +463,7 @@ router.post('/admin/:bookingId/assign', requireAdmin, async (req, res, next) => 
         select: { id: true, name: true, status: true, isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true, wallet: { select: { id: true, balance: true } } }
       })
       if (!driver || driver.status !== 'APPROVED') throw Object.assign(new Error('This driver is not approved.'), { statusCode: 409 })
-      if (!allowUnsubscribedDriversInDevelopment()) {
+      {
         const activeSubscription = await tx.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
         if (!activeSubscription) throw Object.assign(new Error('This driver does not have an active 2WAYZ subscription.'), { statusCode: 409 })
       }

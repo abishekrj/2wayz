@@ -4,7 +4,7 @@ import { adminApi } from '../lib/adminApi'
 
 let mapsPromise
 
-function loadGoogleMaps() {
+export function loadGoogleMaps() {
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   if (!key) return Promise.reject(new Error('Add VITE_GOOGLE_MAPS_API_KEY to your .env.local file.'))
   if (window.google?.maps?.importLibrary) return Promise.resolve(window.google.maps)

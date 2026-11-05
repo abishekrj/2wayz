@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star, IndianRupee, CalendarClock } from 'lucide-react'
+import { LayoutDashboard, Users, Home, CarFront, MapPinned, Activity, BarChart3, Ban, Bell, ClipboardList, ChevronDown, ChevronRight, LogOut, Menu, X, FileEdit, Files, Wallet, UserRound, MapPin, HelpCircle, Siren, Star, IndianRupee, CalendarClock, Share2 } from 'lucide-react'
 import { adminApi } from '../lib/adminApi'
 
 const homeSections = [
@@ -117,6 +117,7 @@ export default function AdminLayout({ admin }) {
             <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
               <NavLink to="/admin/places" onClick={() => setMobileOpen(false)} className={submenuClass}><MapPin size={14}/>Places to Explore</NavLink>
               <NavLink to="/admin/faqs" onClick={() => setMobileOpen(false)} className={submenuClass}><HelpCircle size={14}/>FAQs</NavLink>
+              <NavLink to="/admin/social-links" onClick={() => setMobileOpen(false)} className={submenuClass}><Share2 size={14}/>Social Links</NavLink>
               {homeSections.map(([slug, title]) => (
                 <NavLink key={slug} to={`/admin/home-page/${slug}`} onClick={() => setMobileOpen(false)} className={submenuClass}>
                   <FileEdit size={14} />{title}

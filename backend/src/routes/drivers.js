@@ -513,11 +513,31 @@ router.patch('/admin/:id/profile', requireAdmin, handleProfileUpload, async (req
     const drivingLicenceExpiryDate = parseFutureDate(req.body?.drivingLicenceExpiryDate, 'driving licence expiry date')
     const vehicleInsuranceExpiryDate = parseFutureDate(req.body?.vehicleInsuranceExpiryDate, 'vehicle insurance expiry date')
     const fcExpiryDate = parseFutureDate(req.body?.fcExpiryDate, 'FC expiry date')
-    const existing = await prisma.driver.findUnique({ where: { id: req.params.id }, select: { id: true } })
+    const existing = await prisma.driver.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, drivingLicenceExpiryDate: true, vehicleInsuranceExpiryDate: true, fcExpiryDate: true }
+    })
     if (!existing) return res.status(404).json({ message: 'Driver not found.' })
+    // Allow unrelated profile edits while a driver is suspended for an already-expired
+    // document. An unchanged expired date remains unchanged; any renewed/changed date
+    // must be a valid future date.
+    const adminDocumentDate = (value, label, existingDate) => {
+      const date = String(value || '')
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw Object.assign(new Error('Enter a valid ' + label + '.'), { statusCode: 400 })
+      const parsed = new Date(`${date}T00:00:00.000Z`)
+      if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw Object.assign(new Error(`Enter a valid ${label}.`), { statusCode: 400 })
+      const existingDateString = existingDate ? new Date(existingDate).toISOString().slice(0, 10) : ''
+      if (date <= istTodayString() && date !== existingDateString) throw Object.assign(new Error(`${label} must be a future date.`), { statusCode: 400 })
+      return parsed
+    }
+    const updatedDrivingLicenceExpiryDate = adminDocumentDate(req.body?.drivingLicenceExpiryDate, 'driving licence expiry date', existing.drivingLicenceExpiryDate)
+    const updatedVehicleInsuranceExpiryDate = adminDocumentDate(req.body?.vehicleInsuranceExpiryDate, 'vehicle insurance expiry date', existing.vehicleInsuranceExpiryDate)
+    const updatedFcExpiryDate = adminDocumentDate(req.body?.fcExpiryDate, 'FC expiry date', existing.fcExpiryDate)
     const data = {
       name, phone, vehicleNumber, licenceNumber, serviceArea, age,
-      drivingLicenceExpiryDate, vehicleInsuranceExpiryDate, fcExpiryDate
+      drivingLicenceExpiryDate: updatedDrivingLicenceExpiryDate,
+      vehicleInsuranceExpiryDate: updatedVehicleInsuranceExpiryDate,
+      fcExpiryDate: updatedFcExpiryDate
     }
     if (req.file) data.profilePhotoUrl = `/uploads/${req.file.filename}`
     if (password) data.passwordHash = await bcrypt.hash(password, 12)

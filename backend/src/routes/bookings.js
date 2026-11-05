@@ -8,6 +8,10 @@ import { ensureRideStartOtp } from '../lib/rideStartOtp.js'
 import { getFareSettings, getEffectiveFareSettings } from './fareSettings.js'
 
 const router = Router()
+function allowUnsubscribedDriversInDevelopment() {
+  return process.env.NODE_ENV !== 'production' &&
+    process.env.ALLOW_UNSUBSCRIBED_DRIVERS_IN_DEV === 'true'
+}
 function requirePassenger(req, res, next) {
   const token = req.cookies?.twoWayzPassenger
   if (!token) return res.status(401).json({ message: 'Please log in before requesting a ride.' })
@@ -416,8 +420,10 @@ router.get('/admin/:bookingId/eligible-drivers', requireAdmin, async (req, res, 
         select: { id: true, reference: true }
       })
       const reasons = []
-      const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: driver.id, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
-      if (!activeSubscription) reasons.push('No active 2WAYZ subscription')
+      if (!allowUnsubscribedDriversInDevelopment()) {
+        const activeSubscription = await prisma.driverSubscription.findFirst({ where: { driverId: driver.id, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
+        if (!activeSubscription) reasons.push('No active 2WAYZ subscription')
+      }
       if (!driver.isOnline) reasons.push('Driver is offline')
       if (ageSeconds == null || ageSeconds > 180) reasons.push('GPS location is not recent (last 3 minutes required)')
       if (distance == null || distance > 8) reasons.push('Outside the 8 km pickup radius')
@@ -460,8 +466,10 @@ router.post('/admin/:bookingId/assign', requireAdmin, async (req, res, next) => 
         select: { id: true, name: true, status: true, isOnline: true, currentLat: true, currentLng: true, locationUpdatedAt: true, wallet: { select: { id: true, balance: true } } }
       })
       if (!driver || driver.status !== 'APPROVED') throw Object.assign(new Error('This driver is not approved.'), { statusCode: 409 })
-      const activeSubscription = await tx.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
-      if (!activeSubscription) throw Object.assign(new Error('This driver does not have an active 2WAYZ subscription.'), { statusCode: 409 })
+      if (!allowUnsubscribedDriversInDevelopment()) {
+        const activeSubscription = await tx.driverSubscription.findFirst({ where: { driverId, status: 'ACTIVE', startsAt: { lte: new Date() }, expiresAt: { gt: new Date() } }, select: { id: true } })
+        if (!activeSubscription) throw Object.assign(new Error('This driver does not have an active 2WAYZ subscription.'), { statusCode: 409 })
+      }
       if (!driver.isOnline) throw Object.assign(new Error('This driver is offline. Ask them to go online before assigning.'), { statusCode: 409 })
       if (driver.currentLat == null || driver.currentLng == null || !driver.locationUpdatedAt || Date.now() - driver.locationUpdatedAt.getTime() > 180000) {
         throw Object.assign(new Error('The driver GPS location is missing or older than 3 minutes. Ask the driver to refresh their location.'), { statusCode: 409 })

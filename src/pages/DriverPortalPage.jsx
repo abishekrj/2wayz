@@ -93,6 +93,18 @@ export default function DriverPortalPage() {
   }, [isLoginRoute])
 
   useEffect(() => {
+    if (!driver?.id || isLoginRoute) return
+    const refreshDriverSession = async () => {
+      try {
+        const result = await adminApi.driverMe()
+        setDriver(result.driver)
+      } catch {}
+    }
+    const timer = window.setInterval(refreshDriverSession, 30000)
+    return () => window.clearInterval(timer)
+  }, [driver?.id, isLoginRoute])
+
+  useEffect(() => {
     if (!driver?.isOnline) return
     refreshOffers()
     const timer = window.setInterval(refreshOffers, 5000)

@@ -30,6 +30,46 @@ function requireDriver(req, res, next) {
     next()
   } catch { return res.status(401).json({ message: 'Your driver session has expired. Please sign in again.' }) }
 }
+
+function privateProofUrl(recharge) {
+  return recharge.proofUrl ? `/api/wallet/recharges/${encodeURIComponent(recharge.id)}/proof` : null
+}
+
+async function sendRechargeProof(req, res, next) {
+  try {
+    const recharge = await prisma.walletRecharge.findUnique({ where: { id: req.params.id }, select: { id: true, driverId: true, proofUrl: true } })
+    if (!recharge?.proofUrl) return res.status(404).json({ message: 'Payment proof not found.' })
+
+    const adminToken = req.cookies?.twoWayzAdmin
+    let isAdmin = false
+    if (adminToken) {
+      try {
+        const payload = jwt.verify(adminToken, process.env.JWT_SECRET)
+        isAdmin = payload.role === 'SUPER_ADMIN'
+      } catch {}
+    }
+
+    if (!isAdmin) {
+      const driverToken = req.cookies?.twoWayzDriver
+      if (!driverToken) return res.status(401).json({ message: 'Please sign in to view this payment proof.' })
+      let payload
+      try { payload = jwt.verify(driverToken, process.env.JWT_SECRET) }
+      catch { return res.status(401).json({ message: 'Your driver session has expired.' }) }
+      if (payload.role !== 'DRIVER') return res.status(403).json({ message: 'Access denied.' })
+      if (payload.sub !== recharge.driverId) return res.status(403).json({ message: 'You cannot view another driver’s payment proof.' })
+    }
+
+    const filename = path.basename(recharge.proofUrl)
+    if (!/^[0-9a-f-]{36}\\.(?:jpe?g|png|webp)$/i.test(filename)) return res.status(404).json({ message: 'Payment proof not found.' })
+    const filePath = path.resolve(uploadDir, filename)
+    if (!filePath.startsWith(uploadDir + path.sep)) return res.sendStatus(404)
+    res.set({ 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' })
+    return res.sendFile(filePath, error => { if (error && !res.headersSent) next(error) })
+  } catch (error) { next(error) }
+}
+
+router.get('/recharges/:id/proof', sendRechargeProof)
+
 async function getWallet(driverId) {
   return prisma.driverWallet.upsert({ where: { driverId }, create: { driverId }, update: {} })
 }
@@ -86,7 +126,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
       prisma.walletTransaction.aggregate({ where: { wallet: { is: { driverId: req.driverAuth.sub } }, type: 'COMMISSION' }, _sum: { settledAmount: true } })
     ])
     const outstanding = Math.max(0, (due._sum.amount || 0) - (due._sum.settledAmount || 0))
-    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, transactions, recharges })
+    res.json({ wallet, settings: settings ? { commissionMode: settings.commissionMode, commissionValue: settings.commissionValue, minimumBalance: settings.minimumBalance, isActive: settings.isActive } : null, outstandingCommission: outstanding, totalCommissionDeducted: commissionTotal._sum.settledAmount || 0, transactions, recharges: recharges.map(item => ({ ...item, proofUrl: privateProofUrl(item) })) })
   } catch (error) { next(error) }
 })
 router.post('/recharges', requireDriver, upload.single('proof'), async (req, res, next) => {
@@ -184,7 +224,7 @@ router.get('/admin/recharges', requireAdmin, async (req, res, next) => {
   try {
     const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(String(req.query.status || '').toUpperCase()) ? String(req.query.status).toUpperCase() : undefined
     const recharges = await prisma.walletRecharge.findMany({ where: status ? { status } : {}, include: { driver: { select: { id: true, name: true, phone: true, vehicleNumber: true } } }, orderBy: { createdAt: 'desc' }, take: 200 })
-    res.json({ recharges })
+    res.json({ recharges: recharges.map(item => ({ ...item, proofUrl: privateProofUrl(item) })) })
   } catch (error) { next(error) }
 })
 router.patch('/admin/recharges/:id', requireAdmin, async (req, res, next) => {

@@ -67,14 +67,14 @@ export default function AdminDriverOperationsPage() {
   const staleCount = drivers.filter(d => ['STALE', 'NO_LOCATION'].includes(d.locationHealth)).length
   return <div className="mx-auto max-w-7xl">
     <div className="flex flex-wrap items-end justify-between gap-4">
-      <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Driver management</p><h1 className="mt-2 text-3xl font-extrabold text-wayz-ink">Driver Operations</h1><p className="mt-2 text-sm text-slate-500">Monitor online sessions, GPS health and driver activity history.</p></div>
+      <div><p className="text-xs font-bold uppercase tracking-[.18em] text-wayz-blue">Driver management</p><h1 className="mt-2 text-3xl font-bold text-wayz-ink">Driver Operations</h1><p className="mt-2 text-sm text-slate-500">Monitor online sessions, GPS health and driver activity history.</p></div>
       <button onClick={() => load(true)} disabled={busy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 disabled:opacity-50"><RefreshCw size={16} className={busy ? 'animate-spin' : ''}/>Refresh</button>
     </div>
     {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
     <div className="mt-6 grid gap-3 sm:grid-cols-3">
-      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Approved drivers</p><p className="mt-2 text-2xl font-extrabold">{drivers.length}</p></div>
-      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Currently online</p><p className="mt-2 text-2xl font-extrabold text-emerald-600">{onlineCount}</p></div>
-      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Stale / missing GPS</p><p className="mt-2 text-2xl font-extrabold text-amber-600">{staleCount}</p><p className="mt-1 text-xs text-slate-400">{healthyCount} healthy GPS connections</p></div>
+      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Approved drivers</p><p className="mt-2 text-2xl font-bold">{drivers.length}</p></div>
+      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Currently online</p><p className="mt-2 text-2xl font-bold text-emerald-600">{onlineCount}</p></div>
+      <div className="rounded-2xl border bg-white p-4"><p className="text-xs text-slate-500">Stale / missing GPS</p><p className="mt-2 text-2xl font-bold text-amber-600">{staleCount}</p><p className="mt-1 text-xs text-slate-400">{healthyCount} healthy GPS connections</p></div>
     </div>
     <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.9fr)]">
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">

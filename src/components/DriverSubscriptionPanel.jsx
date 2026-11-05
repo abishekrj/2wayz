@@ -25,7 +25,7 @@ export default function DriverSubscriptionPanel() {
       form.append('paymentReference', reference)
       if (proof) form.append('proof', proof)
       const result = await adminApi.submitSubscriptionPayment(form)
-      setNotice(result.message); setReference(''); setProof(null); event.target.reset(); await load()
+      setNotice(result.message); setReference(''); setProof(null); setPlanId(''); event.target.reset(); await load()
     } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
   return <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

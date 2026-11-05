@@ -198,13 +198,21 @@ export default function HomePage(){
  <section id="about" className="relative overflow-hidden bg-white py-16 sm:py-20">
   <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-blue-50 blur-3xl"/>
   <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
-   <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
-    <div className="relative flex min-h-[280px] items-center justify-center rounded-[30px] bg-[#eef5fd] px-4 py-8 sm:min-h-[390px] sm:px-8">
+   <div className="grid items-stretch gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+    <div className="relative flex h-full min-h-[320px] items-center justify-center overflow-hidden rounded-[30px] bg-[#eaf3fc] px-4 py-8 sm:min-h-[440px] sm:px-8 lg:min-h-full">
      <div className="pointer-events-none absolute left-6 top-6 h-20 w-20 rounded-full border border-blue-200/70"/>
      <div className="pointer-events-none absolute bottom-7 right-7 h-28 w-28 rounded-full border border-amber-200/80"/>
-     <svg viewBox="0 0 520 370" role="img" aria-label="Illustration of a local auto rickshaw journey" className="relative z-10 h-auto w-full max-w-[500px]" xmlns="http://www.w3.org/2000/svg">
+     <svg viewBox="0 0 520 370" role="img" aria-label="Illustration of a local auto rickshaw journey" className="relative z-10 h-auto w-full max-w-[540px] drop-shadow-[0_14px_18px_rgba(23,61,112,0.08)]" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="260" cy="322" rx="190" ry="17" fill="#cbdcf0" opacity=".65"/>
       <path d="M42 286c66-34 126-34 192 0s126 34 244-4" fill="none" stroke="#b8cde6" strokeWidth="5" strokeLinecap="round" strokeDasharray="10 12"/>
+      <g opacity=".92">
+       <path d="M70 258v-70h34v70M112 258v-94h38v94M158 258v-58h28v58M344 258v-76h35v76M389 258v-105h42v105M440 258v-62h30v62" fill="#d6e6f7"/>
+       <path d="M104 188h-34l17-22zM150 164h-38l19-23zM431 153h-42l21-24z" fill="#9dbce0"/>
+       <path d="M202 258v-78h42v78M194 180h58l-29-30z" fill="#c1d8f0"/>
+       <path d="M208 258v-52h30v52M222 150v-25M214 138h16" stroke="#8eafd6" strokeWidth="4" strokeLinecap="round"/>
+      </g>
+      <path d="M24 304c94-25 170-25 238 0s145 26 234-2" fill="none" stroke="#fff" strokeWidth="18" strokeLinecap="round" opacity=".85"/>
+      <path d="M24 304c94-25 170-25 238 0s145 26 234-2" fill="none" stroke="#a9c5e5" strokeWidth="3" strokeLinecap="round" strokeDasharray="8 10"/>
       <path d="M72 95c0-23 19-42 42-42h58" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>
       <circle cx="72" cy="95" r="8" fill="#f5bd36"/>
       <path d="M396 75h42c17 0 30 13 30 30v23" fill="none" stroke="#9bb9dc" strokeWidth="3" strokeLinecap="round"/>

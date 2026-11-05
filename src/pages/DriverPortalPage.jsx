@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CarFront, MapPin, Power, RefreshCw, LogOut, CheckCircle2, Clock3, Navigation, XCircle, Wallet, UploadCloud, LayoutDashboard, ReceiptText, TrendingUp, ShieldCheck } from 'lucide-react'
+import { CarFront, MapPin, Power, RefreshCw, LogOut, CheckCircle2, Clock3, Navigation, XCircle, Wallet, UploadCloud, LayoutDashboard, ReceiptText, TrendingUp, ShieldCheck, Star } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import AuthLayout from '../components/AuthLayout'
 import { adminApi } from '../lib/adminApi'
@@ -300,7 +300,8 @@ export default function DriverPortalPage() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'wallet', label: 'My Wallet', icon: Wallet },
     { id: 'rides', label: 'My Rides', icon: ReceiptText },
-    { id: 'performance', label: 'Earnings & Ratings', icon: TrendingUp },
+    { id: 'earnings', label: 'My Earnings', icon: TrendingUp },
+    { id: 'ratings', label: 'My Ratings', icon: Star },
     { id: 'subscription', label: 'Subscription', icon: ShieldCheck }
   ]
 
@@ -322,7 +323,8 @@ export default function DriverPortalPage() {
       {activeMenu === 'dashboard' && <section className="mt-7 flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:p-6"><div className="flex items-center gap-4"><span className={'flex h-14 w-14 items-center justify-center rounded-2xl ' + (driver.isOnline ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}><Power size={28}/></span><div><p className="text-lg font-bold text-wayz-ink">{driver.isOnline ? 'You are online' : 'You are offline'}</p><p className="mt-1 text-sm text-slate-500">{driver.isOnline ? 'Your GPS location is shared for dispatch.' : 'Go online when you are ready to accept rides.'}</p></div></div><button disabled={busy} onClick={toggleOnline} className={'rounded-xl px-6 py-3.5 text-sm font-bold disabled:opacity-60 ' + (driver.isOnline ? 'border border-slate-200 bg-white text-slate-700' : 'bg-wayz-yellow text-wayz-ink')}>{busy ? 'Please wait…' : driver.isOnline ? 'Go offline' : 'Share location & go online'}</button></section>}
       {activeMenu === 'dashboard' && gpsError && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{gpsError}</p>}
       {activeMenu === 'subscription' && <DriverSubscriptionPanel/>}
-      {activeMenu === 'performance' && <><DailyEarningsSummary role="DRIVER"/><DriverRatingsSummary/></>}
+      {activeMenu === 'earnings' && <DailyEarningsSummary role="DRIVER"/>}
+      {activeMenu === 'ratings' && <DriverRatingsSummary/>}
        {activeMenu === 'wallet' && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="rounded-xl bg-blue-50 p-3 text-wayz-blue"><Wallet size={22}/></span><div><h2 className="text-lg font-bold text-wayz-ink">My wallet</h2><p className="text-xs text-slate-500">Manual recharge · Commission on completed rides</p></div></div><button onClick={loadWallet} className="rounded-lg p-2 text-wayz-blue" aria-label="Refresh wallet"><RefreshCw size={17}/></button></div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Available balance</p><p className="mt-1 text-2xl font-black text-wayz-blue">{money(walletData?.wallet?.balance)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Total commission paid</p><p className="mt-1 text-2xl font-black text-slate-700">{money(walletData?.totalCommissionDeducted)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Outstanding commission</p><p className="mt-1 text-2xl font-black text-amber-700">{money(walletData?.outstandingCommission)}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-semibold text-slate-500">Minimum balance</p><p className="mt-1 text-2xl font-black text-wayz-ink">{money(walletData?.settings?.minimumBalance)}</p></div></div>

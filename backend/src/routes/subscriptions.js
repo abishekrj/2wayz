@@ -125,7 +125,7 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
       include: {
         driver: { select: { id: true, name: true, phone: true, vehicleNumber: true, status: true } }
       },
-      orderBy: [{ reviewedAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ reviewedAt: 'asc' }, { createdAt: 'asc' }],
       take: 500
     })
     const existing = approvedPayments.length
@@ -140,7 +140,19 @@ router.get('/admin/subscriptions', requireAdmin, async (req, res, next) => {
     for (const payment of approvedPayments) {
       let subscription = byPaymentId.get(payment.id)
       if (!subscription) {
-        const startsAt = payment.reviewedAt || payment.createdAt
+        const approvalTime = payment.reviewedAt || payment.createdAt
+        // Preserve the existing renewal chain when rebuilding a missing record.
+        const previous = await prisma.driverSubscription.findFirst({
+          where: {
+            driverId: payment.driverId,
+            startsAt: { lte: approvalTime },
+            expiresAt: { gt: approvalTime }
+          },
+          orderBy: { expiresAt: 'desc' }
+        })
+        const startsAt = previous?.expiresAt && previous.expiresAt > approvalTime
+          ? previous.expiresAt
+          : approvalTime
         const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
         subscription = await prisma.driverSubscription.upsert({
           where: { paymentId: payment.id },

@@ -78,8 +78,13 @@ router.post('/payments', requireDriver, handleUpload, async (req, res, next) => 
     if (paymentMethod === 'UPI' && paymentReference.length < 4) return res.status(400).json({ message: 'Enter the UPI transaction reference.' })
     const plan = await prisma.driverSubscriptionPlan.findFirst({ where: { id: planId, isActive: true } })
     if (!plan) return res.status(404).json({ message: 'This subscription plan is no longer available.' })
-    if (await prisma.driverSubscriptionPayment.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })) return res.status(409).json({ message: 'You already have a subscription payment awaiting Super Admin review.' })
-    const payment = await prisma.driverSubscriptionPayment.create({ data: { driverId: req.driverAuth.sub, planId: plan.id, planName: plan.name, durationDays: plan.durationDays, amount: plan.price, paymentMethod, paymentReference: paymentReference || null, proofUrl: req.file ? '/uploads/subscriptions/' + req.file.filename : null } })
+    const payment = await prisma.$transaction(async tx => {
+      // Serialize submissions per driver so concurrent requests cannot create duplicate pending payments.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${req.driverAuth.sub}, 1))::text`
+      const pendingCount = await tx.driverSubscriptionPayment.count({ where: { driverId: req.driverAuth.sub, status: 'PENDING' } })
+      if (pendingCount) throw Object.assign(new Error('You already have a subscription payment awaiting Super Admin review.'), { statusCode: 409 })
+      return tx.driverSubscriptionPayment.create({ data: { driverId: req.driverAuth.sub, planId: plan.id, planName: plan.name, durationDays: plan.durationDays, amount: plan.price, paymentMethod, paymentReference: paymentReference || null, proofUrl: req.file ? '/uploads/subscriptions/' + req.file.filename : null } })
+    })
     await notify({ role: 'ADMIN', type: 'SUBSCRIPTION_PAYMENT', title: 'Driver subscription payment received', message: 'A driver submitted a ' + paymentMethod.toLowerCase() + ' subscription payment request for ' + plan.name + ' (₹' + plan.price + ').' })
     res.status(201).json({ payment: { ...payment, proofUrl: privatePaymentProofUrl(payment) }, message: 'Subscription payment request submitted. Your plan will activate after Super Admin confirmation.' })
   } catch (error) { next(error) }
@@ -152,7 +157,11 @@ router.patch('/admin/payments/:id', requireAdmin, async (req, res, next) => {
       if (!payment) throw Object.assign(new Error('Payment request not found.'), { statusCode: 404 })
       if (payment.status !== 'PENDING') throw Object.assign(new Error('This payment request has already been reviewed.'), { statusCode: 409 })
       const reviewedAt = new Date()
-      await tx.driverSubscriptionPayment.update({ where: { id: payment.id }, data: { status: decision, reviewNote: reviewNote || null, reviewedAt, reviewedBy: req.admin.sub } })
+      const reviewUpdate = await tx.driverSubscriptionPayment.updateMany({
+        where: { id: payment.id, status: 'PENDING' },
+        data: { status: decision, reviewNote: reviewNote || null, reviewedAt, reviewedBy: req.admin.sub }
+      })
+      if (reviewUpdate.count !== 1) throw Object.assign(new Error('This payment request has already been reviewed.'), { statusCode: 409 })
       if (decision === 'APPROVED') {
         const current = await tx.driverSubscription.findFirst({ where: { driverId: payment.driverId, status: 'ACTIVE', expiresAt: { gt: reviewedAt } }, orderBy: { expiresAt: 'desc' } })
         const startsAt = current?.expiresAt && current.expiresAt > reviewedAt ? current.expiresAt : reviewedAt

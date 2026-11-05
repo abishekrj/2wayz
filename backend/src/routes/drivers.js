@@ -11,6 +11,7 @@ import { requireAdmin } from '../middleware/requireAdmin.js'
 import { notify, notifyBooking } from '../lib/notifications.js'
 import { createRideStartOtp, verifyRideStartOtp } from '../lib/rideStartOtp.js'
 import { expiredDriverDocuments, istTodayString, suspendDriverIfDocumentsExpired } from '../lib/driverCompliance.js'
+import { validateImageUpload } from '../lib/validateImageUpload.js'
 
 const router = Router()
 const authCookie = () => ({ httpOnly: true, secure: process.env.COOKIE_SECURE === 'true', sameSite: 'strict', path: '/', maxAge: 8 * 60 * 60 * 1000 })
@@ -46,7 +47,7 @@ function parseFutureDate(value, label) {
 function handleProfileUpload(req, res, next) {
   profilePhotoUpload.single('profilePhoto')(req, res, error => {
     if (error) return res.status(400).json({ message: error.message || 'Profile photo upload failed.' })
-    next()
+    validateImageUpload(req, res, next)
   })
 }
 

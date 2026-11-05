@@ -25,6 +25,7 @@ import AdminCancellationsPage from './pages/AdminCancellationsPage'
 import AdminBookingsPage from './pages/AdminBookingsPage'
 import AdminNotificationsPage from './pages/AdminNotificationsPage'
 import AdminSosPage from './pages/AdminSosPage'
+import AdminRatingsPage from './pages/AdminRatingsPage'
 import CmsContentPage from './pages/CmsContentPage'
 import MyBookingsPage from './pages/MyBookingsPage'
 import AdminLayout from './components/AdminLayout'
@@ -61,6 +62,7 @@ function AdminRoutes() {
       <Route path="cancellations" element={<AdminCancellationsPage/>}/>
       <Route path="notifications" element={<AdminNotificationsPage/>}/>
       <Route path="sos" element={<AdminSosPage/>}/>
+      <Route path="ratings" element={<AdminRatingsPage/>}/>
       <Route path="places" element={<AdminPlacesPage/>}/>
       <Route path="faqs" element={<AdminFaqsPage/>}/>
       <Route path="home-page/:slug" element={<AdminSectionEditorPage/>}/>

@@ -160,14 +160,43 @@ export default function DriverPortalPage() {
     try {
       if (accept) {
         const result = await adminApi.acceptDriverOffer(offer.id)
-        setNotice(result.message); setOffers(current => current.filter(item => item.id !== offer.id))
-        await refreshOffers()
+        setNotice(result.message || 'Ride accepted. Your location is now being shared with the passenger.')
+        setOffers(current => current.filter(item => item.id !== offer.id))
+
+        // Send a fresh GPS fix immediately after acceptance instead of waiting
+        // for the background watchPosition callback.
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 12000
+              })
+            })
+            await adminApi.driverLocation(position.coords.latitude, position.coords.longitude)
+            setGpsError('')
+          } catch (locationError) {
+            setGpsError(locationError.code === 1
+              ? 'Location permission is disabled. Allow location access so the passenger can track your auto.'
+              : 'Waiting for a fresh GPS signal. Keep location enabled during the ride.')
+          }
+        } else {
+          setGpsError('This browser does not support GPS location sharing.')
+        }
+
+        await Promise.all([refreshOffers(), refreshActiveBookings()])
       } else {
         await adminApi.declineDriverOffer(offer.id)
         setOffers(current => current.filter(item => item.id !== offer.id))
+        await refreshOffers()
       }
-    } catch (err) { setError(err.message || 'Could not update this offer.'); await refreshOffers() }
-    finally { setBusy(false) }
+    } catch (err) {
+      setError(err.message || 'Could not update this offer.')
+      await Promise.all([refreshOffers(), refreshActiveBookings()])
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function cancelActiveBooking(item) {

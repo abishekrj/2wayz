@@ -25,6 +25,7 @@ function loadGoogleMaps() {
 
 export default function GooglePlaceField({ label, placeholder, icon: Icon = MapPin, tone = 'green', value, onSelect, enableCurrentLocation = false, savedPlaces = [] }) {
   const inputRef = useRef(null)
+  const fieldRef = useRef(null)
   const placesRef = useRef(null)
   const requestRef = useRef(0)
   const autoLocationRequested = useRef(false)
@@ -64,6 +65,15 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
       })
     return () => { alive = false }
   }, [])
+
+  useEffect(() => {
+    if (!editing || suggestions.length === 0) return
+    function closeOnOutsidePointer(event) {
+      if (!fieldRef.current?.contains(event.target)) setSuggestions([])
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [editing, suggestions.length])
 
   useEffect(() => {
     if (!editing || !query.trim() || !placesRef.current) {
@@ -159,7 +169,7 @@ export default function GooglePlaceField({ label, placeholder, icon: Icon = MapP
   }
 
   return (
-    <div className="relative z-10 min-w-0 focus-within:z-[60]">
+    <div ref={fieldRef} className="relative z-10 min-w-0 focus-within:z-[60]">
       <span className="mb-2 block text-[11px] font-bold tracking-[.13em] text-slate-600">{label}</span>
       <div
         onClick={() => { if (selectedName && !editing) startEditing() }}

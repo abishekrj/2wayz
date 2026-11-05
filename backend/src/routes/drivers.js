@@ -130,8 +130,10 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', requireDriver, async (req, res, next) => {
   try {
-    const driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
+    let driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     if (!driver) return res.status(401).json({ message: 'Driver account not found.' })
+    await suspendDriverIfDocumentsExpired(driver)
+    driver = await prisma.driver.findUnique({ where: { id: req.driverAuth.sub } })
     res.json({ driver: publicDriver(driver) })
   } catch (error) { next(error) }
 })

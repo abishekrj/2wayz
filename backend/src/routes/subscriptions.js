@@ -27,7 +27,7 @@ router.get('/me', requireDriver, async (req, res, next) => {
   try {
     const now = new Date()
     const [subscription, payments, plans] = await Promise.all([
-      prisma.driverSubscription.findFirst({ where: { driverId: req.driverAuth.sub, status: 'ACTIVE', expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
+      prisma.driverSubscription.findFirst({ where: { driverId: req.driverAuth.sub, status: 'ACTIVE', startsAt: { lte: now }, expiresAt: { gt: now } }, orderBy: { expiresAt: 'desc' } }),
       prisma.driverSubscriptionPayment.findMany({ where: { driverId: req.driverAuth.sub }, orderBy: { createdAt: 'desc' }, take: 10, select: { id: true, planName: true, amount: true, paymentMethod: true, paymentReference: true, status: true, reviewNote: true, createdAt: true, reviewedAt: true } }),
       prisma.driverSubscriptionPlan.findMany({ where: { isActive: true }, orderBy: [{ durationDays: 'asc' }, { price: 'asc' }] })
     ])

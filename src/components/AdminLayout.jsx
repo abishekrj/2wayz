@@ -56,7 +56,7 @@ export default function AdminLayout({ admin }) {
   const sidebar = (
     <div className="flex h-full flex-col bg-[#082f68] text-white">
       <div className="border-b border-white/10 px-5 py-6">
-        <p className="text-xl font-extrabold tracking-wide">2WAYZ <span className="text-wayz-yellow">ADMIN</span></p>
+        <p className="text-xl font-bold tracking-wide">2WAYZ <span className="text-wayz-yellow">ADMIN</span></p>
         <p className="mt-1 text-xs text-blue-200">Website management</p>
       </div>
 

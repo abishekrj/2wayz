@@ -43,3 +43,36 @@ export async function processDriverSubscriptions() {
     })
   }
 }
+
+/**
+ * Rebuild subscription periods from verified payment approvals.
+ * Existing rows are updated as well, correcting dates written by older recovery code.
+ */
+export async function reconcileApprovedDriverSubscriptions(db, driverId) {
+  const payments = await db.driverSubscriptionPayment.findMany({
+    where: { driverId, status: 'APPROVED' },
+    orderBy: [{ reviewedAt: 'asc' }, { updatedAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }]
+  })
+
+  let previousExpiry = null
+  const now = new Date()
+  const reconciled = []
+
+  for (const payment of payments) {
+    const approvalTime = payment.reviewedAt || payment.updatedAt || payment.createdAt
+    const startsAt = previousExpiry && previousExpiry > approvalTime ? previousExpiry : approvalTime
+    const expiresAt = new Date(startsAt.getTime() + payment.durationDays * 86400000)
+    const status = expiresAt > now ? 'ACTIVE' : 'EXPIRED'
+
+    const subscription = await db.driverSubscription.upsert({
+      where: { paymentId: payment.id },
+      create: { driverId, paymentId: payment.id, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status },
+      update: { driverId, planName: payment.planName, amount: payment.amount, startsAt, expiresAt, status }
+    })
+
+    previousExpiry = expiresAt
+    reconciled.push(subscription)
+  }
+
+  return reconciled
+}
